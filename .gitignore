@@ -23,8 +23,15 @@ dist-ssr
 *.sln
 *.sw?
 
+# Package manager lock files
+yarn.lock
+package-lock.json
+
+# Screenshots
+*.png
 
 # Opencode
 tasks
 tmp
 chats.db
+.opencode
