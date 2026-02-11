@@ -8,6 +8,7 @@ import {
   SidebarMenuItem,
   SidebarHeader,
   SidebarRail,
+  useSidebar,
 } from '@/components/ui/sidebar'
 
 import { Home, Wallet, BarChart3 } from 'lucide-react'
@@ -26,6 +27,14 @@ interface SidebarProps {
 }
 
 export function Sidebar({ currentPath }: SidebarProps) {
+  const { isMobile, setOpenMobile } = useSidebar()
+
+  const handleNavigation = () => {
+    if (isMobile) {
+      setOpenMobile(false)
+    }
+  }
+
   return (
     <SidebarBase collapsible="icon">
       <SidebarHeader>
@@ -42,7 +51,7 @@ export function Sidebar({ currentPath }: SidebarProps) {
                 const Icon = item.icon
                 return (
                   <SidebarMenuItem key={item.to}>
-                    <Link to={item.to} className="w-full">
+                    <Link to={item.to} className="w-full" onClick={handleNavigation}>
                       <SidebarMenuButton
                         isActive={currentPath === item.to}
                         tooltip={item.label}
