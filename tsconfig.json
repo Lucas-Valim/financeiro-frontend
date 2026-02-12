@@ -20,7 +20,7 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    "types": ["vite/client", "vitest/globals", "@types/node"]
+    "types": ["vite/client", "vitest/globals", "@types/node", "./src/test/types"]
   },
   "include": ["src"]
 }

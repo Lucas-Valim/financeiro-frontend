@@ -219,7 +219,8 @@ describe('Integration: Responsividade', () => {
       const sidebarWrapper = container.querySelector('.group\\/sidebar-wrapper')
       expect(sidebarWrapper).toHaveClass('flex')
       if (sidebarWrapper instanceof HTMLElement) {
-        expect(sidebarWrapper).toHaveClass('min-h-svh')
+        expect(sidebarWrapper).toHaveClass('md:h-svh')
+        expect(sidebarWrapper).toHaveClass('md:overflow-hidden')
       }
     })
   })
@@ -331,8 +332,9 @@ describe('Integration: Responsividade', () => {
 
       const sidebarWrapper = container.querySelector('.group\\/sidebar-wrapper')
       if (sidebarWrapper instanceof HTMLElement) {
-        expect(sidebarWrapper).toHaveClass('min-h-svh')
+        expect(sidebarWrapper).toHaveClass('md:h-svh')
         expect(sidebarWrapper).toHaveClass('w-full')
+        expect(sidebarWrapper).toHaveClass('md:overflow-hidden')
       }
     })
 
