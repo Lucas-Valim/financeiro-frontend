@@ -5,13 +5,6 @@ import * as React from 'react'
 
 expect.extend(matchers)
 
-declare module 'vitest' {
-  interface AsymmetricMatchersContaining {
-    toHaveClass: typeof matchers.toHaveClass
-    toBeInTheDocument: typeof matchers.toBeInTheDocument
-  }
-}
-
 afterEach(() => {
   cleanup()
 })
@@ -44,6 +37,57 @@ class MockResizeObserver {
 
 ;(window as unknown as typeof window).ResizeObserver = MockResizeObserver
 
+class MockIntersectionObserver implements IntersectionObserver {
+  callback: IntersectionObserverCallback
+  elements: Element[] = []
+  root: Element | Document | null = null
+  rootMargin: string = '0px'
+  thresholds: ReadonlyArray<number> = [0]
+
+  constructor(callback: IntersectionObserverCallback, options?: IntersectionObserverInit) {
+    this.callback = callback
+    if (options) {
+      this.root = options.root ?? null
+      this.rootMargin = options.rootMargin ?? '0px'
+      this.thresholds = Array.isArray(options.threshold) 
+        ? options.threshold 
+        : [options.threshold ?? 0]
+    }
+  }
+
+  observe(element: Element): void {
+    this.elements.push(element)
+  }
+
+  unobserve(element: Element): void {
+    this.elements = this.elements.filter((el) => el !== element)
+  }
+
+  disconnect(): void {
+    this.elements = []
+  }
+
+  takeRecords(): IntersectionObserverEntry[] {
+    return []
+  }
+
+  triggerIntersection(isIntersecting: boolean) {
+    const entries = this.elements.map((element) => ({
+      isIntersecting,
+      intersectionRatio: isIntersecting ? 1 : 0,
+      target: element,
+      boundingClientRect: {} as DOMRectReadOnly,
+      intersectionRect: {} as DOMRectReadOnly,
+      rootBounds: null,
+      time: Date.now(),
+    })) as IntersectionObserverEntry[]
+
+    this.callback(entries, this)
+  }
+}
+
+;(window as unknown as typeof window).IntersectionObserver = MockIntersectionObserver as unknown as typeof IntersectionObserver
+
 function createIconMock(name: string): ({ className }: { className?: string }) => React.ReactElement {
   return ({ className }) =>
     React.createElement('span', { 'data-testid': `${name.toLowerCase()}-icon`, className, 'aria-hidden': 'true' })
@@ -55,6 +99,12 @@ vi.mock('lucide-react', () => ({
   BarChart3: createIconMock('BarChart3'),
   PanelLeft: createIconMock('PanelLeft'),
   X: createIconMock('X'),
+  ChevronDown: createIconMock('ChevronDown'),
+  ChevronUp: createIconMock('ChevronUp'),
+  Check: createIconMock('Check'),
+  MoreVertical: createIconMock('MoreVertical'),
+  AlertCircle: createIconMock('AlertCircle'),
+  Loader2: createIconMock('Loader2'),
 }))
 
 vi.mock('@tanstack/react-router', () => ({

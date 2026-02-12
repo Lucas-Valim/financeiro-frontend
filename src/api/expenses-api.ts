@@ -1,0 +1,31 @@
+import { apiClient } from '../lib/api-client';
+import type { ExpenseDTO, ExpenseFilter, ListExpensesOutput } from '../types/expenses';
+import { ORGANIZATION_ID } from '../constants/expenses';
+
+export class ExpensesApiService {
+  async fetchExpenses(filters: ExpenseFilter = {}, pagination: { page: number; limit: number }): Promise<ListExpensesOutput> {
+    const params = new URLSearchParams();
+    
+    // TODO: Get organizationId dynamically from auth context in the future
+    params.append('organizationId', ORGANIZATION_ID);
+    
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        if (value instanceof Date) {
+          params.append(key, value.toISOString());
+        } else {
+          params.append(key, String(value));
+        }
+      }
+    });
+    
+    params.append('page', String(pagination.page));
+    params.append('limit', String(pagination.limit));
+    
+    return apiClient.get<ListExpensesOutput>('/expenses', { params }) as unknown as Promise<ListExpensesOutput>;
+  }
+
+  async fetchExpenseById(id: string): Promise<ExpenseDTO> {
+    return apiClient.get<ExpenseDTO>(`/expenses/${id}`) as unknown as Promise<ExpenseDTO>;
+  }
+}

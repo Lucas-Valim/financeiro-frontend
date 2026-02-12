@@ -20,7 +20,7 @@ export function Layout({ children }: LayoutProps = {}) {
           </div>
           <Header />
         </header>
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-6 overflow-x-hidden md:overflow-hidden">
           {children ?? <Outlet />}
         </main>
       </SidebarInset>

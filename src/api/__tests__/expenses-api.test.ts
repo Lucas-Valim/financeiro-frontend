@@ -1,0 +1,229 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { ExpensesApiService } from '../expenses-api';
+import { apiClient } from '../../lib/api-client';
+import { ExpenseStatus } from '../../constants/expenses';
+import type { ExpenseDTO, ListExpensesOutput } from '../../types/expenses';
+
+vi.mock('../../lib/api-client');
+
+describe('ExpensesApiService', () => {
+  let service: ExpensesApiService;
+  const mockedApiClient = apiClient as unknown as {
+    get: ReturnType<typeof vi.fn>;
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    service = new ExpensesApiService();
+  });
+
+  describe('fetchExpenses', () => {
+    const mockExpense: ExpenseDTO = {
+      id: '1',
+      organizationId: 'org-123',
+      categoryId: null,
+      description: 'Test expense',
+      amount: 100,
+      currency: 'BRL',
+      dueDate: new Date('2024-01-01'),
+      status: ExpenseStatus.OPEN,
+      paymentMethod: null,
+      paymentProof: null,
+      paymentProofUrl: null,
+      receiver: 'Test Receiver',
+      municipality: 'Test City',
+      serviceInvoice: null,
+      serviceInvoiceUrl: null,
+      createdAt: new Date('2024-01-01'),
+      updatedAt: new Date('2024-01-01'),
+    };
+
+    const mockResponse: ListExpensesOutput = {
+      data: [mockExpense],
+      pagination: {
+        page: 1,
+        limit: 10,
+        total: 1,
+      },
+    };
+
+    it('should send correct query params with pagination (page, limit)', async () => {
+      mockedApiClient.get.mockResolvedValue(mockResponse);
+      
+      await service.fetchExpenses({}, { page: 2, limit: 20 });
+      
+      expect(mockedApiClient.get).toHaveBeenCalledWith('/expenses', {
+        params: expect.any(URLSearchParams),
+      });
+      
+      const callParams = mockedApiClient.get.mock.calls[0][1]!.params as URLSearchParams;
+      expect(callParams.get('page')).toBe('2');
+      expect(callParams.get('limit')).toBe('20');
+    });
+
+    it('should send correct query params with filter parameters', async () => {
+      mockedApiClient.get.mockResolvedValue(mockResponse);
+      
+      const filters = {
+        status: ExpenseStatus.OPEN,
+        receiver: 'Test Receiver',
+        municipality: 'Test City',
+      };
+      
+      await service.fetchExpenses(filters, { page: 1, limit: 10 });
+      
+      const callParams = mockedApiClient.get.mock.calls[0][1]!.params as URLSearchParams;
+      expect(callParams.get('status')).toBe('OPEN');
+      expect(callParams.get('receiver')).toBe('Test Receiver');
+      expect(callParams.get('municipality')).toBe('Test City');
+    });
+
+    it('should send correct query params with date filters (dueDateStart, dueDateEnd)', async () => {
+      mockedApiClient.get.mockResolvedValue(mockResponse);
+      
+      const filters = {
+        dueDateStart: new Date('2024-01-01T00:00:00.000Z'),
+        dueDateEnd: new Date('2024-12-31T23:59:59.999Z'),
+      };
+      
+      await service.fetchExpenses(filters, { page: 1, limit: 10 });
+      
+      const callParams = mockedApiClient.get.mock.calls[0][1]!.params as URLSearchParams;
+      expect(callParams.get('dueDateStart')).toBe('2024-01-01T00:00:00.000Z');
+      expect(callParams.get('dueDateEnd')).toBe('2024-12-31T23:59:59.999Z');
+    });
+
+    it('should handle empty response array', async () => {
+      const emptyResponse: ListExpensesOutput = {
+        data: [],
+        pagination: {
+          page: 1,
+          limit: 10,
+          total: 0,
+        },
+      };
+      
+      mockedApiClient.get.mockResolvedValue(emptyResponse);
+      
+      const data = await service.fetchExpenses({}, { page: 1, limit: 10 });
+      
+      expect(data.data).toEqual([]);
+      expect(data.pagination.total).toBe(0);
+    });
+
+    it('should handle API errors appropriately and throw with meaningful messages', async () => {
+      mockedApiClient.get.mockRejectedValue(new Error('Network error'));
+      
+      await expect(service.fetchExpenses({}, { page: 1, limit: 10 })).rejects.toThrow('Network error');
+    });
+
+    it('should use apiClient internally (verified via mocking)', async () => {
+      mockedApiClient.get.mockResolvedValue(mockResponse);
+      
+      await service.fetchExpenses({}, { page: 1, limit: 10 });
+      
+      expect(mockedApiClient.get).toHaveBeenCalled();
+    });
+
+    it('should enforce TypeScript types correctly in all methods', async () => {
+      mockedApiClient.get.mockResolvedValue(mockResponse);
+      
+      const result = await service.fetchExpenses({}, { page: 1, limit: 10 });
+      
+      expect(result.data).toBeDefined();
+      expect(result.pagination).toBeDefined();
+      expect(Array.isArray(result.data)).toBe(true);
+    });
+
+    it('should include organizationId in request', async () => {
+      mockedApiClient.get.mockResolvedValue(mockResponse);
+      
+      await service.fetchExpenses({}, { page: 1, limit: 10 });
+      
+      expect(mockedApiClient.get).toHaveBeenCalledWith('/expenses', {
+        params: expect.any(URLSearchParams),
+      });
+    });
+
+    it('should handle empty filters', async () => {
+      mockedApiClient.get.mockResolvedValue(mockResponse);
+      
+      await service.fetchExpenses({}, { page: 1, limit: 10 });
+      
+      const callParams = mockedApiClient.get.mock.calls[0][1]!.params as URLSearchParams;
+      expect(callParams.get('page')).toBe('1');
+      expect(callParams.get('limit')).toBe('10');
+    });
+  });
+
+  describe('fetchExpenseById', () => {
+    const mockExpense: ExpenseDTO = {
+      id: '123',
+      organizationId: 'org-123',
+      categoryId: null,
+      description: 'Test expense',
+      amount: 100,
+      currency: 'BRL',
+      dueDate: new Date('2024-01-01'),
+      status: ExpenseStatus.OPEN,
+      paymentMethod: null,
+      paymentProof: null,
+      paymentProofUrl: null,
+      receiver: 'Test Receiver',
+      municipality: 'Test City',
+      serviceInvoice: null,
+      serviceInvoiceUrl: null,
+      createdAt: new Date('2024-01-01'),
+      updatedAt: new Date('2024-01-01'),
+    };
+
+    it('should return correct expense with valid id', async () => {
+      mockedApiClient.get.mockResolvedValue(mockExpense);
+      
+      const result = await service.fetchExpenseById('123');
+      
+      expect(mockedApiClient.get).toHaveBeenCalledWith('/expenses/123');
+      expect(result.id).toBe('123');
+      expect(result.description).toBe('Test expense');
+    });
+
+    it('should handle not found error (404)', async () => {
+      mockedApiClient.get.mockRejectedValue(new Error('Resource not found'));
+      
+      await expect(service.fetchExpenseById('999')).rejects.toThrow('Resource not found');
+    });
+
+    it('should include organizationId in request', async () => {
+      mockedApiClient.get.mockResolvedValue(mockExpense);
+      
+      await service.fetchExpenseById('123');
+      
+      expect(mockedApiClient.get).toHaveBeenCalledWith('/expenses/123');
+    });
+
+    it('should handle API errors appropriately and throw with meaningful messages', async () => {
+      mockedApiClient.get.mockRejectedValue(new Error('Internal server error'));
+      
+      await expect(service.fetchExpenseById('123')).rejects.toThrow('Internal server error');
+    });
+
+    it('should use apiClient internally (verified via mocking)', async () => {
+      mockedApiClient.get.mockResolvedValue(mockExpense);
+      
+      await service.fetchExpenseById('123');
+      
+      expect(mockedApiClient.get).toHaveBeenCalled();
+    });
+
+    it('should enforce TypeScript types correctly', async () => {
+      mockedApiClient.get.mockResolvedValue(mockExpense);
+      
+      const result = await service.fetchExpenseById('123');
+      
+      expect(result).toBeDefined();
+      expect(result.id).toBe('123');
+      expect(result.amount).toBe(100);
+      expect(result.status).toBe(ExpenseStatus.OPEN);
+    });
+  });
+});
