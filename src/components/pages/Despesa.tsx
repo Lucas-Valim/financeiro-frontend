@@ -15,6 +15,7 @@ export function Despesa() {
 
   const {
     data: expenses,
+    total,
     isLoading,
     error,
     hasMore,
@@ -90,8 +91,6 @@ export function Despesa() {
   const handleRefresh = useCallback(() => {
     reset();
   }, [reset]);
-
-  const totalExpenses = expenses.length;
 
   if (error && !isLoading && expenses.length === 0) {
     return (
@@ -177,7 +176,7 @@ export function Despesa() {
               isLoading={isLoading}
               error={error as Error | null}
               hasNextPage={hasMore}
-              total={totalExpenses}
+              total={total}
               onLoadMore={loadMore}
               onRefresh={handleRefresh}
             />

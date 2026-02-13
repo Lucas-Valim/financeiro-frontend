@@ -191,7 +191,9 @@ export function ExpensesGrid({
   onLoadMore,
   onRefresh,
 }: ExpensesGridProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const desktopContainerRef = useRef<HTMLDivElement>(null);
+  const tabletContainerRef = useRef<HTMLDivElement>(null);
+  const mobileContainerRef = useRef<HTMLDivElement>(null);
   const [scrollPosition, setScrollPosition] = useState(0);
 
   const handleLoadMore = () => {
@@ -200,26 +202,50 @@ export function ExpensesGrid({
     }
   };
 
-  const { ref: observerRef } = useIntersectionObserver(handleLoadMore, {
+  const { ref: desktopObserverRef } = useIntersectionObserver(handleLoadMore, {
     threshold: 0.8,
     enabled: hasNextPage && !isLoading,
+    root: desktopContainerRef,
+  });
+
+  const { ref: tabletObserverRef } = useIntersectionObserver(handleLoadMore, {
+    threshold: 0.8,
+    enabled: hasNextPage && !isLoading,
+    root: tabletContainerRef,
+  });
+
+  const { ref: mobileObserverRef } = useIntersectionObserver(handleLoadMore, {
+    threshold: 0.8,
+    enabled: hasNextPage && !isLoading,
+    root: mobileContainerRef,
   });
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
+    const containers = [
+      desktopContainerRef.current,
+      tabletContainerRef.current,
+      mobileContainerRef.current,
+    ].filter(Boolean);
 
     const debouncedScroll = debounce(() => {
-      setScrollPosition(container.scrollTop);
+      const activeContainer = containers.find((c) => c && c.scrollTop > 0);
+      if (activeContainer) {
+        setScrollPosition(activeContainer.scrollTop);
+      }
     }, 300);
 
     const handleScroll = () => {
       debouncedScroll();
     };
 
-    container.addEventListener('scroll', handleScroll);
+    containers.forEach((container) => {
+      container?.addEventListener('scroll', handleScroll);
+    });
+
     return () => {
-      container.removeEventListener('scroll', handleScroll);
+      containers.forEach((container) => {
+        container?.removeEventListener('scroll', handleScroll);
+      });
     };
   }, []);
 
@@ -236,7 +262,7 @@ export function ExpensesGrid({
           {error.message || 'An unexpected error occurred'}
         </p>
         <Button onClick={onRefresh} variant="outline">
-          Try Again
+          Tente novamente
         </Button>
       </div>
     );
@@ -245,7 +271,7 @@ export function ExpensesGrid({
   if (expenses.length === 0 && !isLoading) {
     return (
       <div className="rounded-md border p-8 text-center" data-testid="empty-state">
-        <p className="text-muted-foreground">No expenses found</p>
+        <p className="text-muted-foreground">Nenhuma despesa encontrada</p>
       </div>
     );
   }
@@ -254,7 +280,7 @@ export function ExpensesGrid({
     <div className="flex-1 flex flex-col gap-4 overflow-hidden">
       {/* Desktop Table View */}
       <div
-        ref={containerRef}
+        ref={desktopContainerRef}
         className="hidden lg:block relative overflow-auto flex-1 rounded-md border"
         data-testid="expenses-table-container"
         style={{ scrollBehavior: 'smooth' }}
@@ -301,13 +327,18 @@ export function ExpensesGrid({
             {isLoading && <TableSkeleton />}
           </tbody>
         </table>
-        <div ref={observerRef} className="h-4" data-testid="observer-target" />
+        {isLoading && expenses.length > 0 && (
+          <div className="flex justify-center py-4" data-testid="loading-more-spinner">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          </div>
+        )}
+        <div ref={desktopObserverRef} className="h-4" data-testid="observer-target" />
       </div>
 
       {/* Tablet Horizontal Cards */}
       <div className="hidden md:block lg:hidden">
         <div
-          ref={containerRef}
+          ref={tabletContainerRef}
           className="relative overflow-auto flex-1 rounded-md border"
           data-testid="expenses-tablet-container"
         >
@@ -324,14 +355,19 @@ export function ExpensesGrid({
             ))}
             {isLoading && <CardSkeleton />}
           </div>
-          <div ref={observerRef} className="h-4" />
+          {isLoading && expenses.length > 0 && (
+            <div className="flex justify-center py-4" data-testid="loading-more-spinner-tablet">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          )}
+          <div ref={tabletObserverRef} className="h-4" />
         </div>
       </div>
 
       {/* Mobile Vertical Cards */}
       <div className="md:hidden">
         <div
-          ref={containerRef}
+          ref={mobileContainerRef}
           className="relative overflow-auto flex-1 rounded-md border divide-y"
           data-testid="expenses-mobile-container"
         >
@@ -339,7 +375,12 @@ export function ExpensesGrid({
             <VerticalCard key={expense.id} expense={expense} />
           ))}
           {isLoading && <CardSkeleton />}
-          <div ref={observerRef} className="h-4" />
+          {isLoading && expenses.length > 0 && (
+            <div className="flex justify-center py-4" data-testid="loading-more-spinner-mobile">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          )}
+          <div ref={mobileObserverRef} className="h-4" />
         </div>
       </div>
 

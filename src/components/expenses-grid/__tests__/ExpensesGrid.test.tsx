@@ -103,7 +103,7 @@ describe('ExpensesGrid', () => {
       render(<ExpensesGrid {...defaultProps} expenses={[]} total={0} />);
 
       expect(screen.getByTestId('empty-state')).toBeInTheDocument();
-      expect(screen.getByText('No expenses found')).toBeInTheDocument();
+      expect(screen.getByText('Nenhuma despesa encontrada')).toBeInTheDocument();
     });
   });
 
@@ -124,7 +124,7 @@ describe('ExpensesGrid', () => {
         <ExpensesGrid {...defaultProps} error={error} onRefresh={onRefresh} />
       );
 
-      const retryButton = screen.getByText('Try Again');
+      const retryButton = screen.getByText('Tente novamente');
       fireEvent.click(retryButton);
 
       expect(onRefresh).toHaveBeenCalledTimes(1);
@@ -142,7 +142,7 @@ describe('ExpensesGrid', () => {
     it('displays correct counter for empty expenses', () => {
       render(<ExpensesGrid {...defaultProps} expenses={[]} total={0} />);
 
-      expect(screen.getByText('No expenses found')).toBeInTheDocument();
+      expect(screen.getByText('Nenhuma despesa encontrada')).toBeInTheDocument();
     });
   });
 
@@ -213,6 +213,26 @@ describe('ExpensesGrid', () => {
       const thead = screen.getByTestId('expenses-table').querySelector('thead');
       expect(thead).toHaveClass('sticky');
       expect(thead).toHaveClass('top-0');
+    });
+  });
+
+  describe('Loading More Spinner', () => {
+    it('shows spinner when loading more data (isLoading true and expenses exist)', () => {
+      render(<ExpensesGrid {...defaultProps} isLoading={true} />);
+
+      expect(screen.getByTestId('loading-more-spinner')).toBeInTheDocument();
+    });
+
+    it('does not show spinner during initial load (empty expenses)', () => {
+      render(<ExpensesGrid {...defaultProps} expenses={[]} isLoading={true} />);
+
+      expect(screen.queryByTestId('loading-more-spinner')).not.toBeInTheDocument();
+    });
+
+    it('does not show spinner when not loading', () => {
+      render(<ExpensesGrid {...defaultProps} isLoading={false} />);
+
+      expect(screen.queryByTestId('loading-more-spinner')).not.toBeInTheDocument();
     });
   });
 });

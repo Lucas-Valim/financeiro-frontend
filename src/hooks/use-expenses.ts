@@ -10,6 +10,7 @@ interface UseExpensesParams {
 
 interface UseExpensesReturn {
   data: ExpenseDTO[];
+  total: number;
   isLoading: boolean;
   error: unknown;
   hasMore: boolean;
@@ -85,9 +86,11 @@ export function useExpenses({ filters = {} }: UseExpensesParams = {}): UseExpens
   }, [filters, refetch]);
 
   const flattenedData = pages?.pages.flatMap((page) => page.data) ?? [];
+  const totalCount = pages?.pages[0]?.pagination.total ?? 0;
 
   return {
     data: flattenedData,
+    total: totalCount,
     isLoading,
     error,
     hasMore: hasNextPage ?? false,

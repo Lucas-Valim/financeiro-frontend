@@ -4,6 +4,7 @@ interface UseIntersectionObserverOptions {
   threshold?: number;
   rootMargin?: string;
   enabled?: boolean;
+  root?: React.RefObject<HTMLElement | null>;
 }
 
 interface UseIntersectionObserverReturn {
@@ -14,7 +15,7 @@ export function useIntersectionObserver(
   onIntersect: () => void,
   options: UseIntersectionObserverOptions = {}
 ): UseIntersectionObserverReturn {
-  const { threshold = 0.8, rootMargin = '0px', enabled = true } = options;
+  const { threshold = 0.8, rootMargin = '0px', enabled = true, root } = options;
   const ref = useRef<HTMLDivElement>(null);
   const callbackRef = useRef(onIntersect);
 
@@ -39,6 +40,7 @@ export function useIntersectionObserver(
       {
         threshold,
         rootMargin,
+        root: root?.current ?? null,
       }
     );
 
@@ -47,7 +49,7 @@ export function useIntersectionObserver(
     return () => {
       observer.disconnect();
     };
-  }, [threshold, rootMargin, enabled]);
+  }, [threshold, rootMargin, enabled, root]);
 
   return { ref };
 }

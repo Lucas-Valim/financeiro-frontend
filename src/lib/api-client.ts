@@ -37,7 +37,7 @@ function createApiClient(): AxiosInstance {
           throw new Error(errorMessage);
         }
         if (axiosError.request) {
-          throw new Error('Network error: Unable to connect to server');
+          throw new Error('Erro de rede: Não foi possível conectar ao servidor');
         }
       }
       throw error;
