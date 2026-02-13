@@ -66,18 +66,52 @@ describe('ExpensesGrid', () => {
 
       // Use getAllByText since headers appear in multiple views
       expect(screen.getAllByText('Actions').length).toBeGreaterThanOrEqual(1);
-      expect(screen.getAllByText('Id').length).toBeGreaterThanOrEqual(1);
-      expect(screen.getAllByText('Amount').length).toBeGreaterThanOrEqual(1);
-      expect(screen.getAllByText('Due Date').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Valor').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Fornecedor').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Data de Vencimento').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Status').length).toBeGreaterThanOrEqual(1);
     });
 
     it('renders ExpenseRow component for each expense in array', () => {
       render(<ExpensesGrid {...defaultProps} />);
 
-      // Check for expense IDs in the table (desktop view)
-      const expenseIds = screen.getAllByText(/^(1|2)$/);
-      expect(expenseIds.length).toBeGreaterThanOrEqual(2);
+      // Check for expense amounts in the table (desktop view)
+      const expenseAmounts = screen.getAllByText(/R\$/);
+      expect(expenseAmounts.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('renders Fornecedor column with receiver values in desktop view', () => {
+      render(<ExpensesGrid {...defaultProps} />);
+
+      expect(screen.getAllByText('Receiver 1').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Receiver 2').length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('renders Fornecedor column in tablet view', () => {
+      render(<ExpensesGrid {...defaultProps} />);
+
+      expect(screen.getAllByText('Fornecedor').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Receiver 1').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Receiver 2').length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('renders Fornecedor field in mobile view', () => {
+      render(<ExpensesGrid {...defaultProps} />);
+
+      const fornecedorLabels = screen.getAllByText('Fornecedor:');
+      expect(fornecedorLabels.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('handles null receiver with N/A fallback', () => {
+      const expensesWithNullReceiver: ExpenseDTO[] = [
+        {
+          ...mockExpenses[0],
+          receiver: null as unknown as string,
+        },
+      ];
+      render(<ExpensesGrid {...defaultProps} expenses={expensesWithNullReceiver} total={1} />);
+
+      expect(screen.getAllByText('N/A').length).toBeGreaterThanOrEqual(1);
     });
   });
 

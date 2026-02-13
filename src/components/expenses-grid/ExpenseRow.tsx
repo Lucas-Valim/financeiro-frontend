@@ -57,8 +57,8 @@ export function ExpenseRow({ expense }: ExpenseRowProps) {
           </DropdownMenuContent>
         </DropdownMenu>
       </td>
-      <td className="p-4 text-sm">{expense.id}</td>
       <td className="p-4 text-sm">{formattedAmount}</td>
+      <td className="p-4 text-sm">{expense.receiver ?? "N/A"}</td>
       <td className="p-4 text-sm">{formattedDate}</td>
       <td className="p-4 text-sm">
         <span

@@ -96,6 +96,9 @@ function TableSkeleton() {
             <Skeleton className="h-4 w-20" />
           </td>
           <td className="p-4">
+            <Skeleton className="h-4 w-24" />
+          </td>
+          <td className="p-4">
             <Skeleton className="h-6 w-16" />
           </td>
         </tr>
@@ -131,8 +134,8 @@ function HorizontalCard({ expense }: { expense: ExpenseDTO }) {
       <div className="w-[120px]">
         <ActionsDropdown />
       </div>
-      <div className="w-[80px] text-sm">{expense.id}</div>
       <div className="w-[150px] text-sm">{formatAmount(expense.amount)}</div>
+      <div className="w-[150px] text-sm">{expense.receiver ?? 'N/A'}</div>
       <div className="w-[150px] text-sm">{formatDate(expense.dueDate)}</div>
       <div className="w-[100px]">
         <span
@@ -153,14 +156,14 @@ function VerticalCard({ expense }: { expense: ExpenseDTO }) {
 
   return (
     <div className="p-4 hover:bg-muted/50 border-b last:border-b-0">
-      <div className="flex items-center justify-between mb-3">
-        <span className="font-medium text-sm">ID: {expense.id}</span>
-        <ActionsDropdown />
-      </div>
       <div className="space-y-2 text-sm">
         <div className="flex justify-between">
           <span className="text-muted-foreground">Valor:</span>
           <span>{formatAmount(expense.amount)}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Fornecedor:</span>
+          <span>{expense.receiver ?? 'N/A'}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">Data de Vencimento:</span>
@@ -296,15 +299,15 @@ export function ExpensesGrid({
               </th>
               <th
                 className="h-12 px-4 text-left align-middle font-medium text-muted-foreground"
-                style={{ width: '80px' }}
+                style={{ width: '150px' }}
               >
-                Id
+                Valor
               </th>
               <th
                 className="h-12 px-4 text-left align-middle font-medium text-muted-foreground"
                 style={{ width: '150px' }}
               >
-                Valor
+                Fornecedor
               </th>
               <th
                 className="h-12 px-4 text-left align-middle font-medium text-muted-foreground"
@@ -344,8 +347,8 @@ export function ExpensesGrid({
         >
           <div className="sticky top-0 z-10 bg-background border-b px-4 py-3 grid grid-cols-5 gap-4 font-medium text-sm text-muted-foreground">
             <div style={{ width: '120px' }}>Actions</div>
-            <div style={{ width: '80px' }}>Id</div>
             <div style={{ width: '150px' }}>Amount</div>
+            <div style={{ width: '150px' }}>Fornecedor</div>
             <div style={{ width: '150px' }}>Due Date</div>
             <div style={{ width: '100px' }}>Status</div>
           </div>

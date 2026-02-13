@@ -79,8 +79,8 @@ describe("ExpenseRow", () => {
   describe("Component Rendering", () => {
     it("renders all expense data fields", () => {
       render(<ExpenseRow expense={mockExpense} />)
-      expect(screen.getByText("expense-1")).toBeInTheDocument()
       expect(screen.getByText(/R\$\s*1\.234,56/)).toBeInTheDocument()
+      expect(screen.getByText("Test Receiver")).toBeInTheDocument()
       expect(screen.getByText(/14\/01\/2024|15\/01\/2024/)).toBeInTheDocument()
       expect(screen.getByText("OPEN")).toBeInTheDocument()
     })
@@ -90,11 +90,22 @@ describe("ExpenseRow", () => {
       const cells = container.querySelectorAll("td")
       expect(cells).toHaveLength(5)
       expect(cells[0].querySelector("button")).toBeInTheDocument()
-      expect(cells[1].textContent).toBe("expense-1")
-      expect(cells[2].textContent).toContain("R$")
-      expect(cells[2].textContent).toContain("1.234,56")
+      expect(cells[1].textContent).toContain("R$")
+      expect(cells[1].textContent).toContain("1.234,56")
+      expect(cells[2].textContent).toBe("Test Receiver")
       expect(cells[3].textContent).toMatch(/14\/01\/2024|15\/01\/2024/)
       expect(cells[4].textContent).toBe("OPEN")
+    })
+
+    it("renders Fornecedor column with receiver value", () => {
+      render(<ExpenseRow expense={mockExpense} />)
+      expect(screen.getByText("Test Receiver")).toBeInTheDocument()
+    })
+
+    it("handles null receiver with N/A fallback", () => {
+      const nullReceiverExpense = { ...mockExpense, receiver: null as unknown as string }
+      render(<ExpenseRow expense={nullReceiverExpense} />)
+      expect(screen.getByText("N/A")).toBeInTheDocument()
     })
 
     it("renders actions column as first column with dropdown button", () => {

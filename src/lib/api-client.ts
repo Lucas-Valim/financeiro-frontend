@@ -6,7 +6,7 @@ const API_TIMEOUT = 10000;
 
 function createApiClient(): AxiosInstance {
   const instance = axios.create({
-    baseURL: import.meta.env.API_URL || 'http://localhost:3000',
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
     timeout: API_TIMEOUT,
     headers: {
       'Content-Type': 'application/json',
