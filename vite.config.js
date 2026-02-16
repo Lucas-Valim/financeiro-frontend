@@ -20,8 +20,14 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: './src/test/setup.ts',
+    setupFiles: ['./src/test/setup-polyfill.ts', './src/test/setup.ts'],
     include: ['src/**/__tests__/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     exclude: ['node_modules', 'dist', '.opencode', 'tests/e2e'],
+    deps: {
+      inline: ['react-dom/test-utils'],
+    },
+    env: {
+      NODE_ENV: 'development',
+    },
   },
 })
