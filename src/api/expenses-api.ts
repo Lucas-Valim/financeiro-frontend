@@ -1,5 +1,5 @@
 import { apiClient } from '../lib/api-client';
-import type { ExpenseDTO, ExpenseFilter, ListExpensesOutput } from '../types/expenses';
+import type { ExpenseDTO, ExpenseFilter, ListExpensesOutput, CreateExpenseInput, UpdateExpenseInput } from '../types/expenses';
 import { ORGANIZATION_ID } from '../constants/expenses';
 
 export class ExpensesApiService {
@@ -27,5 +27,13 @@ export class ExpensesApiService {
 
   async fetchExpenseById(id: string): Promise<ExpenseDTO> {
     return apiClient.get<ExpenseDTO>(`/expenses/${id}`) as unknown as Promise<ExpenseDTO>;
+  }
+
+  async create(data: CreateExpenseInput): Promise<ExpenseDTO> {
+    return apiClient.post<ExpenseDTO>('/expenses', data) as unknown as Promise<ExpenseDTO>;
+  }
+
+  async update(id: string, data: UpdateExpenseInput): Promise<ExpenseDTO> {
+    return apiClient.put<ExpenseDTO>(`/expenses/${id}`, data) as unknown as Promise<ExpenseDTO>;
   }
 }
