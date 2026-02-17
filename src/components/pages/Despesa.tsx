@@ -3,15 +3,18 @@ import { useExpenses } from '@/hooks/use-expenses';
 import { StatusCards } from '@/components/status-cards/StatusCards';
 import { FilterModal } from '@/components/filter-modal/FilterModal';
 import { ExpensesGrid } from '@/components/expenses-grid/ExpensesGrid';
+import { ExpenseFormModal } from '@/components/expenses/ExpenseFormModal';
 import { Button } from '@/components/ui/button';
 import { Loader2, Filter, AlertCircle, X } from 'lucide-react';
-import type { ExpenseFilter } from '@/types/expenses';
+import type { ExpenseFilter, ExpenseDTO } from '@/types/expenses';
 import { ExpenseStatus } from '@/constants/expenses';
 import { PageCard } from '@/components/shared/PageCard';
 
 export function Despesa() {
   const [filters, setFilters] = useState<ExpenseFilter>({});
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
+  const [selectedExpense, setSelectedExpense] = useState<ExpenseDTO | null>(null);
 
   const {
     data: expenses,
@@ -89,6 +92,25 @@ export function Despesa() {
   );
 
   const handleRefresh = useCallback(() => {
+    reset();
+  }, [reset]);
+
+  const handleCreateExpense = useCallback(() => {
+    setSelectedExpense(null);
+    setIsExpenseModalOpen(true);
+  }, []);
+
+  const handleEditExpense = useCallback((expense: ExpenseDTO) => {
+    setSelectedExpense(expense);
+    setIsExpenseModalOpen(true);
+  }, []);
+
+  const handleCloseExpenseModal = useCallback(() => {
+    setIsExpenseModalOpen(false);
+    setSelectedExpense(null);
+  }, []);
+
+  const handleExpenseSuccess = useCallback(() => {
     reset();
   }, [reset]);
 
@@ -179,6 +201,8 @@ export function Despesa() {
               total={total}
               onLoadMore={loadMore}
               onRefresh={handleRefresh}
+              onCreate={handleCreateExpense}
+              onEdit={handleEditExpense}
             />
           )}
         </div>
@@ -189,6 +213,13 @@ export function Despesa() {
           onClear={handleClearFilters}
           onClose={handleCloseFilterModal}
           isOpen={isFilterModalOpen}
+        />
+
+        <ExpenseFormModal
+          isOpen={isExpenseModalOpen}
+          onClose={handleCloseExpenseModal}
+          onSuccess={handleExpenseSuccess}
+          expense={selectedExpense}
         />
       </div>
     </PageCard>

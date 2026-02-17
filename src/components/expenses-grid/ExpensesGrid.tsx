@@ -3,7 +3,7 @@ import { ExpenseRow } from './ExpenseRow';
 import type { ExpensesGridProps } from './types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, Loader2, MoreVertical } from 'lucide-react';
+import { AlertCircle, Loader2, MoreVertical, Plus } from 'lucide-react';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import type { ExpenseDTO } from '@/types/expenses';
 import { EXPENSE_STATUS_COLORS } from '@/constants/expenses';
@@ -60,7 +60,17 @@ function formatDate(date: Date | string): string {
   }
 }
 
-function ActionsDropdown() {
+function ActionsDropdown({
+  expense,
+  onEdit,
+}: {
+  expense: ExpenseDTO;
+  onEdit?: (expense: ExpenseDTO) => void;
+}) {
+  const handleEdit = () => {
+    onEdit?.(expense);
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -70,7 +80,9 @@ function ActionsDropdown() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem className="cursor-pointer">Edit</DropdownMenuItem>
+        <DropdownMenuItem className="cursor-pointer" onSelect={handleEdit}>
+          Edit
+        </DropdownMenuItem>
         <DropdownMenuItem className="cursor-pointer">Pay</DropdownMenuItem>
         <DropdownMenuItem className="cursor-pointer">Cancel</DropdownMenuItem>
       </DropdownMenuContent>
@@ -126,13 +138,19 @@ function CardSkeleton() {
   );
 }
 
-function HorizontalCard({ expense }: { expense: ExpenseDTO }) {
+function HorizontalCard({
+  expense,
+  onEdit,
+}: {
+  expense: ExpenseDTO;
+  onEdit?: (expense: ExpenseDTO) => void;
+}) {
   const statusColorClass = EXPENSE_STATUS_COLORS[expense.status] || '';
 
   return (
     <div className="p-4 grid grid-cols-5 gap-4 items-center hover:bg-muted/50 border-b last:border-b-0">
       <div className="w-[120px]">
-        <ActionsDropdown />
+        <ActionsDropdown expense={expense} onEdit={onEdit} />
       </div>
       <div className="w-[150px] text-sm">{formatAmount(expense.amount)}</div>
       <div className="w-[150px] text-sm">{expense.receiver ?? 'N/A'}</div>
@@ -151,11 +169,31 @@ function HorizontalCard({ expense }: { expense: ExpenseDTO }) {
   );
 }
 
-function VerticalCard({ expense }: { expense: ExpenseDTO }) {
+function VerticalCard({
+  expense,
+  onEdit,
+}: {
+  expense: ExpenseDTO;
+  onEdit?: (expense: ExpenseDTO) => void;
+}) {
   const statusColorClass = EXPENSE_STATUS_COLORS[expense.status] || '';
+
+  const handleEdit = () => {
+    onEdit?.(expense);
+  };
 
   return (
     <div className="p-4 hover:bg-muted/50 border-b last:border-b-0">
+      <div className="flex justify-end mb-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleEdit}
+          className="h-8 px-2 text-xs"
+        >
+          Edit
+        </Button>
+      </div>
       <div className="space-y-2 text-sm">
         <div className="flex justify-between">
           <span className="text-muted-foreground">Valor:</span>
@@ -193,6 +231,8 @@ export function ExpensesGrid({
   total,
   onLoadMore,
   onRefresh,
+  onCreate,
+  onEdit,
 }: ExpensesGridProps) {
   const desktopContainerRef = useRef<HTMLDivElement>(null);
   const tabletContainerRef = useRef<HTMLDivElement>(null);
@@ -281,6 +321,16 @@ export function ExpensesGrid({
 
   return (
     <div className="flex-1 flex flex-col gap-4 overflow-hidden">
+      {/* Create Button */}
+      {onCreate && (
+        <div className="flex justify-end shrink-0">
+          <Button onClick={onCreate} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Nova Despesa
+          </Button>
+        </div>
+      )}
+
       {/* Desktop Table View */}
       <div
         ref={desktopContainerRef}
@@ -325,7 +375,7 @@ export function ExpensesGrid({
           </thead>
           <tbody>
             {expenses.map((expense) => (
-              <ExpenseRow key={expense.id} expense={expense} />
+              <ExpenseRow key={expense.id} expense={expense} onEdit={onEdit} />
             ))}
             {isLoading && <TableSkeleton />}
           </tbody>
@@ -354,7 +404,7 @@ export function ExpensesGrid({
           </div>
           <div className="divide-y">
             {expenses.map((expense) => (
-              <HorizontalCard key={expense.id} expense={expense} />
+              <HorizontalCard key={expense.id} expense={expense} onEdit={onEdit} />
             ))}
             {isLoading && <CardSkeleton />}
           </div>
@@ -375,7 +425,7 @@ export function ExpensesGrid({
           data-testid="expenses-mobile-container"
         >
           {expenses.map((expense) => (
-            <VerticalCard key={expense.id} expense={expense} />
+            <VerticalCard key={expense.id} expense={expense} onEdit={onEdit} />
           ))}
           {isLoading && <CardSkeleton />}
           {isLoading && expenses.length > 0 && (

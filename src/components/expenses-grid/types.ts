@@ -8,4 +8,8 @@ export interface ExpensesGridProps {
   total: number;
   onLoadMore: () => void;
   onRefresh: () => void;
+  /** Callback fired when user clicks to create a new expense */
+  onCreate?: () => void;
+  /** Callback fired when user clicks to edit an expense */
+  onEdit?: (expense: ExpenseDTO) => void;
 }
