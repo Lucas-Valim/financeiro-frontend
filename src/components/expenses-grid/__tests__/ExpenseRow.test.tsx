@@ -1,9 +1,23 @@
-import { describe, it, expect } from "vitest"
+import { describe, it, expect, vi } from "vitest"
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { ExpenseRow } from "../ExpenseRow"
 import type { ExpenseDTO } from "@/types/expenses"
 import { ExpenseStatus } from "@/constants/expenses"
+
+// Mock the PaymentModal component
+vi.mock("@/components/payment/PaymentModal", () => ({
+  PaymentModal: vi.fn(({ isOpen, onClose, expense }) => {
+    if (!isOpen || !expense) return null
+    return (
+      <div data-testid="payment-modal" data-expense-id={expense.id}>
+        <button onClick={onClose} data-testid="close-modal-button">
+          Close
+        </button>
+      </div>
+    )
+  }),
+}))
 
 describe("ExpenseRow", () => {
   const mockExpense: ExpenseDTO = {
@@ -163,7 +177,7 @@ describe("ExpenseRow", () => {
   })
 
   describe("Dropdown Menu", () => {
-    it("renders dropdown menu with all three actions", async () => {
+    it("renders dropdown menu with Edit and Cancel actions for OPEN status", async () => {
       const user = userEvent.setup()
       render(<ExpenseRow expense={mockExpense} />)
       const button = screen.getByRole("button")
@@ -190,6 +204,85 @@ describe("ExpenseRow", () => {
       const editItem = screen.getByText("Edit")
       await user.click(editItem)
       expect(screen.queryByText("Edit")).not.toBeInTheDocument()
+    })
+  })
+
+  describe("Pay Button Visibility", () => {
+    it("shows Pay button when expense status is OPEN", async () => {
+      const user = userEvent.setup()
+      const openExpense = { ...mockExpense, status: ExpenseStatus.OPEN }
+      render(<ExpenseRow expense={openExpense} />)
+      const button = screen.getByRole("button")
+      await user.click(button)
+      expect(screen.getByText("Pay")).toBeInTheDocument()
+    })
+
+    it("shows Pay button when expense status is OVERDUE", async () => {
+      const user = userEvent.setup()
+      const overdueExpense = { ...mockExpense, status: ExpenseStatus.OVERDUE }
+      render(<ExpenseRow expense={overdueExpense} />)
+      const button = screen.getByRole("button")
+      await user.click(button)
+      expect(screen.getByText("Pay")).toBeInTheDocument()
+    })
+
+    it("does NOT show Pay button when expense status is PAID", async () => {
+      const user = userEvent.setup()
+      const paidExpense = { ...mockExpense, status: ExpenseStatus.PAID }
+      render(<ExpenseRow expense={paidExpense} />)
+      const button = screen.getByRole("button")
+      await user.click(button)
+      expect(screen.queryByText("Pay")).not.toBeInTheDocument()
+    })
+
+    it("does NOT show Pay button when expense status is CANCELLED", async () => {
+      const user = userEvent.setup()
+      const cancelledExpense = { ...mockExpense, status: ExpenseStatus.CANCELLED }
+      render(<ExpenseRow expense={cancelledExpense} />)
+      const button = screen.getByRole("button")
+      await user.click(button)
+      expect(screen.queryByText("Pay")).not.toBeInTheDocument()
+    })
+  })
+
+  describe("PaymentModal Integration", () => {
+    it("opens PaymentModal when Pay button is clicked", async () => {
+      const user = userEvent.setup()
+      render(<ExpenseRow expense={mockExpense} />)
+      const button = screen.getByRole("button")
+      await user.click(button)
+      const payItem = screen.getByText("Pay")
+      await user.click(payItem)
+      expect(screen.getByTestId("payment-modal")).toBeInTheDocument()
+    })
+
+    it("passes correct expense data to PaymentModal", async () => {
+      const user = userEvent.setup()
+      render(<ExpenseRow expense={mockExpense} />)
+      const button = screen.getByRole("button")
+      await user.click(button)
+      const payItem = screen.getByText("Pay")
+      await user.click(payItem)
+      const modal = screen.getByTestId("payment-modal")
+      expect(modal).toHaveAttribute("data-expense-id", mockExpense.id)
+    })
+
+    it("closes PaymentModal when onClose callback is called", async () => {
+      const user = userEvent.setup()
+      render(<ExpenseRow expense={mockExpense} />)
+      const button = screen.getByRole("button")
+      await user.click(button)
+      const payItem = screen.getByText("Pay")
+      await user.click(payItem)
+      expect(screen.getByTestId("payment-modal")).toBeInTheDocument()
+      const closeButton = screen.getByTestId("close-modal-button")
+      await user.click(closeButton)
+      expect(screen.queryByTestId("payment-modal")).not.toBeInTheDocument()
+    })
+
+    it("does not render PaymentModal initially (closed state)", () => {
+      render(<ExpenseRow expense={mockExpense} />)
+      expect(screen.queryByTestId("payment-modal")).not.toBeInTheDocument()
     })
   })
 

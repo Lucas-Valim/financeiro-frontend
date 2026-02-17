@@ -1,5 +1,6 @@
+import { useState } from "react"
 import type { ExpenseDTO } from "@/types/expenses"
-import { EXPENSE_STATUS_COLORS } from "@/constants/expenses"
+import { EXPENSE_STATUS_COLORS, ExpenseStatus } from "@/constants/expenses"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { MoreVertical } from "lucide-react"
+import { PaymentModal } from "@/components/payment/PaymentModal"
 
 interface ExpenseRowProps {
   expense: ExpenseDTO
@@ -28,6 +30,8 @@ const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
 })
 
 export function ExpenseRow({ expense, onEdit }: ExpenseRowProps) {
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
+
   const formattedAmount = currencyFormatter.format(expense.amount ?? 0)
   let formattedDate = "N/A"
   if (expense.dueDate) {
@@ -42,42 +46,65 @@ export function ExpenseRow({ expense, onEdit }: ExpenseRowProps) {
   }
   const statusColorClass = EXPENSE_STATUS_COLORS[expense.status] || ""
 
+  // Check if expense is in a payable state (OPEN or OVERDUE)
+  const isPayable =
+    expense.status === ExpenseStatus.OPEN || expense.status === ExpenseStatus.OVERDUE
+
   const handleEdit = () => {
     onEdit?.(expense)
   }
 
+  const handlePay = () => {
+    setIsPaymentModalOpen(true)
+  }
+
+  const handleClosePaymentModal = () => {
+    setIsPaymentModalOpen(false)
+  }
+
   return (
-    <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
-      <td className="p-4">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreVertical className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem className="cursor-pointer" onSelect={handleEdit}>
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer">Pay</DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer">Cancel</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </td>
-      <td className="p-4 text-sm">{formattedAmount}</td>
-      <td className="p-4 text-sm">{expense.receiver ?? "N/A"}</td>
-      <td className="p-4 text-sm">{formattedDate}</td>
-      <td className="p-4 text-sm">
-        <span
-          className={cn(
-            "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
-            statusColorClass
-          )}
-        >
-          {expense.status}
-        </span>
-      </td>
-    </tr>
+    <>
+      <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+        <td className="p-4">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreVertical className="h-4 w-4" data-testid="morevertical-icon" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem className="cursor-pointer" onSelect={handleEdit}>
+                Edit
+              </DropdownMenuItem>
+              {isPayable && (
+                <DropdownMenuItem className="cursor-pointer" onSelect={handlePay}>
+                  Pay
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem className="cursor-pointer">Cancel</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </td>
+        <td className="p-4 text-sm">{formattedAmount}</td>
+        <td className="p-4 text-sm">{expense.receiver ?? "N/A"}</td>
+        <td className="p-4 text-sm">{formattedDate}</td>
+        <td className="p-4 text-sm">
+          <span
+            className={cn(
+              "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+              statusColorClass
+            )}
+          >
+            {expense.status}
+          </span>
+        </td>
+      </tr>
+      <PaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={handleClosePaymentModal}
+        expense={expense}
+      />
+    </>
   )
 }
