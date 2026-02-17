@@ -4,6 +4,13 @@ import { ExpensesGrid } from '../ExpensesGrid';
 import type { ExpenseDTO } from '@/types/expenses';
 import { ExpenseStatus } from '@/constants/expenses';
 
+vi.mock('lucide-react', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('lucide-react')>();
+  return {
+    ...actual,
+  };
+});
+
 const mockExpenses: ExpenseDTO[] = [
   {
     id: '1',
@@ -267,6 +274,63 @@ describe('ExpensesGrid', () => {
       render(<ExpensesGrid {...defaultProps} isLoading={false} />);
 
       expect(screen.queryByTestId('loading-more-spinner')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Create Button', () => {
+    it('renders Nova Despesa button when onCreate prop is provided', () => {
+      const onCreate = vi.fn();
+      render(<ExpensesGrid {...defaultProps} onCreate={onCreate} />);
+
+      expect(screen.getByText('Nova Despesa')).toBeInTheDocument();
+    });
+
+    it('does not render Nova Despesa button when onCreate prop is not provided', () => {
+      render(<ExpensesGrid {...defaultProps} />);
+
+      expect(screen.queryByText('Nova Despesa')).not.toBeInTheDocument();
+    });
+
+    it('calls onCreate callback when Nova Despesa button is clicked', () => {
+      const onCreate = vi.fn();
+      render(<ExpensesGrid {...defaultProps} onCreate={onCreate} />);
+
+      const createButton = screen.getByText('Nova Despesa');
+      fireEvent.click(createButton);
+
+      expect(onCreate).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('Edit Action', () => {
+    it('renders Edit button in mobile view', () => {
+      render(<ExpensesGrid {...defaultProps} />);
+
+      // Mobile view has direct Edit buttons
+      const editButtons = screen.getAllByText('Edit');
+      expect(editButtons.length).toBeGreaterThan(0);
+    });
+
+    it('calls onEdit callback when Edit button is clicked in mobile view', () => {
+      const onEdit = vi.fn();
+      render(<ExpensesGrid {...defaultProps} onEdit={onEdit} />);
+
+      // Click Edit in mobile view
+      const editButtons = screen.getAllByText('Edit');
+      fireEvent.click(editButtons[0]);
+
+      expect(onEdit).toHaveBeenCalledWith(mockExpenses[0]);
+    });
+
+    it('does not throw error when onEdit is not provided', () => {
+      render(<ExpensesGrid {...defaultProps} />);
+
+      // Click Edit in mobile view - should not throw
+      const editButtons = screen.getAllByText('Edit');
+      fireEvent.click(editButtons[0]);
+
+      // Should not throw error when onEdit is not provided
+      expect(editButtons[0]).toBeInTheDocument();
     });
   });
 });

@@ -313,8 +313,18 @@ export function ExpensesGrid({
 
   if (expenses.length === 0 && !isLoading) {
     return (
-      <div className="rounded-md border p-8 text-center" data-testid="empty-state">
-        <p className="text-muted-foreground">Nenhuma despesa encontrada</p>
+      <div className="flex-1 flex flex-col gap-4">
+        {onCreate && (
+          <div className="flex justify-end shrink-0">
+            <Button onClick={onCreate} className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Nova Despesa
+            </Button>
+          </div>
+        )}
+        <div className="rounded-md border p-8 text-center" data-testid="empty-state">
+          <p className="text-muted-foreground">Nenhuma despesa encontrada</p>
+        </div>
       </div>
     );
   }
