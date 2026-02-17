@@ -57,7 +57,7 @@ export function ExpenseFormModal({
     initialExpense: expense,
     onSuccess: (result) => {
       onSuccess?.(result);
-      handleClose();
+      handleClose(true);
     },
   });
 
@@ -69,8 +69,8 @@ export function ExpenseFormModal({
   }, [isOpen, resetForm]);
 
   // Handle close with unsaved changes check
-  const handleClose = useCallback(() => {
-    if (isDirty) {
+  const handleClose = useCallback((force = false) => {
+    if (!force && isDirty) {
       setShowConfirmDialog(true);
     } else {
       onClose();
@@ -126,7 +126,7 @@ export function ExpenseFormModal({
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={handleClose}
+                  onClick={() => handleClose()}
                   disabled={isSubmitting}
                   className="w-full sm:w-auto"
                 >

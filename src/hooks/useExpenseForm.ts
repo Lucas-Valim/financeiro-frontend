@@ -78,7 +78,7 @@ export function useExpenseForm({
       let result: ExpenseDTO;
 
       const submitData: CreateExpenseInput = {
-        organizationId: '', // This will be set by the API service
+        organizationId: 'fca3c088-ba34-43a2-9b32-b2b1a1246915', // This will be set by the API service
         description: formData.description,
         amount: formData.amount,
         currency: formData.currency,
@@ -112,9 +112,9 @@ export function useExpenseForm({
   }, [form, expense?.id, reset, onSuccess]);
 
   const resetForm = useCallback(() => {
-    reset(defaultExpenseFormValues as ExpenseFormData);
-    setExpense(null);
-  }, [reset]);
+    reset(getInitialValues() as ExpenseFormData);
+    setExpense(initialExpense);
+  }, [reset, getInitialValues, initialExpense]);
 
   return {
     form: form as unknown as UseFormReturn<ExpenseFormData>,

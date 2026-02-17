@@ -374,7 +374,7 @@ describe('useExpenseForm', () => {
       expect(result.current.form.getValues('amount')).toBeUndefined();
     });
 
-    it('should clear expense state', async () => {
+    it('should reset expense state to initialExpense when provided', async () => {
       const { result } = renderHook(() =>
         useExpenseForm({ initialExpense: mockExpense })
       );
@@ -382,6 +382,18 @@ describe('useExpenseForm', () => {
       expect(result.current.expense).toBe(mockExpense);
 
       // Reset
+      result.current.resetForm();
+
+      // Wait for state update - should set expense back to initialExpense
+      await waitFor(() => {
+        expect(result.current.expense).toBe(mockExpense);
+      });
+    });
+
+    it('should clear expense state to null when no initialExpense', async () => {
+      const { result } = renderHook(() => useExpenseForm());
+
+      // Reset with no initialExpense
       result.current.resetForm();
 
       // Wait for state update
