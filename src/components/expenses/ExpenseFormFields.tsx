@@ -157,7 +157,7 @@ export function ExpenseFormFields({ disabled = false }: ExpenseFormFieldsProps) 
             <FormControl>
               <ReactDatePicker
                 selected={field.value}
-                onChange={(date) => field.onChange(date)}
+                onChange={(date: Date | null) => field.onChange(date)}
                 onBlur={field.onBlur}
                 disabled={disabled}
                 locale="pt-BR"
