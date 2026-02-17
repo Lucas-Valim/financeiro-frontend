@@ -1,4 +1,5 @@
 import { expect, afterEach, vi } from 'vitest'
+import React from 'react'
 import { cleanup } from '@testing-library/react'
 import * as matchers from '@testing-library/jest-dom/matchers'
 
@@ -93,6 +94,11 @@ class MockIntersectionObserver implements IntersectionObserver {
 
 ;(window as unknown as typeof window).IntersectionObserver = MockIntersectionObserver as unknown as typeof IntersectionObserver
 
+// Pointer capture polyfill for Radix UI components
+Element.prototype.hasPointerCapture = vi.fn()
+Element.prototype.setPointerCapture = vi.fn()
+Element.prototype.releasePointerCapture = vi.fn()
+
 function createIconMock(name: string): ({ className }: { className?: string }) => React.ReactElement {
   return ({ className }) =>
     React.createElement('span', { 'data-testid': `${name.toLowerCase()}-icon`, className, 'aria-hidden': 'true' })
@@ -110,6 +116,7 @@ vi.mock('lucide-react', () => ({
   MoreVertical: createIconMock('MoreVertical'),
   AlertCircle: createIconMock('AlertCircle'),
   Loader2: createIconMock('Loader2'),
+  CalendarIcon: createIconMock('CalendarIcon'),
 }))
 
 vi.mock('@tanstack/react-router', () => ({
