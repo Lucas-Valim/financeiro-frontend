@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import type { ExpenseDTO, ExpenseFilter, ListExpensesOutput } from '../expenses';
+import type {
+  ExpenseDTO,
+  ExpenseFilter,
+  ListExpensesOutput,
+  CreateExpenseInput,
+  UpdateExpenseInput,
+} from '../expenses';
 import { ExpenseStatus } from '../../constants/expenses';
 
 describe('Type Definitions', () => {
@@ -166,6 +172,172 @@ describe('Type Definitions', () => {
       expect(output.pagination.page).toBeDefined();
       expect(output.pagination.limit).toBeDefined();
       expect(output.pagination.total).toBeDefined();
+    });
+  });
+
+  describe('CreateExpenseInput', () => {
+    it('should have correct structure with all required fields', () => {
+      const input: CreateExpenseInput = {
+        organizationId: 'org-123',
+        description: 'Test expense',
+        amount: 100.50,
+        currency: 'BRL',
+        dueDate: new Date('2024-12-31'),
+        receiver: 'Test Receiver',
+        municipality: 'Test City',
+      };
+
+      expect(input.organizationId).toBe('org-123');
+      expect(input.description).toBe('Test expense');
+      expect(input.amount).toBe(100.50);
+      expect(input.currency).toBe('BRL');
+      expect(input.dueDate).toBeInstanceOf(Date);
+      expect(input.receiver).toBe('Test Receiver');
+      expect(input.municipality).toBe('Test City');
+    });
+
+    it('should have all required fields defined', () => {
+      const requiredFields: (keyof CreateExpenseInput)[] = [
+        'organizationId',
+        'description',
+        'amount',
+        'currency',
+        'dueDate',
+        'receiver',
+        'municipality',
+      ];
+
+      expect(requiredFields.length).toBe(7);
+    });
+
+    it('should accept optional paymentMethod', () => {
+      const inputWithPaymentMethod: CreateExpenseInput = {
+        organizationId: 'org-123',
+        description: 'Test expense',
+        amount: 100,
+        currency: 'BRL',
+        dueDate: new Date(),
+        receiver: 'Test',
+        municipality: 'City',
+        paymentMethod: 'PIX',
+      };
+
+      expect(inputWithPaymentMethod.paymentMethod).toBe('PIX');
+    });
+
+    it('should work without optional fields', () => {
+      const input: CreateExpenseInput = {
+        organizationId: 'org-123',
+        description: 'Test expense',
+        amount: 100,
+        currency: 'BRL',
+        dueDate: new Date(),
+        receiver: 'Test',
+        municipality: 'City',
+      };
+
+      expect(input.paymentMethod).toBeUndefined();
+    });
+
+    it('should accept string values for description and receiver', () => {
+      const input: CreateExpenseInput = {
+        organizationId: 'org-123',
+        description: 'A valid description',
+        amount: 100,
+        currency: 'BRL',
+        dueDate: new Date(),
+        receiver: 'A valid receiver name',
+        municipality: 'A valid city name',
+      };
+
+      expect(typeof input.description).toBe('string');
+      expect(typeof input.receiver).toBe('string');
+      expect(typeof input.municipality).toBe('string');
+    });
+
+    it('should accept number for amount', () => {
+      const input: CreateExpenseInput = {
+        organizationId: 'org-123',
+        description: 'Test',
+        amount: 99999999.99,
+        currency: 'BRL',
+        dueDate: new Date(),
+        receiver: 'Test',
+        municipality: 'City',
+      };
+
+      expect(typeof input.amount).toBe('number');
+      expect(input.amount).toBe(99999999.99);
+    });
+  });
+
+  describe('UpdateExpenseInput', () => {
+    it('should have all fields optional', () => {
+      const emptyInput: UpdateExpenseInput = {};
+
+      expect(emptyInput.description).toBeUndefined();
+      expect(emptyInput.amount).toBeUndefined();
+      expect(emptyInput.dueDate).toBeUndefined();
+      expect(emptyInput.receiver).toBeUndefined();
+      expect(emptyInput.municipality).toBeUndefined();
+      expect(emptyInput.paymentMethod).toBeUndefined();
+    });
+
+    it('should accept partial updates with single field', () => {
+      const inputWithDescriptionOnly: UpdateExpenseInput = {
+        description: 'Updated description',
+      };
+
+      expect(inputWithDescriptionOnly.description).toBe('Updated description');
+      expect(inputWithDescriptionOnly.amount).toBeUndefined();
+    });
+
+    it('should accept partial updates with multiple fields', () => {
+      const input: UpdateExpenseInput = {
+        description: 'Updated',
+        amount: 200,
+        receiver: 'New Receiver',
+      };
+
+      expect(input.description).toBe('Updated');
+      expect(input.amount).toBe(200);
+      expect(input.receiver).toBe('New Receiver');
+    });
+
+    it('should accept all optional fields', () => {
+      const fullInput: UpdateExpenseInput = {
+        description: 'Full update',
+        amount: 500,
+        dueDate: new Date('2025-01-01'),
+        receiver: 'New Receiver',
+        municipality: 'New City',
+        paymentMethod: 'Bank Transfer',
+      };
+
+      expect(fullInput.description).toBe('Full update');
+      expect(fullInput.amount).toBe(500);
+      expect(fullInput.dueDate).toBeInstanceOf(Date);
+      expect(fullInput.receiver).toBe('New Receiver');
+      expect(fullInput.municipality).toBe('New City');
+      expect(fullInput.paymentMethod).toBe('Bank Transfer');
+    });
+
+    it('should have correct field types', () => {
+      const input: UpdateExpenseInput = {
+        description: 'Test',
+        amount: 100,
+        dueDate: new Date(),
+        receiver: 'Test',
+        municipality: 'Test',
+        paymentMethod: 'Test',
+      };
+
+      expect(typeof input.description).toBe('string');
+      expect(typeof input.amount).toBe('number');
+      expect(input.dueDate).toBeInstanceOf(Date);
+      expect(typeof input.receiver).toBe('string');
+      expect(typeof input.municipality).toBe('string');
+      expect(typeof input.paymentMethod).toBe('string');
     });
   });
 });

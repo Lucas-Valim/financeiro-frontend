@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ExpensesApiService } from '../expenses-api';
 import { apiClient } from '../../lib/api-client';
 import { ExpenseStatus } from '../../constants/expenses';
-import type { ExpenseDTO, ListExpensesOutput } from '../../types/expenses';
+import type { ExpenseDTO, ListExpensesOutput, CreateExpenseInput, UpdateExpenseInput } from '../../types/expenses';
 
 vi.mock('../../lib/api-client');
 
@@ -10,6 +10,8 @@ describe('ExpensesApiService', () => {
   let service: ExpensesApiService;
   const mockedApiClient = apiClient as unknown as {
     get: ReturnType<typeof vi.fn>;
+    post: ReturnType<typeof vi.fn>;
+    put: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(() => {
@@ -217,13 +219,238 @@ describe('ExpensesApiService', () => {
 
     it('should enforce TypeScript types correctly', async () => {
       mockedApiClient.get.mockResolvedValue(mockExpense);
-      
+
       const result = await service.fetchExpenseById('123');
-      
+
       expect(result).toBeDefined();
       expect(result.id).toBe('123');
       expect(result.amount).toBe(100);
       expect(result.status).toBe(ExpenseStatus.OPEN);
+    });
+  });
+
+  describe('create', () => {
+    const mockCreatedExpense: ExpenseDTO = {
+      id: 'new-123',
+      organizationId: 'org-123',
+      categoryId: null,
+      description: 'New expense',
+      amount: 500,
+      currency: 'BRL',
+      dueDate: new Date('2024-06-15'),
+      status: ExpenseStatus.OPEN,
+      paymentMethod: 'PIX',
+      paymentProof: null,
+      paymentProofUrl: null,
+      receiver: 'New Receiver',
+      municipality: 'New City',
+      serviceInvoice: null,
+      serviceInvoiceUrl: null,
+      createdAt: new Date('2024-01-15'),
+      updatedAt: new Date('2024-01-15'),
+    };
+
+    it('should create expense with valid data', async () => {
+      mockedApiClient.post.mockResolvedValue(mockCreatedExpense);
+
+      const input: CreateExpenseInput = {
+        organizationId: 'org-123',
+        description: 'New expense',
+        amount: 500,
+        currency: 'BRL',
+        dueDate: new Date('2024-06-15'),
+        receiver: 'New Receiver',
+        municipality: 'New City',
+        paymentMethod: 'PIX',
+      };
+
+      const result = await service.create(input);
+
+      expect(mockedApiClient.post).toHaveBeenCalledWith('/expenses', input);
+      expect(result.id).toBe('new-123');
+      expect(result.description).toBe('New expense');
+      expect(result.amount).toBe(500);
+    });
+
+    it('should handle API errors appropriately and throw with meaningful messages', async () => {
+      mockedApiClient.post.mockRejectedValue(new Error('Validation error'));
+
+      const input: CreateExpenseInput = {
+        organizationId: 'org-123',
+        description: 'Test',
+        amount: 100,
+        currency: 'BRL',
+        dueDate: new Date('2024-06-15'),
+        receiver: 'Receiver',
+        municipality: 'City',
+      };
+
+      await expect(service.create(input)).rejects.toThrow('Validation error');
+    });
+
+    it('should use apiClient internally (verified via mocking)', async () => {
+      mockedApiClient.post.mockResolvedValue(mockCreatedExpense);
+
+      const input: CreateExpenseInput = {
+        organizationId: 'org-123',
+        description: 'New expense',
+        amount: 500,
+        currency: 'BRL',
+        dueDate: new Date('2024-06-15'),
+        receiver: 'New Receiver',
+        municipality: 'New City',
+      };
+
+      await service.create(input);
+
+      expect(mockedApiClient.post).toHaveBeenCalled();
+    });
+
+    it('should enforce TypeScript types correctly', async () => {
+      mockedApiClient.post.mockResolvedValue(mockCreatedExpense);
+
+      const input: CreateExpenseInput = {
+        organizationId: 'org-123',
+        description: 'New expense',
+        amount: 500,
+        currency: 'BRL',
+        dueDate: new Date('2024-06-15'),
+        receiver: 'New Receiver',
+        municipality: 'New City',
+      };
+
+      const result = await service.create(input);
+
+      expect(result).toBeDefined();
+      expect(typeof result.id).toBe('string');
+      expect(typeof result.amount).toBe('number');
+      expect(result.status).toBe(ExpenseStatus.OPEN);
+    });
+
+    it('should handle network errors', async () => {
+      mockedApiClient.post.mockRejectedValue(new Error('Network error'));
+
+      const input: CreateExpenseInput = {
+        organizationId: 'org-123',
+        description: 'Test',
+        amount: 100,
+        currency: 'BRL',
+        dueDate: new Date('2024-06-15'),
+        receiver: 'Receiver',
+        municipality: 'City',
+      };
+
+      await expect(service.create(input)).rejects.toThrow('Network error');
+    });
+  });
+
+  describe('update', () => {
+    const mockUpdatedExpense: ExpenseDTO = {
+      id: '123',
+      organizationId: 'org-123',
+      categoryId: null,
+      description: 'Updated expense',
+      amount: 750,
+      currency: 'BRL',
+      dueDate: new Date('2024-07-20'),
+      status: ExpenseStatus.OPEN,
+      paymentMethod: 'Bank Transfer',
+      paymentProof: null,
+      paymentProofUrl: null,
+      receiver: 'Updated Receiver',
+      municipality: 'Updated City',
+      serviceInvoice: null,
+      serviceInvoiceUrl: null,
+      createdAt: new Date('2024-01-01'),
+      updatedAt: new Date('2024-01-20'),
+    };
+
+    it('should update expense with valid id and data', async () => {
+      mockedApiClient.put.mockResolvedValue(mockUpdatedExpense);
+
+      const input: UpdateExpenseInput = {
+        description: 'Updated expense',
+        amount: 750,
+        receiver: 'Updated Receiver',
+      };
+
+      const result = await service.update('123', input);
+
+      expect(mockedApiClient.put).toHaveBeenCalledWith('/expenses/123', input);
+      expect(result.id).toBe('123');
+      expect(result.description).toBe('Updated expense');
+      expect(result.amount).toBe(750);
+    });
+
+    it('should handle partial updates', async () => {
+      mockedApiClient.put.mockResolvedValue(mockUpdatedExpense);
+
+      const input: UpdateExpenseInput = {
+        description: 'Only description updated',
+      };
+
+      await service.update('123', input);
+
+      expect(mockedApiClient.put).toHaveBeenCalledWith('/expenses/123', input);
+    });
+
+    it('should handle API errors appropriately and throw with meaningful messages', async () => {
+      mockedApiClient.put.mockRejectedValue(new Error('Resource not found'));
+
+      const input: UpdateExpenseInput = {
+        description: 'Updated',
+      };
+
+      await expect(service.update('999', input)).rejects.toThrow('Resource not found');
+    });
+
+    it('should use apiClient internally (verified via mocking)', async () => {
+      mockedApiClient.put.mockResolvedValue(mockUpdatedExpense);
+
+      const input: UpdateExpenseInput = {
+        amount: 800,
+      };
+
+      await service.update('123', input);
+
+      expect(mockedApiClient.put).toHaveBeenCalled();
+    });
+
+    it('should enforce TypeScript types correctly', async () => {
+      mockedApiClient.put.mockResolvedValue(mockUpdatedExpense);
+
+      const input: UpdateExpenseInput = {
+        description: 'Updated expense',
+        amount: 750,
+      };
+
+      const result = await service.update('123', input);
+
+      expect(result).toBeDefined();
+      expect(typeof result.id).toBe('string');
+      expect(typeof result.amount).toBe('number');
+      expect(result.updatedAt).toBeDefined();
+    });
+
+    it('should handle network errors', async () => {
+      mockedApiClient.put.mockRejectedValue(new Error('Network error'));
+
+      const input: UpdateExpenseInput = {
+        description: 'Updated',
+      };
+
+      await expect(service.update('123', input)).rejects.toThrow('Network error');
+    });
+
+    it('should handle empty update data', async () => {
+      mockedApiClient.put.mockResolvedValue(mockUpdatedExpense);
+
+      const input: UpdateExpenseInput = {};
+
+      const result = await service.update('123', input);
+
+      expect(mockedApiClient.put).toHaveBeenCalledWith('/expenses/123', input);
+      expect(result).toBeDefined();
     });
   });
 });

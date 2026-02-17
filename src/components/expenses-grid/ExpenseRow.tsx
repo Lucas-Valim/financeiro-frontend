@@ -12,6 +12,8 @@ import { MoreVertical } from "lucide-react"
 
 interface ExpenseRowProps {
   expense: ExpenseDTO
+  /** Callback fired when user clicks edit on this expense */
+  onEdit?: (expense: ExpenseDTO) => void
 }
 
 const currencyFormatter = new Intl.NumberFormat("pt-BR", {
@@ -25,7 +27,7 @@ const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
   year: "numeric",
 })
 
-export function ExpenseRow({ expense }: ExpenseRowProps) {
+export function ExpenseRow({ expense, onEdit }: ExpenseRowProps) {
   const formattedAmount = currencyFormatter.format(expense.amount ?? 0)
   let formattedDate = "N/A"
   if (expense.dueDate) {
@@ -40,6 +42,10 @@ export function ExpenseRow({ expense }: ExpenseRowProps) {
   }
   const statusColorClass = EXPENSE_STATUS_COLORS[expense.status] || ""
 
+  const handleEdit = () => {
+    onEdit?.(expense)
+  }
+
   return (
     <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
       <td className="p-4">
@@ -51,7 +57,9 @@ export function ExpenseRow({ expense }: ExpenseRowProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem className="cursor-pointer">Edit</DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer" onSelect={handleEdit}>
+              Edit
+            </DropdownMenuItem>
             <DropdownMenuItem className="cursor-pointer">Pay</DropdownMenuItem>
             <DropdownMenuItem className="cursor-pointer">Cancel</DropdownMenuItem>
           </DropdownMenuContent>

@@ -5,6 +5,35 @@ import { Despesa } from '../Despesa';
 import { ExpenseStatus } from '@/constants/expenses';
 import type { ExpenseDTO } from '@/types/expenses';
 
+// Mock the ExpenseFormModal to verify props
+const mockExpenseFormModal = vi.fn();
+vi.mock('@/components/expenses/ExpenseFormModal', () => ({
+  ExpenseFormModal: (props: {
+    isOpen: boolean;
+    onClose: () => void;
+    onSuccess?: (expense: ExpenseDTO) => void;
+    expense?: ExpenseDTO | null;
+  }) => {
+    mockExpenseFormModal(props);
+    return props.isOpen ? (
+      <div data-testid="expense-form-modal" aria-modal="true" role="dialog">
+        <span data-testid="modal-mode">
+          {props.expense ? 'edit' : 'create'}
+        </span>
+        <button onClick={props.onClose} data-testid="modal-close">
+          Close
+        </button>
+        <button
+          onClick={() => props.onSuccess?.(props.expense || {} as ExpenseDTO)}
+          data-testid="modal-success"
+        >
+          Submit
+        </button>
+      </div>
+    ) : null;
+  },
+}));
+
 const mockUseExpenses = vi.fn();
 
 vi.mock('@/hooks/use-expenses', () => ({
@@ -53,6 +82,7 @@ describe('Despesa', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockExpenseFormModal.mockClear();
     queryClient.clear();
   });
 
@@ -513,6 +543,211 @@ describe('Despesa', () => {
       render(<Despesa />, { wrapper });
 
       expect(screen.getByText('Gerenciamento de Despesas')).toBeInTheDocument();
+    });
+  });
+
+  describe('ExpenseFormModal Integration', () => {
+    it('should open ExpenseFormModal when Nova Despesa button is clicked', async () => {
+      mockUseExpenses.mockReturnValue({
+        data: [],
+        isLoading: false,
+        error: null,
+        hasMore: false,
+        loadMore: vi.fn(),
+        reset: vi.fn(),
+      });
+
+      render(<Despesa />, { wrapper });
+
+      // Initially modal should not be visible
+      expect(screen.queryByTestId('expense-form-modal')).not.toBeInTheDocument();
+
+      // Click the Nova Despesa button
+      const createButton = screen.getByText('Nova Despesa');
+      fireEvent.click(createButton);
+
+      // Modal should now be visible
+      await waitFor(() => {
+        expect(screen.getByTestId('expense-form-modal')).toBeInTheDocument();
+      });
+
+      // Verify modal is in create mode
+      expect(screen.getByTestId('modal-mode')).toHaveTextContent('create');
+    });
+
+    it('should pass null expense to ExpenseFormModal when creating new expense', async () => {
+      mockUseExpenses.mockReturnValue({
+        data: [],
+        isLoading: false,
+        error: null,
+        hasMore: false,
+        loadMore: vi.fn(),
+        reset: vi.fn(),
+      });
+
+      render(<Despesa />, { wrapper });
+
+      const createButton = screen.getByText('Nova Despesa');
+      fireEvent.click(createButton);
+
+      await waitFor(() => {
+        expect(mockExpenseFormModal).toHaveBeenCalledWith(
+          expect.objectContaining({
+            isOpen: true,
+            expense: null,
+          })
+        );
+      });
+    });
+
+    it('should close ExpenseFormModal when onClose callback is triggered', async () => {
+      mockUseExpenses.mockReturnValue({
+        data: [],
+        isLoading: false,
+        error: null,
+        hasMore: false,
+        loadMore: vi.fn(),
+        reset: vi.fn(),
+      });
+
+      render(<Despesa />, { wrapper });
+
+      // Open modal
+      const createButton = screen.getByText('Nova Despesa');
+      fireEvent.click(createButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('expense-form-modal')).toBeInTheDocument();
+      });
+
+      // Close modal
+      const closeButton = screen.getByTestId('modal-close');
+      fireEvent.click(closeButton);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('expense-form-modal')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should trigger reset when onSuccess callback is called', async () => {
+      const resetMock = vi.fn();
+      mockUseExpenses.mockReturnValue({
+        data: [],
+        isLoading: false,
+        error: null,
+        hasMore: false,
+        loadMore: vi.fn(),
+        reset: resetMock,
+      });
+
+      render(<Despesa />, { wrapper });
+
+      // Open modal
+      const createButton = screen.getByText('Nova Despesa');
+      fireEvent.click(createButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('expense-form-modal')).toBeInTheDocument();
+      });
+
+      // Trigger success
+      const successButton = screen.getByTestId('modal-success');
+      fireEvent.click(successButton);
+
+      await waitFor(() => {
+        expect(resetMock).toHaveBeenCalled();
+      });
+    });
+
+    it('should open ExpenseFormModal with selected expense when editing', async () => {
+      mockUseExpenses.mockReturnValue({
+        data: [mockExpense],
+        isLoading: false,
+        error: null,
+        hasMore: false,
+        loadMore: vi.fn(),
+        reset: vi.fn(),
+      });
+
+      render(<Despesa />, { wrapper });
+
+      // Simulate edit by clicking the Edit button in mobile view
+      // Mobile view has a direct Edit button that's easier to test
+      const editButtons = screen.getAllByText('Edit');
+      fireEvent.click(editButtons[0]);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('expense-form-modal')).toBeInTheDocument();
+        expect(screen.getByTestId('modal-mode')).toHaveTextContent('edit');
+      });
+    });
+
+    it('should pass the correct expense to ExpenseFormModal when editing', async () => {
+      mockUseExpenses.mockReturnValue({
+        data: [mockExpense],
+        isLoading: false,
+        error: null,
+        hasMore: false,
+        loadMore: vi.fn(),
+        reset: vi.fn(),
+      });
+
+      render(<Despesa />, { wrapper });
+
+      // Click Edit in mobile view
+      const editButtons = screen.getAllByText('Edit');
+      fireEvent.click(editButtons[0]);
+
+      await waitFor(() => {
+        expect(mockExpenseFormModal).toHaveBeenCalledWith(
+          expect.objectContaining({
+            isOpen: true,
+            expense: mockExpense,
+          })
+        );
+      });
+    });
+
+    it('should reset selectedExpense to null when modal closes', async () => {
+      mockUseExpenses.mockReturnValue({
+        data: [mockExpense],
+        isLoading: false,
+        error: null,
+        hasMore: false,
+        loadMore: vi.fn(),
+        reset: vi.fn(),
+      });
+
+      render(<Despesa />, { wrapper });
+
+      // Open edit modal
+      const editButtons = screen.getAllByText('Edit');
+      fireEvent.click(editButtons[0]);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('expense-form-modal')).toBeInTheDocument();
+      });
+
+      // Close modal
+      const closeButton = screen.getByTestId('modal-close');
+      fireEvent.click(closeButton);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('expense-form-modal')).not.toBeInTheDocument();
+      });
+
+      // Open create modal to verify expense is null
+      const createButton = screen.getByText('Nova Despesa');
+      fireEvent.click(createButton);
+
+      await waitFor(() => {
+        expect(mockExpenseFormModal).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            isOpen: true,
+            expense: null,
+          })
+        );
+      });
     });
   });
 });
