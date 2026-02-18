@@ -292,27 +292,6 @@ export function ExpenseFormFields({ disabled = false }: ExpenseFormFieldsProps) 
           </FormItem>
         )}
       />
-
-      {/* Service Invoice Field */}
-      <FormField
-        control={form.control}
-        name="serviceInvoice"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Nota de Serviço</FormLabel>
-            <FormControl>
-              <Input
-                {...field}
-                value={field.value ?? ''}
-                placeholder="Digite o número da nota de serviço"
-                disabled={disabled}
-                aria-describedby="serviceInvoice-error"
-              />
-            </FormControl>
-            <FormMessage id="serviceInvoice-error" />
-          </FormItem>
-        )}
-      />
     </div>
   );
 }

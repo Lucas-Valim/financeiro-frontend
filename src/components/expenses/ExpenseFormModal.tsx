@@ -9,7 +9,9 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ExpenseFormFields } from './ExpenseFormFields';
+import { ExpenseUploadFields } from './ExpenseUploadFields';
 import { useExpenseForm } from '@/hooks/useExpenseForm';
 import type { ExpenseDTO } from '@/types/expenses';
 
@@ -120,7 +122,20 @@ export function ExpenseFormModal({
 
           <Form {...form}>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <ExpenseFormFields disabled={isSubmitting} />
+              <Tabs defaultValue="data" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="data">Dados</TabsTrigger>
+                  <TabsTrigger value="documents">Documentos</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="data" className="mt-4">
+                  <ExpenseFormFields disabled={isSubmitting} />
+                </TabsContent>
+
+                <TabsContent value="documents" className="mt-4">
+                  <ExpenseUploadFields disabled={isSubmitting} />
+                </TabsContent>
+              </Tabs>
 
               <DialogFooter className="gap-2 sm:gap-0">
                 <Button

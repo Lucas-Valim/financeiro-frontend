@@ -7,6 +7,9 @@ declare module 'vitest' {
     toHaveTextContent: (text: string) => void
     toBeDisabled: () => void
     toBeEnabled: () => void
+    toBeVisible: () => void
+    toHaveFocus: () => void
+    toHaveAttribute: (attr: string, value?: string) => void
   }
   
   interface AsymmetricMatchersContaining {
@@ -15,5 +18,8 @@ declare module 'vitest' {
     toHaveTextContent: typeof jest.Matchers.prototype.toHaveTextContent
     toBeDisabled: typeof jest.Matchers.prototype.toBeDisabled
     toBeEnabled: typeof jest.Matchers.prototype.toBeEnabled
+    toBeVisible: typeof jest.Matchers.prototype.toBeVisible
+    toHaveFocus: typeof jest.Matchers.prototype.toHaveFocus
+    toHaveAttribute: typeof jest.Matchers.prototype.toHaveAttribute
   }
 }

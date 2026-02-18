@@ -47,7 +47,8 @@ export function useExpenseForm({
         paymentMethod: initialExpense.paymentMethod,
         receiver: initialExpense.receiver,
         municipality: initialExpense.municipality,
-        serviceInvoice: initialExpense.serviceInvoice,
+        serviceInvoice: null,
+        bankBill: null,
       };
     }
     return defaultExpenseFormValues;

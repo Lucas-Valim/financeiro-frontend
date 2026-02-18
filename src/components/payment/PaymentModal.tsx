@@ -109,7 +109,7 @@ export function PaymentModal({
       try {
         const paymentData = {
           id: expense.id,
-          paymentDate: data.paymentDate,
+          paymentDate: data.paymentDate.toISOString().split('T')[0],
           paymentProof: data.paymentProof || undefined,
         };
 

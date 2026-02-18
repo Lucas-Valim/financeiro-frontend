@@ -1,21 +1,34 @@
 import { z } from 'zod';
 import { ExpenseStatus } from '../constants/expenses';
 
-/**
- * Validation schema for expense form
- * Used with React Hook Form via zodResolver
- * Provides real-time validation with Portuguese error messages
- */
+export const EXPENSE_FILE_ALLOWED_TYPES = [
+  'application/pdf',
+  'image/png',
+  'image/jpeg',
+  'image/jpg',
+] as const;
 
-// Brazilian municipality name validation (letters, spaces, hyphens, accents)
+export const EXPENSE_FILE_MAX_SIZE = 5 * 1024 * 1024;
+
+export const EXPENSE_FILE_ALLOWED_TYPES_DISPLAY = 'PDF, PNG, JPG, JPEG';
+const MAX_SIZE_MB = EXPENSE_FILE_MAX_SIZE / (1024 * 1024);
+
 const municipalityRegex = /^[a-zA-ZÀ-ÿ\s\-']+$/;
 
-// Service invoice validation (alphanumeric with hyphens and spaces)
-const serviceInvoiceRegex = /^[a-zA-Z0-9\-/\s]+$/;
+const expenseFileSchema = z.custom<File | null | undefined>(
+  (value) => value == null || value instanceof File
+)
+  .refine(
+    (file) => file == null || file.size <= EXPENSE_FILE_MAX_SIZE,
+    { message: `O arquivo deve ter no máximo ${MAX_SIZE_MB}MB` }
+  )
+  .refine(
+    (file) => file == null || EXPENSE_FILE_ALLOWED_TYPES.includes(file.type as typeof EXPENSE_FILE_ALLOWED_TYPES[number]),
+    { message: `Apenas arquivos ${EXPENSE_FILE_ALLOWED_TYPES_DISPLAY} são permitidos` }
+  )
+  .optional()
+  .nullable();
 
-/**
- * Base expense form schema with validation rules
- */
 export const expenseFormSchema = z.object({
   description: z
     .string({ error: 'A descrição é obrigatória' })
@@ -66,39 +79,18 @@ export const expenseFormSchema = z.object({
       { error: 'O município deve conter apenas letras e espaços' }
     ),
 
-  serviceInvoice: z
-    .string()
-    .max(50, { error: 'A nota de serviço deve ter no máximo 50 caracteres' })
-    .refine(
-      (value) => value === null || value === '' || serviceInvoiceRegex.test(value),
-      { error: 'A nota de serviço deve conter apenas letras, números e hífens' }
-    )
-    .nullable()
-    .optional(),
+  serviceInvoice: expenseFileSchema,
+  
+  bankBill: expenseFileSchema,
 });
 
-/**
- * Schema for creating a new expense
- * All required fields must be present
- */
 export const createExpenseSchema = expenseFormSchema;
-
-/**
- * Schema for updating an existing expense
- * All fields are optional for partial updates
- */
 export const updateExpenseSchema = expenseFormSchema.partial();
 
-/**
- * Inferred TypeScript types from the schemas
- */
 export type ExpenseFormData = z.infer<typeof expenseFormSchema>;
 export type CreateExpenseInput = z.infer<typeof createExpenseSchema>;
 export type UpdateExpenseInput = z.infer<typeof updateExpenseSchema>;
 
-/**
- * Default values for the expense form
- */
 export const defaultExpenseFormValues: Partial<ExpenseFormData> = {
   description: '',
   amount: undefined,
@@ -110,12 +102,9 @@ export const defaultExpenseFormValues: Partial<ExpenseFormData> = {
   receiver: '',
   municipality: '',
   serviceInvoice: null,
+  bankBill: null,
 };
 
-/**
- * Transform form data for API submission
- * Converts null values to undefined and formats dates
- */
 export function transformExpenseFormData(data: ExpenseFormData): CreateExpenseInput {
   return {
     description: data.description,
@@ -128,5 +117,6 @@ export function transformExpenseFormData(data: ExpenseFormData): CreateExpenseIn
     receiver: data.receiver,
     municipality: data.municipality,
     serviceInvoice: data.serviceInvoice || null,
+    bankBill: data.bankBill || null,
   };
 }
