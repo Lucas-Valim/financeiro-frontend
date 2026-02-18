@@ -40,6 +40,7 @@ describe('useExpenseForm', () => {
     paymentMethod: 'Credit Card',
     paymentProof: null,
     paymentProofUrl: null,
+    paymentDate: null,
     receiver: 'Test Receiver',
     municipality: 'Test City',
     serviceInvoice: null,

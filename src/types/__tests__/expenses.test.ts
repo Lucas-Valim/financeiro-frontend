@@ -22,16 +22,17 @@ describe('Type Definitions', () => {
         status: ExpenseStatus.OPEN,
         paymentMethod: null,
         paymentProof: null,
-        paymentProofUrl: null,
-        receiver: 'Test Receiver',
-        municipality: 'Test City',
-        serviceInvoice: null,
-        serviceInvoiceUrl: null,
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01'),
-      };
+    paymentProofUrl: null,
+    paymentDate: null,
+    receiver: 'Test Receiver',
+    municipality: 'Test City',
+    serviceInvoice: null,
+    serviceInvoiceUrl: null,
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01'),
+  };
 
-      expect(dto.id).toBe('123');
+  expect(dto.id).toBe('123');
       expect(dto.amount).toBe(100);
       expect(dto.status).toBe(ExpenseStatus.OPEN);
     });
@@ -146,16 +147,17 @@ describe('Type Definitions', () => {
         status: ExpenseStatus.OPEN,
         paymentMethod: null,
         paymentProof: null,
-        paymentProofUrl: null,
-        receiver: 'Test',
-        municipality: 'Test',
-        serviceInvoice: null,
-        serviceInvoiceUrl: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+    paymentProofUrl: null,
+    paymentDate: null,
+    receiver: 'Test',
+    municipality: 'Test',
+    serviceInvoice: null,
+    serviceInvoiceUrl: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
 
-      const output: ListExpensesOutput = {
+  const output: ListExpensesOutput = {
         data: [expense],
         pagination: { page: 1, limit: 10, total: 1 },
       };

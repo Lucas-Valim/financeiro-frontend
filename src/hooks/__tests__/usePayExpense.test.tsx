@@ -251,14 +251,16 @@ describe('usePayExpense', () => {
       const _isError: boolean = result.current.isError;
       const _isSuccess: boolean = result.current.isSuccess;
       const _isIdle: boolean = result.current.isIdle;
-      const _data: PaymentResponse | undefined = result.current.data;
-      const _error: Error | null = result.current.error;
 
       // Verify types are correct at runtime
       expect(typeof _isPending).toBe('boolean');
       expect(typeof _isError).toBe('boolean');
       expect(typeof _isSuccess).toBe('boolean');
       expect(typeof _isIdle).toBe('boolean');
+
+      // Type inference assertions for PaymentResponse and Error
+      expect(result.current.data).toBeUndefined();
+      expect(result.current.error).toBeNull();
     });
   });
 

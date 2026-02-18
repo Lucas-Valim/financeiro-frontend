@@ -46,9 +46,12 @@ export function ExpenseRow({ expense, onEdit }: ExpenseRowProps) {
   }
   const statusColorClass = EXPENSE_STATUS_COLORS[expense.status] || ""
 
-  // Check if expense is in a payable state (OPEN or OVERDUE)
   const isPayable =
-    expense.status === ExpenseStatus.OPEN || expense.status === ExpenseStatus.OVERDUE
+    expense.status !== ExpenseStatus.CANCELLED
+
+  const payMenuLabel = expense.status === ExpenseStatus.PAID
+    ? "Ver Comprovante"
+    : "Pagar" 
 
   const handleEdit = () => {
     onEdit?.(expense)
@@ -75,14 +78,14 @@ export function ExpenseRow({ expense, onEdit }: ExpenseRowProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem className="cursor-pointer" onSelect={handleEdit}>
-                Edit
+                Editar
               </DropdownMenuItem>
               {isPayable && (
                 <DropdownMenuItem className="cursor-pointer" onSelect={handlePay}>
-                  Pay
+                  {payMenuLabel}
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem className="cursor-pointer">Cancel</DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer">Cancelar</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </td>

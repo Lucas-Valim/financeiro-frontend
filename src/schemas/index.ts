@@ -14,8 +14,6 @@ export {
   createPaymentSchema,
   defaultPaymentFormValues,
   transformPaymentFormData,
-  PaymentMethod,
-  PAYMENT_METHOD_LABELS,
   PAYMENT_PROOF_ALLOWED_TYPES,
   PAYMENT_PROOF_MAX_SIZE,
   type PaymentFormData,

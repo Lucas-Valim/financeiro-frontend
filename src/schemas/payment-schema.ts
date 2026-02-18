@@ -7,33 +7,6 @@ import { z } from 'zod';
  */
 
 /**
- * Payment method enum values
- * Brazilian payment methods for expense payments
- */
-export enum PaymentMethod {
-  CASH = 'cash',
-  CREDIT_CARD = 'credit_card',
-  DEBIT_CARD = 'debit_card',
-  BANK_TRANSFER = 'bank_transfer',
-  PIX = 'pix',
-  CHECK = 'check',
-  OTHER = 'other',
-}
-
-/**
- * Payment method labels in Portuguese
- */
-export const PAYMENT_METHOD_LABELS = {
-  [PaymentMethod.CASH]: 'Dinheiro',
-  [PaymentMethod.CREDIT_CARD]: 'Cartão de Crédito',
-  [PaymentMethod.DEBIT_CARD]: 'Cartão de Débito',
-  [PaymentMethod.BANK_TRANSFER]: 'Transferência Bancária',
-  [PaymentMethod.PIX]: 'PIX',
-  [PaymentMethod.CHECK]: 'Cheque',
-  [PaymentMethod.OTHER]: 'Outro',
-} as const;
-
-/**
  * Supported file types for payment proof
  */
 export const PAYMENT_PROOF_ALLOWED_TYPES = [
@@ -72,11 +45,6 @@ const paymentProofFileSchema = fileSchema
   );
 
 /**
- * Reference number validation (alphanumeric with common characters)
- */
-const referenceNumberRegex = /^[a-zA-Z0-9\-/\s]+$/;
-
-/**
  * Base payment form schema with validation rules
  */
 export const paymentFormSchema = z.object({
@@ -86,32 +54,6 @@ export const paymentFormSchema = z.object({
 
   paymentDate: z
     .date({ error: 'A data do pagamento é obrigatória' }),
-
-  amount: z
-    .number({ error: 'O valor deve ser um número válido' })
-    .positive({ error: 'O valor deve ser maior que zero' })
-    .max(99999999.99, { error: 'O valor excede o limite máximo' }),
-
-  paymentMethod: z
-    .nativeEnum(PaymentMethod, {
-      error: 'A forma de pagamento é obrigatória',
-    }),
-
-  referenceNumber: z
-    .string()
-    .max(100, { error: 'O número de referência deve ter no máximo 100 caracteres' })
-    .refine(
-      (value) => !value || referenceNumberRegex.test(value),
-      { error: 'O número de referência deve conter apenas letras, números e hífens' }
-    )
-    .optional()
-    .nullable(),
-
-  notes: z
-    .string()
-    .max(500, { error: 'As observações devem ter no máximo 500 caracteres' })
-    .optional()
-    .nullable(),
 
   paymentProof: paymentProofFileSchema.optional().nullable(),
 });
@@ -132,9 +74,6 @@ export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;
  */
 export const defaultPaymentFormValues: Partial<PaymentFormData> = {
   paymentDate: new Date(),
-  amount: undefined,
-  referenceNumber: null,
-  notes: null,
   paymentProof: null,
 };
 
@@ -146,10 +85,6 @@ export function transformPaymentFormData(data: PaymentFormData): CreatePaymentIn
   return {
     expenseId: data.expenseId,
     paymentDate: data.paymentDate,
-    amount: data.amount,
-    paymentMethod: data.paymentMethod,
-    referenceNumber: data.referenceNumber || undefined,
-    notes: data.notes || undefined,
     paymentProof: data.paymentProof || undefined,
   };
 }
@@ -160,12 +95,8 @@ export function transformPaymentFormData(data: PaymentFormData): CreatePaymentIn
  */
 export interface PaymentRequest {
   id: string;
-  paymentDate: string; // ISO date string
+  paymentDate: Date; // ISO date string
   paymentProof?: File;
-  amount?: number;
-  paymentMethod?: PaymentMethod;
-  referenceNumber?: string;
-  notes?: string;
 }
 
 /**
@@ -174,7 +105,7 @@ export interface PaymentRequest {
 export interface PaymentResponse {
   id: string;
   status: 'PAID';
-  paymentDate: string;
+  paymentDate: Date;
   paymentProofUrl?: string;
   // ... other ExpenseDTO fields
 }

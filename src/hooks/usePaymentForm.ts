@@ -6,7 +6,6 @@ import {
   defaultPaymentFormValues,
   transformPaymentFormData,
   type PaymentFormData,
-  type CreatePaymentInput,
   type PaymentRequest,
 } from '@/schemas/payment-schema';
 import type { ExpenseDTO } from '@/types/expenses';
@@ -48,7 +47,6 @@ export function usePaymentForm({
     defaultValues: {
       ...defaultPaymentFormValues,
       expenseId: expense.id,
-      amount: expense.amount,
     },
   });
 
@@ -59,7 +57,6 @@ export function usePaymentForm({
     form.reset({
       ...defaultPaymentFormValues,
       expenseId: expense.id,
-      amount: expense.amount,
     });
   }, [form, expense]);
 
@@ -67,8 +64,7 @@ export function usePaymentForm({
   const getPaymentRequest = useCallback((): PaymentRequest | null => {
     const formData = form.getValues();
 
-    // Validate required fields
-    if (!formData.expenseId || !formData.paymentDate || !formData.amount || !formData.paymentMethod) {
+    if (!formData.expenseId || !formData.paymentDate) {
       return null;
     }
 
@@ -78,10 +74,6 @@ export function usePaymentForm({
       id: transformedData.expenseId,
       paymentDate: transformedData.paymentDate.toISOString().split('T')[0],
       paymentProof: transformedData.paymentProof ?? undefined,
-      amount: transformedData.amount,
-      paymentMethod: transformedData.paymentMethod,
-      referenceNumber: transformedData.referenceNumber,
-      notes: transformedData.notes,
     };
   }, [form]);
 

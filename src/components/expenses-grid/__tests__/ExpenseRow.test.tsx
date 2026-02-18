@@ -32,6 +32,7 @@ describe("ExpenseRow", () => {
     paymentMethod: null,
     paymentProof: null,
     paymentProofUrl: null,
+    paymentDate: null,
     receiver: "Test Receiver",
     municipality: "Test City",
     serviceInvoice: null,
@@ -182,9 +183,9 @@ describe("ExpenseRow", () => {
       render(<ExpenseRow expense={mockExpense} />)
       const button = screen.getByRole("button")
       await user.click(button)
-      expect(screen.getByText("Edit")).toBeInTheDocument()
-      expect(screen.getByText("Pay")).toBeInTheDocument()
-      expect(screen.getByText("Cancel")).toBeInTheDocument()
+      expect(screen.getByText("Editar")).toBeInTheDocument()
+      expect(screen.getByText("Pagar")).toBeInTheDocument()
+      expect(screen.getByText("Cancelar")).toBeInTheDocument()
     })
 
     it("dropdown items are clickable", async () => {
@@ -192,7 +193,7 @@ describe("ExpenseRow", () => {
       render(<ExpenseRow expense={mockExpense} />)
       const button = screen.getByRole("button")
       await user.click(button)
-      const editItem = screen.getByText("Edit")
+      const editItem = screen.getByText("Editar")
       expect(editItem).toHaveClass("cursor-pointer")
     })
 
@@ -201,9 +202,9 @@ describe("ExpenseRow", () => {
       render(<ExpenseRow expense={mockExpense} />)
       const button = screen.getByRole("button")
       await user.click(button)
-      const editItem = screen.getByText("Edit")
+      const editItem = screen.getByText("Editar")
       await user.click(editItem)
-      expect(screen.queryByText("Edit")).not.toBeInTheDocument()
+      expect(screen.queryByText("Editar")).not.toBeInTheDocument()
     })
   })
 
@@ -214,7 +215,7 @@ describe("ExpenseRow", () => {
       render(<ExpenseRow expense={openExpense} />)
       const button = screen.getByRole("button")
       await user.click(button)
-      expect(screen.getByText("Pay")).toBeInTheDocument()
+      expect(screen.getByText("Pagar")).toBeInTheDocument()
     })
 
     it("shows Pay button when expense status is OVERDUE", async () => {
@@ -223,7 +224,7 @@ describe("ExpenseRow", () => {
       render(<ExpenseRow expense={overdueExpense} />)
       const button = screen.getByRole("button")
       await user.click(button)
-      expect(screen.getByText("Pay")).toBeInTheDocument()
+      expect(screen.getByText("Pagar")).toBeInTheDocument()
     })
 
     it("does NOT show Pay button when expense status is PAID", async () => {
@@ -232,7 +233,7 @@ describe("ExpenseRow", () => {
       render(<ExpenseRow expense={paidExpense} />)
       const button = screen.getByRole("button")
       await user.click(button)
-      expect(screen.queryByText("Pay")).not.toBeInTheDocument()
+      expect(screen.queryByText("Pagar")).not.toBeInTheDocument()
     })
 
     it("does NOT show Pay button when expense status is CANCELLED", async () => {
@@ -241,7 +242,7 @@ describe("ExpenseRow", () => {
       render(<ExpenseRow expense={cancelledExpense} />)
       const button = screen.getByRole("button")
       await user.click(button)
-      expect(screen.queryByText("Pay")).not.toBeInTheDocument()
+      expect(screen.queryByText("Pagar")).not.toBeInTheDocument()
     })
   })
 
@@ -251,7 +252,7 @@ describe("ExpenseRow", () => {
       render(<ExpenseRow expense={mockExpense} />)
       const button = screen.getByRole("button")
       await user.click(button)
-      const payItem = screen.getByText("Pay")
+      const payItem = screen.getByText("Pagar")
       await user.click(payItem)
       expect(screen.getByTestId("payment-modal")).toBeInTheDocument()
     })
@@ -261,7 +262,7 @@ describe("ExpenseRow", () => {
       render(<ExpenseRow expense={mockExpense} />)
       const button = screen.getByRole("button")
       await user.click(button)
-      const payItem = screen.getByText("Pay")
+      const payItem = screen.getByText("Pagar")
       await user.click(payItem)
       const modal = screen.getByTestId("payment-modal")
       expect(modal).toHaveAttribute("data-expense-id", mockExpense.id)
@@ -272,7 +273,7 @@ describe("ExpenseRow", () => {
       render(<ExpenseRow expense={mockExpense} />)
       const button = screen.getByRole("button")
       await user.click(button)
-      const payItem = screen.getByText("Pay")
+      const payItem = screen.getByText("Pagar")
       await user.click(payItem)
       expect(screen.getByTestId("payment-modal")).toBeInTheDocument()
       const closeButton = screen.getByTestId("close-modal-button")
@@ -324,9 +325,9 @@ describe("ExpenseRow", () => {
       await user.tab()
       expect(document.activeElement).toBe(button)
       await user.keyboard("{Enter}")
-      expect(screen.getByText("Edit")).toBeInTheDocument()
+      expect(screen.getByText("Editar")).toBeInTheDocument()
       await user.keyboard("{Escape}")
-      expect(screen.queryByText("Edit")).not.toBeInTheDocument()
+      expect(screen.queryByText("Editar")).not.toBeInTheDocument()
     })
 
     it("has proper ARIA labels", () => {

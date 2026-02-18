@@ -42,19 +42,6 @@ export class ExpensesApiService {
     const formData = new FormData();
     formData.append('id', data.id);
     formData.append('paymentDate', data.paymentDate);
-
-    if (data.amount !== undefined) {
-      formData.append('amount', String(data.amount));
-    }
-    if (data.paymentMethod) {
-      formData.append('paymentMethod', data.paymentMethod);
-    }
-    if (data.referenceNumber) {
-      formData.append('referenceNumber', data.referenceNumber);
-    }
-    if (data.notes) {
-      formData.append('notes', data.notes);
-    }
     if (data.paymentProof) {
       formData.append('paymentProof', data.paymentProof);
     }

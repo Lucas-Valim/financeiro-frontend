@@ -43,6 +43,7 @@ describe('ExpensesPage Integration', () => {
     paymentMethod: null,
     paymentProof: null,
     paymentProofUrl: null,
+    paymentDate: null,
     receiver: 'Test Receiver',
     municipality: 'Test City',
     serviceInvoice: null,
