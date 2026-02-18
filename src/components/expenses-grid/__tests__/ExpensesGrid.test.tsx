@@ -11,6 +11,14 @@ vi.mock('lucide-react', async (importOriginal) => {
   };
 });
 
+// Mock the PaymentModal component to avoid QueryClient dependency
+vi.mock('@/components/payment/PaymentModal', () => ({
+  PaymentModal: vi.fn(({ isOpen, expense }) => {
+    if (!isOpen || !expense) return null;
+    return <div data-testid="payment-modal" data-expense-id={expense.id} />;
+  }),
+}));
+
 const mockExpenses: ExpenseDTO[] = [
   {
     id: '1',
@@ -24,6 +32,7 @@ const mockExpenses: ExpenseDTO[] = [
     paymentMethod: null,
     paymentProof: null,
     paymentProofUrl: null,
+    paymentDate: null,
     receiver: 'Receiver 1',
     municipality: 'City 1',
     serviceInvoice: null,
@@ -43,6 +52,7 @@ const mockExpenses: ExpenseDTO[] = [
     paymentMethod: null,
     paymentProof: null,
     paymentProofUrl: null,
+    paymentDate: null,
     receiver: 'Receiver 2',
     municipality: 'City 2',
     serviceInvoice: null,

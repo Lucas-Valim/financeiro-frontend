@@ -1,5 +1,6 @@
 import { apiClient } from '../lib/api-client';
 import type { ExpenseDTO, ExpenseFilter, ListExpensesOutput, CreateExpenseInput, UpdateExpenseInput } from '../types/expenses';
+import type { PaymentRequest, PaymentResponse } from '../schemas/payment-schema';
 import { ORGANIZATION_ID } from '../constants/expenses';
 
 export class ExpensesApiService {
@@ -35,5 +36,20 @@ export class ExpensesApiService {
 
   async update(id: string, data: UpdateExpenseInput): Promise<ExpenseDTO> {
     return apiClient.put<ExpenseDTO>(`/expenses/${id}`, data) as unknown as Promise<ExpenseDTO>;
+  }
+
+  async pay(data: PaymentRequest): Promise<PaymentResponse> {
+    const formData = new FormData();
+    formData.append('id', data.id);
+    formData.append('paymentDate', data.paymentDate);
+    if (data.paymentProof) {
+      formData.append('paymentProof', data.paymentProof);
+    }
+
+    return apiClient.post<PaymentResponse>(`/expenses/${data.id}/pay`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }) as unknown as Promise<PaymentResponse>;
   }
 }

@@ -15,6 +15,7 @@ export interface ExpenseDTO {
   paymentMethod: string | null;
   paymentProof: string | null;
   paymentProofUrl: string | null;
+  paymentDate: Date | null;
   receiver: string;
   municipality: string;
   serviceInvoice: string | null;

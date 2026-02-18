@@ -31,16 +31,17 @@ describe('ExpensesApiService', () => {
       status: ExpenseStatus.OPEN,
       paymentMethod: null,
       paymentProof: null,
-      paymentProofUrl: null,
-      receiver: 'Test Receiver',
-      municipality: 'Test City',
-      serviceInvoice: null,
-      serviceInvoiceUrl: null,
-      createdAt: new Date('2024-01-01'),
-      updatedAt: new Date('2024-01-01'),
-    };
+    paymentProofUrl: null,
+    paymentDate: null,
+    receiver: 'Test Receiver',
+    municipality: 'Test City',
+    serviceInvoice: null,
+    serviceInvoiceUrl: null,
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01'),
+  };
 
-    const mockResponse: ListExpensesOutput = {
+  const mockResponse: ListExpensesOutput = {
       data: [mockExpense],
       pagination: {
         page: 1,
@@ -170,16 +171,17 @@ describe('ExpensesApiService', () => {
       status: ExpenseStatus.OPEN,
       paymentMethod: null,
       paymentProof: null,
-      paymentProofUrl: null,
-      receiver: 'Test Receiver',
-      municipality: 'Test City',
-      serviceInvoice: null,
-      serviceInvoiceUrl: null,
-      createdAt: new Date('2024-01-01'),
-      updatedAt: new Date('2024-01-01'),
-    };
+    paymentProofUrl: null,
+    paymentDate: null,
+    receiver: 'Test Receiver',
+    municipality: 'Test City',
+    serviceInvoice: null,
+    serviceInvoiceUrl: null,
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01'),
+  };
 
-    it('should return correct expense with valid id', async () => {
+  it('should return correct expense with valid id', async () => {
       mockedApiClient.get.mockResolvedValue(mockExpense);
       
       const result = await service.fetchExpenseById('123');
@@ -241,16 +243,17 @@ describe('ExpensesApiService', () => {
       status: ExpenseStatus.OPEN,
       paymentMethod: 'PIX',
       paymentProof: null,
-      paymentProofUrl: null,
-      receiver: 'New Receiver',
-      municipality: 'New City',
-      serviceInvoice: null,
-      serviceInvoiceUrl: null,
-      createdAt: new Date('2024-01-15'),
-      updatedAt: new Date('2024-01-15'),
-    };
+    paymentProofUrl: null,
+    paymentDate: null,
+    receiver: 'New Receiver',
+    municipality: 'New City',
+    serviceInvoice: null,
+    serviceInvoiceUrl: null,
+    createdAt: new Date('2024-01-15'),
+    updatedAt: new Date('2024-01-15'),
+  };
 
-    it('should create expense with valid data', async () => {
+  it('should create expense with valid data', async () => {
       mockedApiClient.post.mockResolvedValue(mockCreatedExpense);
 
       const input: CreateExpenseInput = {
@@ -356,16 +359,17 @@ describe('ExpensesApiService', () => {
       status: ExpenseStatus.OPEN,
       paymentMethod: 'Bank Transfer',
       paymentProof: null,
-      paymentProofUrl: null,
-      receiver: 'Updated Receiver',
-      municipality: 'Updated City',
-      serviceInvoice: null,
-      serviceInvoiceUrl: null,
-      createdAt: new Date('2024-01-01'),
-      updatedAt: new Date('2024-01-20'),
-    };
+    paymentProofUrl: null,
+    paymentDate: null,
+    receiver: 'Updated Receiver',
+    municipality: 'Updated City',
+    serviceInvoice: null,
+    serviceInvoiceUrl: null,
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-20'),
+  };
 
-    it('should update expense with valid id and data', async () => {
+  it('should update expense with valid id and data', async () => {
       mockedApiClient.put.mockResolvedValue(mockUpdatedExpense);
 
       const input: UpdateExpenseInput = {
