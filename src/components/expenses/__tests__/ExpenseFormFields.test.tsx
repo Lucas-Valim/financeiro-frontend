@@ -51,7 +51,7 @@ function FormWrapper({
 
   return (
     <FormProvider {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>{children}</form>
+      <form onSubmit={form.handleSubmit(onSubmit as (data: unknown) => void)}>{children}</form>
     </FormProvider>
   );
 }
@@ -93,7 +93,6 @@ describe('ExpenseFormFields', () => {
       expect(screen.getByText('Favorecido')).toBeInTheDocument();
       expect(screen.getByText('Município')).toBeInTheDocument();
       expect(screen.getByText('Forma de Pagamento')).toBeInTheDocument();
-      expect(screen.getByText('Nota de Serviço')).toBeInTheDocument();
     });
 
     it('shows asterisk for required fields', () => {
@@ -352,6 +351,78 @@ describe('ExpenseFormFields', () => {
       // Form element exists but may not have explicit role, check inputs are present
       expect(screen.getByLabelText(/valor/i)).toBeInTheDocument();
       expect(screen.getByTestId('date-picker')).toBeInTheDocument();
+    });
+  });
+
+  describe('Service Invoice Field Removal', () => {
+    it('does NOT render Nota de Serviço text input', () => {
+      render(
+        <FormWrapper>
+          <ExpenseFormFields />
+        </FormWrapper>
+      );
+
+      expect(screen.queryByText('Nota de Serviço')).not.toBeInTheDocument();
+    });
+
+    it('does NOT have serviceInvoice placeholder', () => {
+      render(
+        <FormWrapper>
+          <ExpenseFormFields />
+        </FormWrapper>
+      );
+
+      expect(screen.queryByPlaceholderText(/nota de serviço/i)).not.toBeInTheDocument();
+    });
+
+    it('renders exactly 7 main form fields (no file fields in Dados tab)', () => {
+      render(
+        <FormWrapper>
+          <ExpenseFormFields />
+        </FormWrapper>
+      );
+
+      const textInputs = screen.getAllByRole('textbox');
+      const comboboxes = screen.getAllByRole('combobox');
+      const datePickers = screen.queryAllByTestId('date-picker');
+      const fileInputs = document.querySelectorAll('input[type="file"]');
+
+      expect(textInputs.length).toBeGreaterThanOrEqual(4);
+      expect(comboboxes.length).toBe(2);
+      expect(datePickers.length).toBe(1);
+      expect(fileInputs.length).toBe(0);
+    });
+
+    it('all 7 remaining text/select fields still work', async () => {
+      render(
+        <FormWrapper>
+          <ExpenseFormFields />
+        </FormWrapper>
+      );
+
+      expect(screen.getByLabelText(/descrição/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/valor/i)).toBeInTheDocument();
+      expect(screen.getByTestId('date-picker')).toBeInTheDocument();
+      expect(screen.getByRole('combobox', { name: /categoria/i })).toBeInTheDocument();
+      expect(screen.getByRole('combobox', { name: /favorecido/i })).toBeInTheDocument();
+      expect(screen.getByLabelText(/município/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/forma de pagamento/i)).toBeInTheDocument();
+    });
+
+    it('disabled state works for all remaining fields', () => {
+      render(
+        <FormWrapper>
+          <ExpenseFormFields disabled={true} />
+        </FormWrapper>
+      );
+
+      expect(screen.getByLabelText(/descrição/i)).toBeDisabled();
+      expect(screen.getByLabelText(/valor/i)).toBeDisabled();
+      expect(screen.getByTestId('date-picker')).toBeDisabled();
+      expect(screen.getByRole('combobox', { name: /categoria/i })).toHaveAttribute('data-disabled');
+      expect(screen.getByRole('combobox', { name: /favorecido/i })).toHaveAttribute('data-disabled');
+      expect(screen.getByLabelText(/município/i)).toBeDisabled();
+      expect(screen.getByLabelText(/forma de pagamento/i)).toBeDisabled();
     });
   });
 });

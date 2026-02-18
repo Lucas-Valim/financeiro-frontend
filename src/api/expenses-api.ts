@@ -41,7 +41,7 @@ export class ExpensesApiService {
   async pay(data: PaymentRequest): Promise<PaymentResponse> {
     const formData = new FormData();
     formData.append('id', data.id);
-    formData.append('paymentDate', data.paymentDate);
+    formData.append('paymentDate', String(data.paymentDate));
     if (data.paymentProof) {
       formData.append('paymentProof', data.paymentProof);
     }
