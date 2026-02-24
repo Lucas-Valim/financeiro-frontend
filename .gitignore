@@ -35,3 +35,4 @@ tasks
 tmp
 chats.db
 .opencode
+.agents

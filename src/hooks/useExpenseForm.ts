@@ -22,6 +22,10 @@ interface UseExpenseFormReturn {
   onSubmit: () => Promise<void>;
   resetForm: () => void;
   expense: ExpenseDTO | null;
+  existingServiceInvoiceUrl: string | null;
+  existingBankBillUrl: string | null;
+  handleClearServiceInvoice: () => void;
+  handleClearBankBill: () => void;
 }
 
 const expensesApiService = new ExpensesApiService();
@@ -32,6 +36,14 @@ export function useExpenseForm({
 }: UseExpenseFormParams = {}): UseExpenseFormReturn {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [expense, setExpense] = useState<ExpenseDTO | null>(initialExpense);
+
+  // Track existing file URLs separately from new file uploads
+  const [existingServiceInvoiceUrl, setExistingServiceInvoiceUrl] = useState<string | null>(
+    initialExpense?.serviceInvoiceUrl ?? null
+  );
+  const [existingBankBillUrl, setExistingBankBillUrl] = useState<string | null>(
+    initialExpense?.bankBillUrl ?? null
+  );
 
   const getInitialValues = useCallback((): Partial<ExpenseFormData> => {
     if (initialExpense) {
@@ -79,7 +91,8 @@ export function useExpenseForm({
       let result: ExpenseDTO;
 
       const submitData: CreateExpenseInput = {
-        organizationId: 'fca3c088-ba34-43a2-9b32-b2b1a1246915', // This will be set by the API service
+        // TODO(@lucasborges): Get organizationId dynamically from auth context - Priority: HIGH - Owner: @lucasborges
+        organizationId: 'fca3c088-ba34-43a2-9b32-b2b1a1246915',
         description: formData.description,
         amount: formData.amount,
         currency: formData.currency,
@@ -87,6 +100,8 @@ export function useExpenseForm({
         receiver: formData.receiver,
         municipality: formData.municipality,
         paymentMethod: formData.paymentMethod ?? undefined,
+        serviceInvoice: formData.serviceInvoice ?? null,
+        bankBill: formData.bankBill ?? null,
       };
 
       if (expense?.id) {
@@ -115,7 +130,18 @@ export function useExpenseForm({
   const resetForm = useCallback(() => {
     reset(getInitialValues() as ExpenseFormData);
     setExpense(initialExpense);
+    setExistingServiceInvoiceUrl(initialExpense?.serviceInvoiceUrl ?? null);
+    setExistingBankBillUrl(initialExpense?.bankBillUrl ?? null);
   }, [reset, getInitialValues, initialExpense]);
+
+  // Handlers to clear existing URLs
+  const handleClearServiceInvoice = useCallback(() => {
+    setExistingServiceInvoiceUrl(null);
+  }, []);
+
+  const handleClearBankBill = useCallback(() => {
+    setExistingBankBillUrl(null);
+  }, []);
 
   return {
     form: form as unknown as UseFormReturn<ExpenseFormData>,
@@ -124,5 +150,9 @@ export function useExpenseForm({
     onSubmit,
     resetForm,
     expense,
+    existingServiceInvoiceUrl,
+    existingBankBillUrl,
+    handleClearServiceInvoice,
+    handleClearBankBill,
   };
 }

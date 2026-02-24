@@ -45,6 +45,7 @@ describe('useExpenseForm', () => {
     municipality: 'Test City',
     serviceInvoice: null,
     serviceInvoiceUrl: null,
+    bankBillUrl: null,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
   };
@@ -450,6 +451,148 @@ describe('useExpenseForm', () => {
       expect(mockCreate).not.toHaveBeenCalled();
       expect(mockUpdate).not.toHaveBeenCalled();
       expect(toast.success).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('file upload submission', () => {
+    it('should include serviceInvoice file in submitData', async () => {
+      const file = new File(['content'], 'invoice.pdf', { type: 'application/pdf' });
+      const formDataWithFile = {
+        ...validFormData,
+        serviceInvoice: file,
+      };
+
+      const { result } = renderHook(() => useExpenseForm());
+      result.current.form.reset(formDataWithFile);
+
+      await result.current.onSubmit();
+
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          serviceInvoice: file,
+        })
+      );
+    });
+
+    it('should include bankBill file in submitData', async () => {
+      const file = new File(['content'], 'boleto.png', { type: 'image/png' });
+      const formDataWithFile = {
+        ...validFormData,
+        bankBill: file,
+      };
+
+      const { result } = renderHook(() => useExpenseForm());
+      result.current.form.reset(formDataWithFile);
+
+      await result.current.onSubmit();
+
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          bankBill: file,
+        })
+      );
+    });
+
+    it('should include both files in submitData', async () => {
+      const invoiceFile = new File(['content'], 'invoice.pdf', { type: 'application/pdf' });
+      const boletoFile = new File(['content'], 'boleto.png', { type: 'image/png' });
+      const formDataWithFiles = {
+        ...validFormData,
+        serviceInvoice: invoiceFile,
+        bankBill: boletoFile,
+      };
+
+      const { result } = renderHook(() => useExpenseForm());
+      result.current.form.reset(formDataWithFiles);
+
+      await result.current.onSubmit();
+
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          serviceInvoice: invoiceFile,
+          bankBill: boletoFile,
+        })
+      );
+    });
+
+    it('should handle null serviceInvoice', async () => {
+      const formDataWithNullFile = {
+        ...validFormData,
+        serviceInvoice: null,
+      };
+
+      const { result } = renderHook(() => useExpenseForm());
+      result.current.form.reset(formDataWithNullFile);
+
+      await result.current.onSubmit();
+
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          serviceInvoice: null,
+        })
+      );
+    });
+
+    it('should handle null bankBill', async () => {
+      const formDataWithNullFile = {
+        ...validFormData,
+        bankBill: null,
+      };
+
+      const { result } = renderHook(() => useExpenseForm());
+      result.current.form.reset(formDataWithNullFile);
+
+      await result.current.onSubmit();
+
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          bankBill: null,
+        })
+      );
+    });
+
+    it('should include serviceInvoice in update call', async () => {
+      const file = new File(['content'], 'invoice.pdf', { type: 'application/pdf' });
+      const formDataWithFile = {
+        ...validFormData,
+        serviceInvoice: file,
+      };
+
+      const { result } = renderHook(() =>
+        useExpenseForm({ initialExpense: mockExpense })
+      );
+      result.current.form.reset(formDataWithFile);
+
+      await result.current.onSubmit();
+
+      expect(mockUpdate).toHaveBeenCalledWith(
+        mockExpense.id,
+        expect.objectContaining({
+          serviceInvoice: file,
+        })
+      );
+    });
+
+    it('should include bankBill in update call', async () => {
+      const file = new File(['content'], 'boleto.png', { type: 'image/png' });
+      const formDataWithFile = {
+        ...validFormData,
+        bankBill: file,
+      };
+
+      const { result } = renderHook(() =>
+        useExpenseForm({ initialExpense: mockExpense })
+      );
+      result.current.form.reset(formDataWithFile);
+
+      await result.current.onSubmit();
+
+      expect(mockUpdate).toHaveBeenCalledWith(
+        mockExpense.id,
+        expect.objectContaining({
+          bankBill: file,
+        })
+      );
     });
   });
 });

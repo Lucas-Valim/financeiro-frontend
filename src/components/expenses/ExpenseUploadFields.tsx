@@ -17,9 +17,19 @@ import {
 
 interface ExpenseUploadFieldsProps {
   disabled?: boolean;
+  existingServiceInvoiceUrl?: string | null;
+  existingBankBillUrl?: string | null;
+  onClearServiceInvoice?: () => void;
+  onClearBankBill?: () => void;
 }
 
-export function ExpenseUploadFields({ disabled = false }: ExpenseUploadFieldsProps) {
+export function ExpenseUploadFields({
+  disabled = false,
+  existingServiceInvoiceUrl,
+  existingBankBillUrl,
+  onClearServiceInvoice,
+  onClearBankBill,
+}: ExpenseUploadFieldsProps) {
   const form = useFormContext<ExpenseFormData>();
 
   const handleServiceInvoiceChange = useCallback(
@@ -43,7 +53,7 @@ export function ExpenseUploadFields({ disabled = false }: ExpenseUploadFieldsPro
   );
 
   return (
-    <div className="space-y-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <FormField
         control={form.control}
         name="serviceInvoice"
@@ -55,11 +65,14 @@ export function ExpenseUploadFields({ disabled = false }: ExpenseUploadFieldsPro
                 id="service-invoice-upload"
                 value={field.value ?? null}
                 onChange={handleServiceInvoiceChange}
+                existingUrl={existingServiceInvoiceUrl}
+                onClearExisting={onClearServiceInvoice}
                 acceptedTypes={EXPENSE_FILE_ALLOWED_TYPES}
                 maxSize={EXPENSE_FILE_MAX_SIZE}
                 allowedTypesDisplay={EXPENSE_FILE_ALLOWED_TYPES_DISPLAY}
                 disabled={disabled}
                 error={form.formState.errors.serviceInvoice?.message}
+                documentLabel="Nota de Serviço"
               />
             </FormControl>
             <FormMessage id="serviceInvoice-error" />
@@ -78,11 +91,14 @@ export function ExpenseUploadFields({ disabled = false }: ExpenseUploadFieldsPro
                 id="bank-bill-upload"
                 value={field.value ?? null}
                 onChange={handleBankBillChange}
+                existingUrl={existingBankBillUrl}
+                onClearExisting={onClearBankBill}
                 acceptedTypes={EXPENSE_FILE_ALLOWED_TYPES}
                 maxSize={EXPENSE_FILE_MAX_SIZE}
                 allowedTypesDisplay={EXPENSE_FILE_ALLOWED_TYPES_DISPLAY}
                 disabled={disabled}
                 error={form.formState.errors.bankBill?.message}
+                documentLabel="Boleto"
               />
             </FormControl>
             <FormMessage id="bankBill-error" />

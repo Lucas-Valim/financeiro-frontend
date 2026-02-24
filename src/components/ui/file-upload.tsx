@@ -8,12 +8,15 @@ interface FileUploadProps {
   value: File | null;
   onChange: (file: File | null) => void;
   onRemove?: () => void;
+  existingUrl?: string | null;
+  onClearExisting?: () => void;
   acceptedTypes: readonly string[];
   maxSize: number;
   allowedTypesDisplay?: string;
   disabled?: boolean;
   error?: string;
   className?: string;
+  documentLabel?: string;
 }
 
 function formatMaxSize(bytes: number): string {
@@ -26,12 +29,15 @@ export function FileUpload({
   value,
   onChange,
   onRemove,
+  existingUrl,
+  onClearExisting,
   acceptedTypes,
   maxSize,
   allowedTypesDisplay,
   disabled = false,
   error,
   className,
+  documentLabel,
 }: FileUploadProps) {
   const [dragActive, setDragActive] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -80,7 +86,8 @@ export function FileUpload({
     setValidationError(null);
     onChange(null);
     onRemove?.();
-  }, [onChange, onRemove]);
+    onClearExisting?.();
+  }, [onChange, onRemove, onClearExisting]);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -111,11 +118,13 @@ export function FileUpload({
 
   const displayError = error || validationError;
 
+  const showExistingPreview = existingUrl && !value;
+
   return (
-    <div className={cn('space-y-3', className)}>
+    <div className={cn('space-y-2', className)}>
       <div
         className={cn(
-          'border-2 border-dashed rounded-lg p-4 text-center transition-colors cursor-pointer',
+          'border-2 border-dashed rounded-lg p-3 text-center transition-colors cursor-pointer',
           dragActive && 'border-primary bg-primary/5',
           !dragActive && !displayError && 'border-input hover:border-primary/50',
           displayError && 'border-destructive',
@@ -139,13 +148,13 @@ export function FileUpload({
         <label
           htmlFor={id}
           className={cn(
-            'cursor-pointer flex flex-col items-center gap-2',
+            'cursor-pointer flex flex-col items-center gap-1',
             disabled && 'cursor-not-allowed'
           )}
         >
-          <Upload className="h-8 w-8 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">
-            Arraste um arquivo ou clique para selecionar
+          <Upload className="h-6 w-6 text-muted-foreground" />
+          <span className="text-xs text-muted-foreground">
+            Clique ou arraste para upload
           </span>
           <span className="text-xs text-muted-foreground">
             {displayTypes} (máx. {formatMaxSize(maxSize)})
@@ -159,9 +168,19 @@ export function FileUpload({
         </p>
       )}
 
+      {showExistingPreview && (
+        <ImagePreview
+          imageUrl={existingUrl}
+          displayName={documentLabel}
+          onRemove={handleRemove}
+          disabled={disabled}
+        />
+      )}
+
       {value && (
         <ImagePreview
           file={value}
+          displayName={documentLabel}
           onRemove={handleRemove}
           disabled={disabled}
         />

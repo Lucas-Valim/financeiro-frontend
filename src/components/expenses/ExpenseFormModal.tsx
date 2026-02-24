@@ -55,6 +55,10 @@ export function ExpenseFormModal({
     isSubmitting,
     onSubmit,
     resetForm,
+    existingServiceInvoiceUrl,
+    existingBankBillUrl,
+    handleClearServiceInvoice,
+    handleClearBankBill,
   } = useExpenseForm({
     initialExpense: expense,
     onSuccess: (result) => {
@@ -114,7 +118,7 @@ export function ExpenseFormModal({
     <>
       {/* Main Form Modal */}
       <Dialog open={isOpen && !showConfirmDialog} onOpenChange={handleOpenChange}>
-        <DialogContent className="max-w-[95vw] sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-[95vw] sm:max-w-[500px] max-h-[90vh] overflow-x-hidden overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{modalTitle}</DialogTitle>
             <DialogDescription>{modalDescription}</DialogDescription>
@@ -133,7 +137,13 @@ export function ExpenseFormModal({
                 </TabsContent>
 
                 <TabsContent value="documents" className="mt-4">
-                  <ExpenseUploadFields disabled={isSubmitting} />
+                  <ExpenseUploadFields
+                    disabled={isSubmitting}
+                    existingServiceInvoiceUrl={existingServiceInvoiceUrl}
+                    existingBankBillUrl={existingBankBillUrl}
+                    onClearServiceInvoice={handleClearServiceInvoice}
+                    onClearBankBill={handleClearBankBill}
+                  />
                 </TabsContent>
               </Tabs>
 

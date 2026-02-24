@@ -20,6 +20,7 @@ export interface ExpenseDTO {
   municipality: string;
   serviceInvoice: string | null;
   serviceInvoiceUrl: string | null;
+  bankBillUrl: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -45,6 +46,10 @@ export interface CreateExpenseInput {
   municipality: string;
   /** Optional payment method description */
   paymentMethod?: string;
+  /** Service invoice file (PDF, PNG, JPG, JPEG - max 5MB) */
+  serviceInvoice?: File | null;
+  /** Bank bill file (PDF, PNG, JPG, JPEG - max 5MB) */
+  bankBill?: File | null;
 }
 
 /**
@@ -64,6 +69,10 @@ export interface UpdateExpenseInput {
   municipality?: string;
   /** Updated payment method */
   paymentMethod?: string;
+  /** Service invoice file (PDF, PNG, JPG, JPEG - max 5MB) */
+  serviceInvoice?: File | null;
+  /** Bank bill file (PDF, PNG, JPG, JPEG - max 5MB) */
+  bankBill?: File | null;
 }
 
 export interface ExpenseFilter {
@@ -101,6 +110,7 @@ export interface GetExpenseOutput {
   municipality: string;
   serviceInvoice: string | null;
   serviceInvoiceUrl: string | null;
+  bankBillUrl: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

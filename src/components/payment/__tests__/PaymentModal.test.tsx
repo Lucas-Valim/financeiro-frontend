@@ -79,6 +79,7 @@ const mockExpense: ExpenseDTO = {
   municipality: 'Test City',
   serviceInvoice: null,
   serviceInvoiceUrl: null,
+  bankBillUrl: null,
   createdAt: new Date(),
   updatedAt: new Date(),
 };

@@ -137,8 +137,7 @@ describe('FileUpload', () => {
         />
       );
 
-      expect(screen.getByText(/arraste um arquivo/i)).toBeInTheDocument();
-      expect(screen.getByText(/clique para selecionar/i)).toBeInTheDocument();
+      expect(screen.getByText(/clique ou arraste para upload/i)).toBeInTheDocument();
     });
   });
 
@@ -442,7 +441,7 @@ describe('FileUpload', () => {
         />
       );
 
-      const label = screen.getByText(/arraste um arquivo/i).closest('label');
+      const label = screen.getByText(/clique ou arraste para upload/i).closest('label');
       expect(label).toHaveClass('cursor-not-allowed');
     });
 

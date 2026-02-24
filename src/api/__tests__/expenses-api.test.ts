@@ -37,6 +37,7 @@ describe('ExpensesApiService', () => {
     municipality: 'Test City',
     serviceInvoice: null,
     serviceInvoiceUrl: null,
+    bankBillUrl: null,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
   };
@@ -177,6 +178,7 @@ describe('ExpensesApiService', () => {
     municipality: 'Test City',
     serviceInvoice: null,
     serviceInvoiceUrl: null,
+    bankBillUrl: null,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
   };
@@ -249,6 +251,7 @@ describe('ExpensesApiService', () => {
     municipality: 'New City',
     serviceInvoice: null,
     serviceInvoiceUrl: null,
+    bankBillUrl: null,
     createdAt: new Date('2024-01-15'),
     updatedAt: new Date('2024-01-15'),
   };
@@ -365,6 +368,7 @@ describe('ExpensesApiService', () => {
     municipality: 'Updated City',
     serviceInvoice: null,
     serviceInvoiceUrl: null,
+    bankBillUrl: null,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-20'),
   };
@@ -455,6 +459,345 @@ describe('ExpensesApiService', () => {
 
       expect(mockedApiClient.put).toHaveBeenCalledWith('/expenses/123', input);
       expect(result).toBeDefined();
+    });
+  });
+
+  describe('create with files', () => {
+    const mockCreatedExpense: ExpenseDTO = {
+      id: 'new-123',
+      organizationId: 'org-123',
+      categoryId: null,
+      description: 'New expense',
+      amount: 500,
+      currency: 'BRL',
+      dueDate: new Date('2024-06-15'),
+      status: ExpenseStatus.OPEN,
+      paymentMethod: 'PIX',
+      paymentProof: null,
+      paymentProofUrl: null,
+      paymentDate: null,
+      receiver: 'New Receiver',
+      municipality: 'New City',
+      serviceInvoice: null,
+      serviceInvoiceUrl: null,
+      bankBillUrl: null,
+      createdAt: new Date('2024-01-15'),
+      updatedAt: new Date('2024-01-15'),
+    };
+
+    it('should send FormData when serviceInvoice is a File', async () => {
+      const file = new File(['content'], 'invoice.pdf', { type: 'application/pdf' });
+      const input: CreateExpenseInput = {
+        organizationId: 'org-123',
+        description: 'Test',
+        amount: 100,
+        currency: 'BRL',
+        dueDate: new Date('2024-12-31'),
+        receiver: 'Receiver',
+        municipality: 'City',
+        serviceInvoice: file,
+      };
+
+      mockedApiClient.post.mockResolvedValue(mockCreatedExpense);
+      await service.create(input);
+
+      expect(mockedApiClient.post).toHaveBeenCalledWith(
+        '/expenses',
+        expect.any(FormData),
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      );
+    });
+
+    it('should send FormData when bankBill is a File', async () => {
+      const file = new File(['content'], 'boleto.png', { type: 'image/png' });
+      const input: CreateExpenseInput = {
+        organizationId: 'org-123',
+        description: 'Test',
+        amount: 100,
+        currency: 'BRL',
+        dueDate: new Date('2024-12-31'),
+        receiver: 'Receiver',
+        municipality: 'City',
+        bankBill: file,
+      };
+
+      mockedApiClient.post.mockResolvedValue(mockCreatedExpense);
+      await service.create(input);
+
+      expect(mockedApiClient.post).toHaveBeenCalledWith(
+        '/expenses',
+        expect.any(FormData),
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      );
+    });
+
+    it('should send FormData when both files are present', async () => {
+      const invoiceFile = new File(['content'], 'invoice.pdf', { type: 'application/pdf' });
+      const boletoFile = new File(['content'], 'boleto.png', { type: 'image/png' });
+      const input: CreateExpenseInput = {
+        organizationId: 'org-123',
+        description: 'Test',
+        amount: 100,
+        currency: 'BRL',
+        dueDate: new Date('2024-12-31'),
+        receiver: 'Receiver',
+        municipality: 'City',
+        serviceInvoice: invoiceFile,
+        bankBill: boletoFile,
+      };
+
+      mockedApiClient.post.mockResolvedValue(mockCreatedExpense);
+      await service.create(input);
+
+      expect(mockedApiClient.post).toHaveBeenCalledWith(
+        '/expenses',
+        expect.any(FormData),
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      );
+    });
+
+    it('should send JSON when no files are present', async () => {
+      const input: CreateExpenseInput = {
+        organizationId: 'org-123',
+        description: 'Test',
+        amount: 100,
+        currency: 'BRL',
+        dueDate: new Date('2024-12-31'),
+        receiver: 'Receiver',
+        municipality: 'City',
+      };
+
+      mockedApiClient.post.mockResolvedValue(mockCreatedExpense);
+      await service.create(input);
+
+      expect(mockedApiClient.post).toHaveBeenCalledWith('/expenses', input);
+    });
+
+    it('should append serviceInvoice to FormData', async () => {
+      const file = new File(['content'], 'invoice.pdf', { type: 'application/pdf' });
+      const input: CreateExpenseInput = {
+        organizationId: 'org-123',
+        description: 'Test',
+        amount: 100,
+        currency: 'BRL',
+        dueDate: new Date('2024-12-31'),
+        receiver: 'Receiver',
+        municipality: 'City',
+        serviceInvoice: file,
+      };
+
+      mockedApiClient.post.mockResolvedValue(mockCreatedExpense);
+      await service.create(input);
+
+      const formData = mockedApiClient.post.mock.calls[0][1] as FormData;
+      expect(formData.get('serviceInvoice')).toBe(file);
+    });
+
+    it('should append bankBill to FormData', async () => {
+      const file = new File(['content'], 'boleto.png', { type: 'image/png' });
+      const input: CreateExpenseInput = {
+        organizationId: 'org-123',
+        description: 'Test',
+        amount: 100,
+        currency: 'BRL',
+        dueDate: new Date('2024-12-31'),
+        receiver: 'Receiver',
+        municipality: 'City',
+        bankBill: file,
+      };
+
+      mockedApiClient.post.mockResolvedValue(mockCreatedExpense);
+      await service.create(input);
+
+      const formData = mockedApiClient.post.mock.calls[0][1] as FormData;
+      expect(formData.get('bankBill')).toBe(file);
+    });
+
+    it('should append all text fields to FormData', async () => {
+      const file = new File(['content'], 'invoice.pdf', { type: 'application/pdf' });
+      const input: CreateExpenseInput = {
+        organizationId: 'org-123',
+        description: 'Test Description',
+        amount: 150.50,
+        currency: 'BRL',
+        dueDate: new Date('2024-12-31T00:00:00.000Z'),
+        receiver: 'Test Receiver',
+        municipality: 'Test City',
+        paymentMethod: 'PIX',
+        serviceInvoice: file,
+      };
+
+      mockedApiClient.post.mockResolvedValue(mockCreatedExpense);
+      await service.create(input);
+
+      const formData = mockedApiClient.post.mock.calls[0][1] as FormData;
+      expect(formData.get('description')).toBe('Test Description');
+      expect(formData.get('amount')).toBe('150.5');
+      expect(formData.get('currency')).toBe('BRL');
+      expect(formData.get('receiver')).toBe('Test Receiver');
+      expect(formData.get('municipality')).toBe('Test City');
+      expect(formData.get('paymentMethod')).toBe('PIX');
+      expect(formData.get('organizationId')).toBe('org-123');
+    });
+  });
+
+  describe('update with files', () => {
+    const mockUpdatedExpense: ExpenseDTO = {
+      id: '123',
+      organizationId: 'org-123',
+      categoryId: null,
+      description: 'Updated expense',
+      amount: 750,
+      currency: 'BRL',
+      dueDate: new Date('2024-07-20'),
+      status: ExpenseStatus.OPEN,
+      paymentMethod: 'Bank Transfer',
+      paymentProof: null,
+      paymentProofUrl: null,
+      paymentDate: null,
+      receiver: 'Updated Receiver',
+      municipality: 'Updated City',
+      serviceInvoice: null,
+      serviceInvoiceUrl: null,
+      bankBillUrl: null,
+      createdAt: new Date('2024-01-01'),
+      updatedAt: new Date('2024-01-20'),
+    };
+
+    it('should send FormData when serviceInvoice is a File', async () => {
+      const file = new File(['content'], 'invoice.pdf', { type: 'application/pdf' });
+      const input: UpdateExpenseInput = {
+        description: 'Updated',
+        serviceInvoice: file,
+      };
+
+      mockedApiClient.put.mockResolvedValue(mockUpdatedExpense);
+      await service.update('123', input);
+
+      expect(mockedApiClient.put).toHaveBeenCalledWith(
+        '/expenses/123',
+        expect.any(FormData),
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      );
+    });
+
+    it('should send FormData when bankBill is a File', async () => {
+      const file = new File(['content'], 'boleto.png', { type: 'image/png' });
+      const input: UpdateExpenseInput = {
+        description: 'Updated',
+        bankBill: file,
+      };
+
+      mockedApiClient.put.mockResolvedValue(mockUpdatedExpense);
+      await service.update('123', input);
+
+      expect(mockedApiClient.put).toHaveBeenCalledWith(
+        '/expenses/123',
+        expect.any(FormData),
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      );
+    });
+  });
+
+  describe('error scenarios', () => {
+    it('should throw error when amount is negative', async () => {
+      const input: CreateExpenseInput = {
+        organizationId: 'org-123',
+        description: 'Test',
+        amount: -100,
+        currency: 'BRL',
+        dueDate: new Date('2024-12-31'),
+        receiver: 'Receiver',
+        municipality: 'City',
+      };
+
+      await expect(service.create(input)).rejects.toThrow('Amount must be positive');
+    });
+
+    it('should throw error when amount is zero', async () => {
+      const input: CreateExpenseInput = {
+        organizationId: 'org-123',
+        description: 'Test',
+        amount: 0,
+        currency: 'BRL',
+        dueDate: new Date('2024-12-31'),
+        receiver: 'Receiver',
+        municipality: 'City',
+      };
+
+      await expect(service.create(input)).rejects.toThrow('Amount must be positive');
+    });
+
+    it('should throw error when description is too long', async () => {
+      const input: CreateExpenseInput = {
+        organizationId: 'org-123',
+        description: 'a'.repeat(256),
+        amount: 100,
+        currency: 'BRL',
+        dueDate: new Date('2024-12-31'),
+        receiver: 'Receiver',
+        municipality: 'City',
+      };
+
+      await expect(service.create(input)).rejects.toThrow('Description must be less than 255 characters');
+    });
+
+    it('should throw error when dueDate is not a Date object', async () => {
+      const input: CreateExpenseInput = {
+        organizationId: 'org-123',
+        description: 'Test',
+        amount: 100,
+        currency: 'BRL',
+        dueDate: '2024-12-31' as unknown as Date,
+        receiver: 'Receiver',
+        municipality: 'City',
+      };
+
+      await expect(service.create(input)).rejects.toThrow('Due date must be a valid Date object');
+    });
+
+    it('should throw error when update amount is negative', async () => {
+      const input: UpdateExpenseInput = {
+        amount: -50,
+      };
+
+      await expect(service.update('123', input)).rejects.toThrow('Amount must be positive');
+    });
+
+    it('should handle network error during file upload', async () => {
+      const file = new File(['content'], 'invoice.pdf', { type: 'application/pdf' });
+      const input: CreateExpenseInput = {
+        organizationId: 'org-123',
+        description: 'Test',
+        amount: 100,
+        currency: 'BRL',
+        dueDate: new Date('2024-12-31'),
+        receiver: 'Receiver',
+        municipality: 'City',
+        serviceInvoice: file,
+      };
+
+      mockedApiClient.post.mockRejectedValue(new Error('Network error'));
+
+      await expect(service.create(input)).rejects.toThrow('Network error');
+    });
+
+    it('should handle timeout during file upload', async () => {
+      const file = new File(['content'], 'invoice.pdf', { type: 'application/pdf' });
+      const input: CreateExpenseInput = {
+        organizationId: 'org-123',
+        description: 'Test',
+        amount: 100,
+        currency: 'BRL',
+        dueDate: new Date('2024-12-31'),
+        receiver: 'Receiver',
+        municipality: 'City',
+        serviceInvoice: file,
+      };
+
+      mockedApiClient.post.mockRejectedValue(new Error('timeout of 10000ms exceeded'));
+
+      await expect(service.create(input)).rejects.toThrow('timeout of 10000ms exceeded');
     });
   });
 });

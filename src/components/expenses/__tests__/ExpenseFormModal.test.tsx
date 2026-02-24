@@ -5,6 +5,17 @@ import { ExpenseFormModal } from '../ExpenseFormModal';
 import { ExpenseStatus } from '@/constants/expenses';
 import type { ExpenseDTO } from '@/types/expenses';
 
+// Mock Dialog components to avoid warnings
+vi.mock('@/components/ui/dialog', () => ({
+  Dialog: ({ children, open, onOpenChange }: any) =>
+    open ? <div role="dialog" {...({ onChange: onOpenChange })}>{children}</div> : null,
+  DialogContent: ({ children }: any) => <div>{children}</div>,
+  DialogFooter: ({ children }: any) => <div>{children}</div>,
+  DialogHeader: ({ children }: any) => <div>{children}</div>,
+  DialogTitle: ({ children }: any) => <div role="heading">{children}</div>,
+  DialogDescription: ({ children }: any) => <div>{children}</div>,
+}));
+
 vi.mock('@/hooks/useExpenseForm', () => ({
   useExpenseForm: vi.fn(() => ({
     form: {
@@ -58,6 +69,7 @@ const mockExpense: ExpenseDTO = {
   municipality: 'Test Municipality',
   serviceInvoice: null,
   serviceInvoiceUrl: null,
+  bankBillUrl: null,
   createdAt: new Date('2024-01-01T00:00:00Z'),
   updatedAt: new Date('2024-01-01T00:00:00Z'),
 };
