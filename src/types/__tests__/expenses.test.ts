@@ -28,6 +28,7 @@ describe('Type Definitions', () => {
     municipality: 'Test City',
     serviceInvoice: null,
     serviceInvoiceUrl: null,
+    bankBillUrl: null,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
   };
@@ -153,6 +154,7 @@ describe('Type Definitions', () => {
     municipality: 'Test',
     serviceInvoice: null,
     serviceInvoiceUrl: null,
+    bankBillUrl: null,
     createdAt: new Date(),
     updatedAt: new Date(),
   };

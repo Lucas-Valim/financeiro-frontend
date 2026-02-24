@@ -95,7 +95,7 @@ export function transformPaymentFormData(data: PaymentFormData): CreatePaymentIn
  */
 export interface PaymentRequest {
   id: string;
-  paymentDate: Date; // ISO date string
+  paymentDate: string; // ISO date string
   paymentProof?: File;
 }
 
@@ -105,7 +105,6 @@ export interface PaymentRequest {
 export interface PaymentResponse {
   id: string;
   status: 'PAID';
-  paymentDate: Date;
+  paymentDate: string;
   paymentProofUrl?: string;
-  // ... other ExpenseDTO fields
 }

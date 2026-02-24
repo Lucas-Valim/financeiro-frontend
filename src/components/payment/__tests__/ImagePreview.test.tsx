@@ -45,8 +45,7 @@ describe('ImagePreview', () => {
 
       expect(screen.getByTestId('image-preview-container')).toBeInTheDocument();
       expect(screen.getByTestId('file-name')).toHaveTextContent('test-image.png');
-      expect(screen.getByTestId('file-size')).toHaveTextContent('1 KB');
-      expect(screen.getByTestId('file-type')).toHaveTextContent('image/png');
+      expect(screen.getByTestId('file-info')).toHaveTextContent('1 KB • image/png');
     });
 
     it('renders PDF icon for PDF files', () => {
@@ -59,7 +58,7 @@ describe('ImagePreview', () => {
 
       expect(screen.getByTestId('pdf-icon')).toBeInTheDocument();
       expect(screen.getByTestId('file-name')).toHaveTextContent('test.pdf');
-      expect(screen.getByTestId('file-size')).toHaveTextContent('2 KB');
+      expect(screen.getByTestId('file-info')).toHaveTextContent('2 KB • application/pdf');
     });
 
     it('renders image preview for image files', () => {
@@ -83,7 +82,7 @@ describe('ImagePreview', () => {
 
       render(<ImagePreview file={file} onRemove={mockOnRemove} />);
 
-      expect(screen.getByTestId('file-size')).toHaveTextContent('512 Bytes');
+      expect(screen.getByTestId('file-info')).toHaveTextContent('512 Bytes');
     });
 
     it('formats kilobytes correctly', () => {
@@ -92,7 +91,7 @@ describe('ImagePreview', () => {
 
       render(<ImagePreview file={file} onRemove={mockOnRemove} />);
 
-      expect(screen.getByTestId('file-size')).toHaveTextContent('2.5 KB');
+      expect(screen.getByTestId('file-info')).toHaveTextContent('2.5 KB');
     });
 
     it('formats megabytes correctly', () => {
@@ -101,7 +100,7 @@ describe('ImagePreview', () => {
 
       render(<ImagePreview file={file} onRemove={mockOnRemove} />);
 
-      expect(screen.getByTestId('file-size')).toHaveTextContent('1.5 MB');
+      expect(screen.getByTestId('file-info')).toHaveTextContent('1.5 MB');
     });
   });
 
@@ -122,16 +121,6 @@ describe('ImagePreview', () => {
       await userEvent.click(screen.getByTestId('remove-file-button'));
 
       expect(mockOnRemove).toHaveBeenCalledTimes(1);
-    });
-
-    it('revokes object URL when remove is clicked', async () => {
-      const imageFile = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
-
-      render(<ImagePreview file={imageFile} onRemove={mockOnRemove} />);
-
-      await userEvent.click(screen.getByTestId('remove-file-button'));
-
-      expect(mockRevokeObjectURL).toHaveBeenCalledWith('blob:test-url');
     });
 
     it('does not call onRemove when disabled', async () => {

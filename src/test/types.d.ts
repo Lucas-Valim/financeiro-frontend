@@ -6,5 +6,7 @@ declare module 'vitest' {
     toBeInTheDocument(...args: Parameters<typeof matchers.toBeInTheDocument>): this
     toHaveAttribute(...args: Parameters<typeof matchers.toHaveAttribute>): this
     toHaveValue(...args: Parameters<typeof matchers.toHaveValue>): this
+    toHaveTextContent(...args: Parameters<typeof matchers.toHaveTextContent>): this
+    toBeDisabled(...args: Parameters<typeof matchers.toBeDisabled>): this
   }
 }
