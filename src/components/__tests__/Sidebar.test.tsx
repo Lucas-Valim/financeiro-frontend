@@ -1,6 +1,10 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent, act } from '@testing-library/react'
 import { SidebarProvider } from '@/components/ui/sidebar'
 import { Sidebar } from '../Sidebar'
+
+vi.mock('@/components/calendar/CalendarPage', () => ({
+  default: () => <div data-testid="calendar-page">Calendar Page</div>,
+}))
 
 describe('Sidebar', () => {
   const renderSidebar = (props: { currentPath?: string } = {}) => {
@@ -11,10 +15,11 @@ describe('Sidebar', () => {
     )
   }
 
-  it('deve renderizar corretamente com 3 itens de navegação', () => {
+  it('deve renderizar corretamente com 4 itens de navegação', () => {
     renderSidebar()
     expect(screen.getByText('Home')).toBeInTheDocument()
     expect(screen.getByText('Despesa')).toBeInTheDocument()
+    expect(screen.getByText('Calendário')).toBeInTheDocument()
     expect(screen.getByText('Relatórios')).toBeInTheDocument()
   })
 
@@ -39,6 +44,14 @@ describe('Sidebar', () => {
     expect(screen.getByText('Despesa').closest('[data-active="true"]')).toBeInTheDocument()
   })
 
+  it('deve indicar visualmente a página do calendário como ativa', () => {
+    renderSidebar({ currentPath: '/calendario' })
+    
+    const calendarioButton = screen.getByText('Calendário')
+    expect(calendarioButton).toBeInTheDocument()
+    expect(calendarioButton.closest('[data-active="true"]')).toBeInTheDocument()
+  })
+
   it('deve renderizar SidebarRail', () => {
     renderSidebar()
     const rail = document.querySelector('[data-sidebar="rail"]')
@@ -48,5 +61,18 @@ describe('Sidebar', () => {
   it('deve exibir o título "Evoluire" na sidebar', () => {
     renderSidebar()
     expect(screen.getByText('Evoluire')).toBeInTheDocument()
+  })
+
+  it('deve chamar preload do calendário ao fazer hover no link', async () => {
+    renderSidebar()
+    
+    const calendarioLink = screen.getByText('Calendário').closest('a')
+    expect(calendarioLink).toBeInTheDocument()
+    
+    await act(async () => {
+      if (calendarioLink) {
+        fireEvent.mouseEnter(calendarioLink)
+      }
+    })
   })
 })

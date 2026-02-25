@@ -91,7 +91,6 @@ export function useExpenseForm({
       let result: ExpenseDTO;
 
       const submitData: CreateExpenseInput = {
-        // TODO(@lucasborges): Get organizationId dynamically from auth context - Priority: HIGH - Owner: @lucasborges
         organizationId: 'fca3c088-ba34-43a2-9b32-b2b1a1246915',
         description: formData.description,
         amount: formData.amount,
@@ -100,6 +99,7 @@ export function useExpenseForm({
         receiver: formData.receiver,
         municipality: formData.municipality,
         paymentMethod: formData.paymentMethod ?? undefined,
+        categoryId: formData.categoryId ?? null,
         serviceInvoice: formData.serviceInvoice ?? null,
         bankBill: formData.bankBill ?? null,
       };

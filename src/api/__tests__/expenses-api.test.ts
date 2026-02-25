@@ -158,6 +158,36 @@ describe('ExpensesApiService', () => {
       expect(callParams.get('page')).toBe('1');
       expect(callParams.get('limit')).toBe('10');
     });
+
+    it('should send categoryId filter when provided', async () => {
+      mockedApiClient.get.mockResolvedValue(mockResponse);
+      
+      const filters = {
+        categoryId: 'cat-123',
+      };
+      
+      await service.fetchExpenses(filters, { page: 1, limit: 10 });
+      
+      const callParams = mockedApiClient.get.mock.calls[0][1]!.params as URLSearchParams;
+      expect(callParams.get('categoryId')).toBe('cat-123');
+    });
+
+    it('should send all filters combined including categoryId', async () => {
+      mockedApiClient.get.mockResolvedValue(mockResponse);
+      
+      const filters = {
+        status: ExpenseStatus.OPEN,
+        receiver: 'Test Receiver',
+        categoryId: 'cat-456',
+      };
+      
+      await service.fetchExpenses(filters, { page: 1, limit: 10 });
+      
+      const callParams = mockedApiClient.get.mock.calls[0][1]!.params as URLSearchParams;
+      expect(callParams.get('status')).toBe('OPEN');
+      expect(callParams.get('receiver')).toBe('Test Receiver');
+      expect(callParams.get('categoryId')).toBe('cat-456');
+    });
   });
 
   describe('fetchExpenseById', () => {
