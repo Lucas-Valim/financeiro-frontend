@@ -97,9 +97,10 @@ describe('Type Definitions', () => {
         'municipality',
         'dueDateStart',
         'dueDateEnd',
+        'categoryId',
       ];
 
-      expect(optionalFields.length).toBe(5);
+      expect(optionalFields.length).toBe(6);
     });
 
     it('should accept partial filters', () => {
@@ -110,12 +111,34 @@ describe('Type Definitions', () => {
         dueDateStart: new Date('2024-01-01'),
         dueDateEnd: new Date('2024-12-31'),
       };
+      const partialFilter5: ExpenseFilter = { categoryId: 'cat-123' };
 
       expect(partialFilter1.status).toBe(ExpenseStatus.OPEN);
       expect(partialFilter2.receiver).toBe('Test');
       expect(partialFilter3.municipality).toBe('City');
       expect(partialFilter4.dueDateStart).toBeInstanceOf(Date);
       expect(partialFilter4.dueDateEnd).toBeInstanceOf(Date);
+      expect(partialFilter5.categoryId).toBe('cat-123');
+    });
+
+    it('should accept categoryId filter', () => {
+      const filter: ExpenseFilter = {
+        categoryId: 'category-uuid-123',
+      };
+      expect(filter.categoryId).toBe('category-uuid-123');
+    });
+
+    it('should accept all filters combined', () => {
+      const filter: ExpenseFilter = {
+        status: ExpenseStatus.OPEN,
+        receiver: 'Test Receiver',
+        municipality: 'São Paulo',
+        dueDateStart: new Date('2024-01-01'),
+        dueDateEnd: new Date('2024-12-31'),
+        categoryId: 'cat-456',
+      };
+      expect(filter.status).toBe(ExpenseStatus.OPEN);
+      expect(filter.categoryId).toBe('cat-456');
     });
   });
 

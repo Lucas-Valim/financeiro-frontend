@@ -10,10 +10,23 @@ import {
   defaultExpenseFormValues,
 } from '@/schemas/expense-form-schema';
 
-// Mock react-datepicker
+const DEFAULT_ORGANIZATION_ID = 'fca3c088-ba34-43a2-9b32-b2b1a1246915';
+
+const mockCategories = [
+  { id: 'cat-1', name: 'Combustível', description: 'Combustível' },
+  { id: 'cat-2', name: 'Alimentação', description: 'Alimentação' },
+];
+
+vi.mock('@/hooks/use-categories', () => ({
+  useCategories: vi.fn(() => ({
+    categories: mockCategories,
+    isLoading: false,
+    error: null,
+  })),
+}));
+
 vi.mock('react-datepicker', () => ({
   default: vi.fn(({ selected, onChange, placeholderText, disabled, ...props }) => {
-    // Render a simple input for testing
     return (
       <input
         type="date"
@@ -32,7 +45,6 @@ vi.mock('react-datepicker', () => ({
   registerLocale: vi.fn(),
 }));
 
-// Wrapper component to provide form context
 function FormWrapper({
   children,
   defaultValues = defaultExpenseFormValues,
@@ -67,7 +79,7 @@ describe('ExpenseFormFields', () => {
     it('renders all required form fields', () => {
       render(
         <FormWrapper>
-          <ExpenseFormFields />
+          <ExpenseFormFields organizationId={DEFAULT_ORGANIZATION_ID} />
         </FormWrapper>
       );
 
@@ -82,7 +94,7 @@ describe('ExpenseFormFields', () => {
     it('displays Portuguese labels for each field', () => {
       render(
         <FormWrapper>
-          <ExpenseFormFields />
+          <ExpenseFormFields organizationId={DEFAULT_ORGANIZATION_ID} />
         </FormWrapper>
       );
 
@@ -98,13 +110,12 @@ describe('ExpenseFormFields', () => {
     it('shows asterisk for required fields', () => {
       render(
         <FormWrapper>
-          <ExpenseFormFields />
+          <ExpenseFormFields organizationId={DEFAULT_ORGANIZATION_ID} />
         </FormWrapper>
       );
 
-      // Check that required fields have asterisks
       const requiredLabels = screen.getAllByText('*');
-      expect(requiredLabels.length).toBeGreaterThanOrEqual(5); // Description, Value, Date, Receiver, Municipality
+      expect(requiredLabels.length).toBeGreaterThanOrEqual(5);
     });
   });
 
@@ -112,7 +123,7 @@ describe('ExpenseFormFields', () => {
     it('allows typing in description field', async () => {
       render(
         <FormWrapper>
-          <ExpenseFormFields />
+          <ExpenseFormFields organizationId={DEFAULT_ORGANIZATION_ID} />
         </FormWrapper>
       );
 
@@ -125,7 +136,7 @@ describe('ExpenseFormFields', () => {
     it('shows validation error when description exceeds max length', async () => {
       render(
         <FormWrapper>
-          <ExpenseFormFields />
+          <ExpenseFormFields organizationId={DEFAULT_ORGANIZATION_ID} />
         </FormWrapper>
       );
 
@@ -149,7 +160,7 @@ describe('ExpenseFormFields', () => {
     it('has correct input mode for numeric input', () => {
       render(
         <FormWrapper>
-          <ExpenseFormFields />
+          <ExpenseFormFields organizationId={DEFAULT_ORGANIZATION_ID} />
         </FormWrapper>
       );
 
@@ -160,7 +171,7 @@ describe('ExpenseFormFields', () => {
     it('formats amount as currency during input', async () => {
       render(
         <FormWrapper>
-          <ExpenseFormFields />
+          <ExpenseFormFields organizationId={DEFAULT_ORGANIZATION_ID} />
         </FormWrapper>
       );
 
@@ -168,10 +179,8 @@ describe('ExpenseFormFields', () => {
 
       await user.type(amountInput, '1234');
 
-      // The value should be formatted as BRL currency
       const value = amountInput;
       expect(value).toBeInTheDocument();
-      // Check that the value contains numbers and currency formatting
       expect((value as HTMLInputElement).value).toMatch(/R\$/);
     });
   });
@@ -180,11 +189,10 @@ describe('ExpenseFormFields', () => {
     it('renders date picker with placeholder', () => {
       render(
         <FormWrapper>
-          <ExpenseFormFields />
+          <ExpenseFormFields organizationId={DEFAULT_ORGANIZATION_ID} />
         </FormWrapper>
       );
 
-      // The mocked date picker renders as an input
       expect(screen.getByTestId('date-picker')).toBeInTheDocument();
     });
   });
@@ -193,7 +201,7 @@ describe('ExpenseFormFields', () => {
     it('renders category dropdown trigger', () => {
       render(
         <FormWrapper>
-          <ExpenseFormFields />
+          <ExpenseFormFields organizationId={DEFAULT_ORGANIZATION_ID} />
         </FormWrapper>
       );
 
@@ -206,7 +214,7 @@ describe('ExpenseFormFields', () => {
     it('renders receiver dropdown trigger', () => {
       render(
         <FormWrapper>
-          <ExpenseFormFields />
+          <ExpenseFormFields organizationId={DEFAULT_ORGANIZATION_ID} />
         </FormWrapper>
       );
 
@@ -219,7 +227,7 @@ describe('ExpenseFormFields', () => {
     it('allows typing in municipality field', async () => {
       render(
         <FormWrapper>
-          <ExpenseFormFields />
+          <ExpenseFormFields organizationId={DEFAULT_ORGANIZATION_ID} />
         </FormWrapper>
       );
 
@@ -234,7 +242,7 @@ describe('ExpenseFormFields', () => {
     it('disables all fields when disabled prop is true', () => {
       render(
         <FormWrapper>
-          <ExpenseFormFields disabled={true} />
+          <ExpenseFormFields disabled={true} organizationId={DEFAULT_ORGANIZATION_ID} />
         </FormWrapper>
       );
 
@@ -249,7 +257,7 @@ describe('ExpenseFormFields', () => {
     it('enables all fields when disabled prop is false', () => {
       render(
         <FormWrapper>
-          <ExpenseFormFields disabled={false} />
+          <ExpenseFormFields disabled={false} organizationId={DEFAULT_ORGANIZATION_ID} />
         </FormWrapper>
       );
 
@@ -267,12 +275,12 @@ describe('ExpenseFormFields', () => {
         dueDate: new Date('2024-12-31'),
         receiver: 'google',
         municipality: 'São Paulo',
-        categoryId: 'software',
+        categoryId: 'cat-1',
       };
 
       render(
         <FormWrapper defaultValues={existingExpense}>
-          <ExpenseFormFields />
+          <ExpenseFormFields organizationId={DEFAULT_ORGANIZATION_ID} />
         </FormWrapper>
       );
 
@@ -291,7 +299,7 @@ describe('ExpenseFormFields', () => {
 
       render(
         <FormWrapper defaultValues={existingExpense}>
-          <ExpenseFormFields />
+          <ExpenseFormFields organizationId={DEFAULT_ORGANIZATION_ID} />
         </FormWrapper>
       );
 
@@ -313,7 +321,7 @@ describe('ExpenseFormFields', () => {
         return (
           <FormProvider {...form}>
             <form onSubmit={form.handleSubmit(() => {})}>
-              <ExpenseFormFields />
+              <ExpenseFormFields organizationId={DEFAULT_ORGANIZATION_ID} />
               <button type="submit">Submit</button>
             </form>
           </FormProvider>
@@ -331,7 +339,7 @@ describe('ExpenseFormFields', () => {
     it('has aria-describedby for error messages', () => {
       render(
         <FormWrapper>
-          <ExpenseFormFields />
+          <ExpenseFormFields organizationId={DEFAULT_ORGANIZATION_ID} />
         </FormWrapper>
       );
 
@@ -342,13 +350,11 @@ describe('ExpenseFormFields', () => {
     it('has proper form structure', () => {
       render(
         <FormWrapper>
-          <ExpenseFormFields />
+          <ExpenseFormFields organizationId={DEFAULT_ORGANIZATION_ID} />
         </FormWrapper>
       );
 
-      // Check form elements are properly associated
       expect(screen.getByLabelText(/descrição/i)).toBeInTheDocument();
-      // Form element exists but may not have explicit role, check inputs are present
       expect(screen.getByLabelText(/valor/i)).toBeInTheDocument();
       expect(screen.getByTestId('date-picker')).toBeInTheDocument();
     });
@@ -358,7 +364,7 @@ describe('ExpenseFormFields', () => {
     it('does NOT render Nota de Serviço text input', () => {
       render(
         <FormWrapper>
-          <ExpenseFormFields />
+          <ExpenseFormFields organizationId={DEFAULT_ORGANIZATION_ID} />
         </FormWrapper>
       );
 
@@ -368,7 +374,7 @@ describe('ExpenseFormFields', () => {
     it('does NOT have serviceInvoice placeholder', () => {
       render(
         <FormWrapper>
-          <ExpenseFormFields />
+          <ExpenseFormFields organizationId={DEFAULT_ORGANIZATION_ID} />
         </FormWrapper>
       );
 
@@ -378,7 +384,7 @@ describe('ExpenseFormFields', () => {
     it('renders exactly 7 main form fields (no file fields in Dados tab)', () => {
       render(
         <FormWrapper>
-          <ExpenseFormFields />
+          <ExpenseFormFields organizationId={DEFAULT_ORGANIZATION_ID} />
         </FormWrapper>
       );
 
@@ -396,7 +402,7 @@ describe('ExpenseFormFields', () => {
     it('all 7 remaining text/select fields still work', async () => {
       render(
         <FormWrapper>
-          <ExpenseFormFields />
+          <ExpenseFormFields organizationId={DEFAULT_ORGANIZATION_ID} />
         </FormWrapper>
       );
 
@@ -412,7 +418,7 @@ describe('ExpenseFormFields', () => {
     it('disabled state works for all remaining fields', () => {
       render(
         <FormWrapper>
-          <ExpenseFormFields disabled={true} />
+          <ExpenseFormFields disabled={true} organizationId={DEFAULT_ORGANIZATION_ID} />
         </FormWrapper>
       );
 
@@ -423,6 +429,39 @@ describe('ExpenseFormFields', () => {
       expect(screen.getByRole('combobox', { name: /favorecido/i })).toHaveAttribute('data-disabled');
       expect(screen.getByLabelText(/município/i)).toBeDisabled();
       expect(screen.getByLabelText(/forma de pagamento/i)).toBeDisabled();
+    });
+  });
+
+  describe('Dynamic Categories', () => {
+    it('should call useCategories with organizationId prop', async () => {
+      const { useCategories } = await import('@/hooks/use-categories');
+      const mockedUseCategories = vi.mocked(useCategories);
+
+      render(
+        <FormWrapper>
+          <ExpenseFormFields organizationId={DEFAULT_ORGANIZATION_ID} />
+        </FormWrapper>
+      );
+
+      expect(mockedUseCategories).toHaveBeenCalledWith(DEFAULT_ORGANIZATION_ID);
+    });
+
+    it('should show categories from API in dropdown', async () => {
+      render(
+        <FormWrapper>
+          <ExpenseFormFields organizationId={DEFAULT_ORGANIZATION_ID} />
+        </FormWrapper>
+      );
+
+      const categoryTrigger = screen.getByRole('combobox', { name: /categoria/i });
+      await user.click(categoryTrigger);
+
+      await waitFor(() => {
+        const combustivelOptions = screen.getAllByText('Combustível');
+        const alimentacaoOptions = screen.getAllByText('Alimentação');
+        expect(combustivelOptions.length).toBeGreaterThan(0);
+        expect(alimentacaoOptions.length).toBeGreaterThan(0);
+      });
     });
   });
 });

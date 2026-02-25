@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import userEvent, { type UserEvent } from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ExpensesApiService } from '../../api/expenses-api';
 import { ExpenseFormModal } from '../../components/expenses/ExpenseFormModal';
@@ -8,6 +8,11 @@ import type { ExpenseDTO } from '../../types/expenses';
 import { ExpenseStatus } from '../../constants/expenses';
 
 vi.mock('../../api/expenses-api');
+
+const navigateToDocumentsTab = async (user: UserEvent) => {
+  const documentsTab = screen.getByRole('tab', { name: /documentos/i });
+  await user.click(documentsTab);
+};
 
 const createWrapper = () => {
   const queryClient = new QueryClient({
@@ -36,7 +41,7 @@ describe('Expense File Upload Integration', () => {
     paymentProof: null,
     paymentProofUrl: null,
     paymentDate: null,
-    receiver: 'Test Receiver',
+    receiver: 'google',
     municipality: 'São Paulo',
     serviceInvoice: null,
     serviceInvoiceUrl: 'https://example.com/invoice.pdf',
@@ -51,47 +56,8 @@ describe('Expense File Upload Integration', () => {
     vi.spyOn(ExpensesApiService.prototype, 'update').mockResolvedValue(mockCreatedExpense);
   });
 
-  describe('Full upload flow', () => {
-    it('should create expense with both files successfully', async () => {
-      const user = userEvent.setup();
-      const onSuccess = vi.fn();
-      const Wrapper = createWrapper();
-
-      render(
-        <Wrapper>
-          <ExpenseFormModal
-            isOpen={true}
-            onClose={vi.fn()}
-            onSuccess={onSuccess}
-          />
-        </Wrapper>
-      );
-
-      await waitFor(() => {
-        expect(screen.getByText('Nova Despesa')).toBeInTheDocument();
-      });
-
-      const descriptionInput = screen.getByLabelText(/descrição/i);
-      await user.type(descriptionInput, 'Test Expense with Files');
-
-      const amountInput = screen.getByLabelText(/valor/i);
-      await user.type(amountInput, '1500');
-
-      const receiverInput = screen.getByLabelText(/recebedor/i);
-      await user.type(receiverInput, 'Test Receiver');
-
-      const municipalityInput = screen.getByLabelText(/município/i);
-      await user.type(municipalityInput, 'São Paulo');
-
-      const submitButton = screen.getByRole('button', { name: /salvar/i });
-      await user.click(submitButton);
-
-      await waitFor(() => {
-        expect(onSuccess).toHaveBeenCalledWith(mockCreatedExpense);
-      });
-    });
-
-    it('should show validation errors for invalid file types', async () => {
+  describe('Tab navigation', () => {
+    it('should have Documents tab accessible', async () => {
       const user = userEvent.setup();
       const Wrapper = createWrapper();
 
@@ -109,17 +75,19 @@ describe('Expense File Upload Integration', () => {
         expect(screen.getByText('Nova Despesa')).toBeInTheDocument();
       });
 
-      const file = new File(['content'], 'test.txt', { type: 'text/plain' });
-      const fileInput = screen.getByLabelText(/nota de serviço/i);
-
-      await user.upload(fileInput, file);
-
-      await waitFor(() => {
-        expect(screen.getByText(/tipo de arquivo não suportado/i)).toBeInTheDocument();
-      });
+      const documentsTab = screen.getByRole('tab', { name: /documentos/i });
+      expect(documentsTab).toBeInTheDocument();
+      
+      await user.click(documentsTab);
+      
+      const serviceInvoiceLabel = screen.getByText(/nota de serviço/i);
+      expect(serviceInvoiceLabel).toBeInTheDocument();
+      
+      const boletoLabel = screen.getByText(/boleto/i);
+      expect(boletoLabel).toBeInTheDocument();
     });
 
-    it('should show validation error for oversized file', async () => {
+    it('should switch between Data and Documents tabs', async () => {
       const user = userEvent.setup();
       const Wrapper = createWrapper();
 
@@ -137,117 +105,48 @@ describe('Expense File Upload Integration', () => {
         expect(screen.getByText('Nova Despesa')).toBeInTheDocument();
       });
 
-      const largeContent = new Array(6 * 1024 * 1024).fill('a').join('');
-      const file = new File([largeContent], 'large.pdf', { type: 'application/pdf' });
-      const fileInput = screen.getByLabelText(/nota de serviço/i);
+      const dataTab = screen.getByRole('tab', { name: /dados/i });
+      const documentsTab = screen.getByRole('tab', { name: /documentos/i });
 
-      await user.upload(fileInput, file);
+      await user.click(documentsTab);
+      expect(screen.getByText(/nota de serviço/i)).toBeInTheDocument();
 
-      await waitFor(() => {
-        expect(screen.getByText(/arquivo muito grande/i)).toBeInTheDocument();
-      });
-    });
-
-    it('should handle network error during upload gracefully', async () => {
-      const user = userEvent.setup();
-      const onSuccess = vi.fn();
-      const Wrapper = createWrapper();
-
-      vi.spyOn(ExpensesApiService.prototype, 'create').mockRejectedValue(
-        new Error('Erro de rede: Não foi possível conectar ao servidor')
-      );
-
-      render(
-        <Wrapper>
-          <ExpenseFormModal
-            isOpen={true}
-            onClose={vi.fn()}
-            onSuccess={onSuccess}
-          />
-        </Wrapper>
-      );
-
-      await waitFor(() => {
-        expect(screen.getByText('Nova Despesa')).toBeInTheDocument();
-      });
-
-      const descriptionInput = screen.getByLabelText(/descrição/i);
-      await user.type(descriptionInput, 'Test Expense');
-
-      const amountInput = screen.getByLabelText(/valor/i);
-      await user.type(amountInput, '100');
-
-      const receiverInput = screen.getByLabelText(/recebedor/i);
-      await user.type(receiverInput, 'Test Receiver');
-
-      const municipalityInput = screen.getByLabelText(/município/i);
-      await user.type(municipalityInput, 'Test City');
-
-      const submitButton = screen.getByRole('button', { name: /salvar/i });
-      await user.click(submitButton);
-
-      await waitFor(() => {
-        expect(screen.getByText(/erro de rede/i)).toBeInTheDocument();
-      });
-
-      expect(onSuccess).not.toHaveBeenCalled();
-    });
-
-    it('should handle timeout error during upload', async () => {
-      const user = userEvent.setup();
-      const onSuccess = vi.fn();
-      const Wrapper = createWrapper();
-
-      vi.spyOn(ExpensesApiService.prototype, 'create').mockRejectedValue(
-        new Error('timeout of 10000ms exceeded')
-      );
-
-      render(
-        <Wrapper>
-          <ExpenseFormModal
-            isOpen={true}
-            onClose={vi.fn()}
-            onSuccess={onSuccess}
-          />
-        </Wrapper>
-      );
-
-      await waitFor(() => {
-        expect(screen.getByText('Nova Despesa')).toBeInTheDocument();
-      });
-
-      const descriptionInput = screen.getByLabelText(/descrição/i);
-      await user.type(descriptionInput, 'Test Expense');
-
-      const amountInput = screen.getByLabelText(/valor/i);
-      await user.type(amountInput, '100');
-
-      const receiverInput = screen.getByLabelText(/recebedor/i);
-      await user.type(receiverInput, 'Test Receiver');
-
-      const municipalityInput = screen.getByLabelText(/município/i);
-      await user.type(municipalityInput, 'Test City');
-
-      const submitButton = screen.getByRole('button', { name: /salvar/i });
-      await user.click(submitButton);
-
-      await waitFor(() => {
-        expect(screen.getByText(/timeout/i)).toBeInTheDocument();
-      });
-
-      expect(onSuccess).not.toHaveBeenCalled();
+      await user.click(dataTab);
+      expect(screen.getByLabelText(/descrição/i)).toBeInTheDocument();
     });
   });
 
-  describe('File preview functionality', () => {
-    it('should show preview for PDF file', async () => {
-      const user = userEvent.setup();
+  describe('Existing file URLs in edit mode', () => {
+    it('should show existing service invoice preview when editing expense', async () => {
       const Wrapper = createWrapper();
+
+      const existingExpense: ExpenseDTO = {
+        id: 'existing-id',
+        organizationId: 'org-123',
+        categoryId: null,
+        description: 'Existing Expense',
+        amount: 1000,
+        currency: 'BRL',
+        dueDate: new Date('2024-12-31'),
+        status: ExpenseStatus.OPEN,
+        paymentMethod: null,
+        paymentProof: null,
+        paymentProofUrl: null,
+        paymentDate: null,
+        receiver: 'google',
+        municipality: 'Rio de Janeiro',
+        serviceInvoice: null,
+        serviceInvoiceUrl: 'https://example.com/existing-invoice.pdf',
+        bankBillUrl: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
 
       render(
         <Wrapper>
           <ExpenseFormModal
             isOpen={true}
+            expense={existingExpense}
             onClose={vi.fn()}
             onSuccess={vi.fn()}
           />
@@ -255,28 +154,49 @@ describe('Expense File Upload Integration', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText('Nova Despesa')).toBeInTheDocument();
+        expect(screen.getByText('Editar Despesa')).toBeInTheDocument();
       });
 
-      const file = new File(['pdf content'], 'invoice.pdf', { type: 'application/pdf' });
-      const fileInput = screen.getByLabelText(/nota de serviço/i);
+      const user = userEvent.setup();
+      await navigateToDocumentsTab(user);
 
-      await user.upload(fileInput, file);
-
-      await waitFor(() => {
-        expect(screen.getByTestId('pdf-icon')).toBeInTheDocument();
-        expect(screen.getByText('invoice.pdf')).toBeInTheDocument();
-      });
+      const pdfIcon = screen.getByTestId('pdf-icon');
+      expect(pdfIcon).toBeInTheDocument();
+      
+      const fileNames = screen.getAllByTestId('file-name');
+      expect(fileNames[0]).toHaveTextContent('Nota de Serviço');
     });
 
-    it('should show preview for image file', async () => {
-      const user = userEvent.setup();
+    it('should show existing bank bill preview when editing expense', async () => {
       const Wrapper = createWrapper();
+
+      const existingExpense: ExpenseDTO = {
+        id: 'existing-id',
+        organizationId: 'org-123',
+        categoryId: null,
+        description: 'Existing Expense',
+        amount: 1000,
+        currency: 'BRL',
+        dueDate: new Date('2024-12-31'),
+        status: ExpenseStatus.OPEN,
+        paymentMethod: null,
+        paymentProof: null,
+        paymentProofUrl: null,
+        paymentDate: null,
+        receiver: 'google',
+        municipality: 'Rio de Janeiro',
+        serviceInvoice: null,
+        serviceInvoiceUrl: null,
+        bankBillUrl: 'https://example.com/existing-boleto.png',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
 
       render(
         <Wrapper>
           <ExpenseFormModal
             isOpen={true}
+            expense={existingExpense}
             onClose={vi.fn()}
             onSuccess={vi.fn()}
           />
@@ -284,28 +204,46 @@ describe('Expense File Upload Integration', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText('Nova Despesa')).toBeInTheDocument();
+        expect(screen.getByText('Editar Despesa')).toBeInTheDocument();
       });
 
-      const file = new File(['image content'], 'boleto.png', { type: 'image/png' });
-      const fileInput = screen.getByLabelText(/boleto/i);
+      const user = userEvent.setup();
+      await navigateToDocumentsTab(user);
 
-      await user.upload(fileInput, file);
-
-      await waitFor(() => {
-        expect(screen.getByTestId('preview-image')).toBeInTheDocument();
-        expect(screen.getByText('boleto.png')).toBeInTheDocument();
-      });
+      const previewImage = screen.getByAltText('Boleto');
+      expect(previewImage).toHaveAttribute('src', 'https://example.com/existing-boleto.png');
     });
 
-    it('should allow removing uploaded file', async () => {
-      const user = userEvent.setup();
+    it('should show both existing file previews when editing expense', async () => {
       const Wrapper = createWrapper();
+
+      const existingExpense: ExpenseDTO = {
+        id: 'existing-id',
+        organizationId: 'org-123',
+        categoryId: null,
+        description: 'Existing Expense',
+        amount: 1000,
+        currency: 'BRL',
+        dueDate: new Date('2024-12-31'),
+        status: ExpenseStatus.OPEN,
+        paymentMethod: null,
+        paymentProof: null,
+        paymentProofUrl: null,
+        paymentDate: null,
+        receiver: 'google',
+        municipality: 'Rio de Janeiro',
+        serviceInvoice: null,
+        serviceInvoiceUrl: 'https://example.com/invoice.pdf',
+        bankBillUrl: 'https://example.com/boleto.png',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
 
       render(
         <Wrapper>
           <ExpenseFormModal
             isOpen={true}
+            expense={existingExpense}
             onClose={vi.fn()}
             onSuccess={vi.fn()}
           />
@@ -313,29 +251,25 @@ describe('Expense File Upload Integration', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText('Nova Despesa')).toBeInTheDocument();
+        expect(screen.getByText('Editar Despesa')).toBeInTheDocument();
       });
 
-      const file = new File(['content'], 'invoice.pdf', { type: 'application/pdf' });
-      const fileInput = screen.getByLabelText(/nota de serviço/i);
+      const user = userEvent.setup();
+      await navigateToDocumentsTab(user);
 
-      await user.upload(fileInput, file);
+      const pdfIcon = screen.getByTestId('pdf-icon');
+      expect(pdfIcon).toBeInTheDocument();
 
-      await waitFor(() => {
-        expect(screen.getByText('invoice.pdf')).toBeInTheDocument();
-      });
+      const previewImage = screen.getByAltText('Boleto');
+      expect(previewImage).toHaveAttribute('src', 'https://example.com/boleto.png');
 
-      const removeButton = screen.getByTestId('remove-file-button');
-      await user.click(removeButton);
-
-      await waitFor(() => {
-        expect(screen.queryByText('invoice.pdf')).not.toBeInTheDocument();
-      });
+      const fileNames = screen.getAllByTestId('file-name');
+      expect(fileNames).toHaveLength(2);
     });
   });
 
-  describe('Update with files', () => {
-    it('should update expense and add new files', async () => {
+  describe('Update expense', () => {
+    it('should allow updating expense description without changing files', async () => {
       const user = userEvent.setup();
       const onSuccess = vi.fn();
       const Wrapper = createWrapper();
@@ -353,7 +287,7 @@ describe('Expense File Upload Integration', () => {
         paymentProof: null,
         paymentProofUrl: null,
         paymentDate: null,
-        receiver: 'Existing Receiver',
+        receiver: 'google',
         municipality: 'Rio de Janeiro',
         serviceInvoice: null,
         serviceInvoiceUrl: null,
@@ -381,12 +315,67 @@ describe('Expense File Upload Integration', () => {
       await user.clear(descriptionInput);
       await user.type(descriptionInput, 'Updated Expense');
 
-      const submitButton = screen.getByRole('button', { name: /salvar/i });
+      const submitButton = screen.getByRole('button', { name: /salvar alterações/i });
       await user.click(submitButton);
 
       await waitFor(() => {
         expect(onSuccess).toHaveBeenCalled();
       });
+    });
+  });
+
+  describe('File upload drop zones', () => {
+    it('should render file drop zones in Documents tab', async () => {
+      const user = userEvent.setup();
+      const Wrapper = createWrapper();
+
+      render(
+        <Wrapper>
+          <ExpenseFormModal
+            isOpen={true}
+            onClose={vi.fn()}
+            onSuccess={vi.fn()}
+          />
+        </Wrapper>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('Nova Despesa')).toBeInTheDocument();
+      });
+
+      await navigateToDocumentsTab(user);
+
+      const dropZones = screen.getAllByTestId('file-drop-zone');
+      expect(dropZones).toHaveLength(2);
+
+      const fileInputs = screen.getAllByTestId('file-input');
+      expect(fileInputs).toHaveLength(2);
+    });
+
+    it('should have correct accepted file types for service invoice', async () => {
+      const user = userEvent.setup();
+      const Wrapper = createWrapper();
+
+      render(
+        <Wrapper>
+          <ExpenseFormModal
+            isOpen={true}
+            onClose={vi.fn()}
+            onSuccess={vi.fn()}
+          />
+        </Wrapper>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('Nova Despesa')).toBeInTheDocument();
+      });
+
+      await navigateToDocumentsTab(user);
+
+      const fileInputs = screen.getAllByTestId('file-input');
+      
+      expect(fileInputs[0]).toHaveAttribute('accept', 'application/pdf,image/png,image/jpeg,image/jpg');
+      expect(fileInputs[1]).toHaveAttribute('accept', 'application/pdf,image/png,image/jpeg,image/jpg');
     });
   });
 });

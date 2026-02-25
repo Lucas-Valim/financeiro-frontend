@@ -11,13 +11,14 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 
-import { Home, Wallet, BarChart3 } from 'lucide-react'
+import { Home, Wallet, BarChart3, Calendar } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import { EvoluireLogo } from './EvoluireLogo'
 import { PLACEHOLDER_USER } from '@/constants'
 
 const navigationItems = [
   { to: '/', label: 'Home', icon: Home },
+  { to: '/calendario', label: 'Calendário', icon: Calendar, preload: true },
   { to: '/despesa', label: 'Despesa', icon: Wallet },
   { to: '/relatorios', label: 'Relatórios', icon: BarChart3 },
 ] as const
@@ -32,6 +33,12 @@ export function Sidebar({ currentPath }: SidebarProps) {
   const handleNavigation = () => {
     if (isMobile) {
       setOpenMobile(false)
+    }
+  }
+
+  const handlePreload = (item: typeof navigationItems[number]) => {
+    if ('preload' in item && item.preload) {
+      import('@/components/calendar/CalendarPage')
     }
   }
 
@@ -51,7 +58,12 @@ export function Sidebar({ currentPath }: SidebarProps) {
                 const Icon = item.icon
                 return (
                   <SidebarMenuItem key={item.to}>
-                    <Link to={item.to} className="w-full" onClick={handleNavigation}>
+                    <Link 
+                      to={item.to} 
+                      className="w-full" 
+                      onClick={handleNavigation}
+                      onMouseEnter={() => handlePreload(item)}
+                    >
                       <SidebarMenuButton
                         isActive={currentPath === item.to}
                         tooltip={item.label}

@@ -1,0 +1,131 @@
+@import 'react-big-calendar/lib/css/react-big-calendar.css';
+
+.rbc-calendar {
+  background-color: var(--calendar-bg);
+  border: 1px solid var(--calendar-border);
+  border-radius: 0.5rem;
+  font-family: system-ui, -apple-system, sans-serif;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.rbc-toolbar {
+  display: none;
+}
+
+.rbc-header {
+  padding: var(--space-sm);
+  font-weight: 500;
+  color: var(--calendar-text-secondary);
+  border-bottom: 1px solid var(--calendar-border);
+  font-size: 0.875rem;
+}
+
+.rbc-month-view {
+  border: none;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.rbc-month-header {
+  background-color: var(--calendar-bg);
+}
+
+.rbc-month-row {
+  flex: 1;
+  min-height: 0;
+}
+
+.rbc-day-bg {
+  background-color: var(--calendar-bg);
+}
+
+.rbc-off-range-bg {
+  background-color: #F8FAFC;
+}
+
+.rbc-today {
+  background-color: var(--calendar-today) !important;
+}
+
+.rbc-date-cell {
+  padding: var(--space-xs);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--calendar-text-primary);
+}
+
+.rbc-date-cell.rbc-off-range {
+  color: var(--calendar-text-secondary);
+}
+
+.rbc-event {
+  border-radius: 4px;
+  padding: 2px var(--space-xs);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: transform var(--motion-hover), box-shadow var(--motion-hover);
+}
+
+.rbc-event:hover {
+  transform: scale(1.02);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.rbc-event-label {
+  display: none;
+}
+
+.rbc-event-content {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rbc-event.event-pending {
+  background-color: var(--event-pending-bg);
+  color: var(--event-pending-text);
+  border-left: 3px solid var(--event-pending-border);
+}
+
+.rbc-event.event-paid {
+  background-color: var(--event-paid-bg);
+  color: var(--event-paid-text);
+  border-left: 3px solid var(--event-paid-border);
+}
+
+.rbc-event.event-overdue {
+  background-color: var(--event-overdue-bg);
+  color: var(--event-overdue-text);
+  border-left: 3px solid var(--event-overdue-border);
+}
+
+.rbc-show-more {
+  font-size: 0.75rem;
+  color: var(--calendar-text-secondary);
+  padding: var(--space-xs);
+  cursor: pointer;
+}
+
+.rbc-show-more:hover {
+  text-decoration: underline;
+}
+
+.rbc-row-segment {
+  padding: 1px;
+}
+
+.rbc-addons-dnd {
+  min-height: 100%;
+}
+
+.rbc-month-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}

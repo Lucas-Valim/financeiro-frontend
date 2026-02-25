@@ -459,4 +459,142 @@ describe('ExpenseFormModal', () => {
       expect(onClose).toHaveBeenCalledTimes(3);
     });
   });
+
+  describe('Readonly Mode', () => {
+    it('shows "Detalhes da Despesa" title when readonly=true', () => {
+      render(
+        <ExpenseFormModal
+          isOpen={true}
+          onClose={mockOnClose}
+          onSuccess={mockOnSuccess}
+          expense={mockExpense}
+          readonly={true}
+        />
+      );
+
+      expect(screen.getByText('Detalhes da Despesa')).toBeInTheDocument();
+    });
+
+    it('hides Cancelar button when readonly=true', () => {
+      render(
+        <ExpenseFormModal
+          isOpen={true}
+          onClose={mockOnClose}
+          onSuccess={mockOnSuccess}
+          expense={mockExpense}
+          readonly={true}
+        />
+      );
+
+      expect(screen.queryByRole('button', { name: /cancelar/i })).not.toBeInTheDocument();
+    });
+
+    it('hides submit button when readonly=true', () => {
+      render(
+        <ExpenseFormModal
+          isOpen={true}
+          onClose={mockOnClose}
+          onSuccess={mockOnSuccess}
+          expense={mockExpense}
+          readonly={true}
+        />
+      );
+
+      expect(screen.queryByRole('button', { name: /salvar/i })).not.toBeInTheDocument();
+    });
+
+    it('shows only Fechar button when readonly=true', () => {
+      render(
+        <ExpenseFormModal
+          isOpen={true}
+          onClose={mockOnClose}
+          onSuccess={mockOnSuccess}
+          expense={mockExpense}
+          readonly={true}
+        />
+      );
+
+      expect(screen.getByRole('button', { name: /fechar/i })).toBeInTheDocument();
+      const buttons = screen.getAllByRole('button');
+      expect(buttons).toHaveLength(1);
+    });
+
+    it('passes disabled=true to ExpenseFormFields when readonly=true', () => {
+      render(
+        <ExpenseFormModal
+          isOpen={true}
+          onClose={mockOnClose}
+          onSuccess={mockOnSuccess}
+          expense={mockExpense}
+          readonly={true}
+        />
+      );
+
+      const formFields = screen.getByTestId('expense-form-fields');
+      expect(formFields).toHaveAttribute('data-disabled', 'true');
+    });
+
+    it('passes disabled=true to ExpenseUploadFields when readonly=true', async () => {
+      render(
+        <ExpenseFormModal
+          isOpen={true}
+          onClose={mockOnClose}
+          onSuccess={mockOnSuccess}
+          expense={mockExpense}
+          readonly={true}
+        />
+      );
+
+      const documentosTab = screen.getByRole('tab', { name: /documentos/i });
+      await user.click(documentosTab);
+
+      const uploadFields = screen.getByTestId('expense-upload-fields');
+      expect(uploadFields).toHaveAttribute('data-disabled', 'true');
+    });
+
+    it('Fechar button calls onClose when clicked in readonly mode', async () => {
+      render(
+        <ExpenseFormModal
+          isOpen={true}
+          onClose={mockOnClose}
+          onSuccess={mockOnSuccess}
+          expense={mockExpense}
+          readonly={true}
+        />
+      );
+
+      const closeButton = screen.getByRole('button', { name: /fechar/i });
+      await user.click(closeButton);
+
+      expect(mockOnClose).toHaveBeenCalled();
+    });
+
+    it('shows readonly description text when readonly=true', () => {
+      render(
+        <ExpenseFormModal
+          isOpen={true}
+          onClose={mockOnClose}
+          onSuccess={mockOnSuccess}
+          expense={mockExpense}
+          readonly={true}
+        />
+      );
+
+      expect(screen.getByText('Visualize os dados da despesa.')).toBeInTheDocument();
+    });
+
+    it('readonly mode works without expense (view empty form)', () => {
+      render(
+        <ExpenseFormModal
+          isOpen={true}
+          onClose={mockOnClose}
+          onSuccess={mockOnSuccess}
+          readonly={true}
+        />
+      );
+
+      expect(screen.getByText('Detalhes da Despesa')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /fechar/i })).toBeInTheDocument();
+    });
+  });
 });

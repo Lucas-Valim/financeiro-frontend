@@ -57,6 +57,7 @@ describe('Integration: Navegação Completa', () => {
     expect(screen.getByText('Financeiro')).toBeInTheDocument()
     expect(screen.getByText('Home')).toBeInTheDocument()
     expect(screen.getByText('Despesa')).toBeInTheDocument()
+    expect(screen.getByText('Calendário')).toBeInTheDocument()
     expect(screen.getByText('Relatórios')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Sair' })).toBeInTheDocument()
   })
@@ -77,6 +78,17 @@ describe('Integration: Navegação Completa', () => {
 
     expect(screen.getByRole('button', { name: /home/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /despesa/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /calendário/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /relatórios/i })).toBeInTheDocument()
+  })
+
+  it('deve ter link de calendário na sidebar', () => {
+    renderApp()
+
+    const calendarioButton = screen.getByRole('button', { name: /calendário/i })
+    expect(calendarioButton).toBeInTheDocument()
+    
+    const calendarioLink = calendarioButton.closest('a')
+    expect(calendarioLink).toBeInTheDocument()
   })
 })

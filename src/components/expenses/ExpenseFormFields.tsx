@@ -2,7 +2,7 @@ import { useFormContext } from 'react-hook-form';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import ReactDatePicker, { registerLocale } from 'react-datepicker';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, Loader2 } from 'lucide-react';
 import {
   FormField,
   FormItem,
@@ -20,13 +20,12 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useCategories } from '@/hooks/use-categories';
 import type { ExpenseFormData } from '@/schemas/expense-form-schema';
 import 'react-datepicker/dist/react-datepicker.css';
 
-// Register Portuguese locale for date picker
 registerLocale('pt-BR', ptBR);
 
-// Format currency to BRL format
 function formatCurrency(value: number | undefined): string {
   if (value === undefined || value === null || isNaN(value)) {
     return '';
@@ -37,68 +36,45 @@ function formatCurrency(value: number | undefined): string {
   }).format(value);
 }
 
-// Parse currency string to number
 function parseCurrencyToNumber(value: string): number | undefined {
   if (!value) return undefined;
-
-  // Remove currency symbol, spaces, and thousand separators
   const cleanValue = value
     .replace(/[R$\s.]/g, '')
     .replace(',', '.');
-
   const parsed = parseFloat(cleanValue);
   return isNaN(parsed) ? undefined : parsed;
 }
 
-// Apply currency mask during input
 function applyCurrencyMask(value: string): string {
-  // Remove all non-numeric characters except comma and dot
   const numbers = value.replace(/[^\d]/g, '');
-
   if (!numbers) return '';
-
-  // Convert to number (treating last two digits as decimal)
   const intValue = parseInt(numbers, 10);
   const floatValue = intValue / 100;
-
   return formatCurrency(floatValue);
 }
 
-// Sample categories - in a real app, these would come from an API
-const CATEGORY_OPTIONS = [
-  { value: 'marketing', label: 'Marketing' },
-  { value: 'software', label: 'Software' },
-  { value: 'hardware', label: 'Hardware' },
-  { value: 'services', label: 'Serviços' },
-  { value: 'utilities', label: 'Utilidades' },
-  { value: 'rent', label: 'Aluguel' },
-  { value: 'salaries', label: 'Salários' },
-  { value: 'other', label: 'Outros' },
-] as const;
-
-// Sample receivers - in a real app, these would come from an API
 const RECEIVER_OPTIONS = [
-  { value: 'google', label: 'Google' },
-  { value: 'microsoft', label: 'Microsoft' },
-  { value: 'aws', label: 'Amazon Web Services' },
-  { value: 'azure', label: 'Azure' },
-  { value: 'spotify', label: 'Spotify' },
-  { value: 'slack', label: 'Slack' },
-  { value: 'notion', label: 'Notion' },
-  { value: 'figma', label: 'Figma' },
-  { value: 'other', label: 'Outro' },
+  { value: 'Advento Aprendizagem', label: 'Advento Aprendizagem' },
+  { value: 'Maria Cristina Tudium', label: 'Maria Cristina Tudium' },
+  { value: 'GFarias', label: 'GFarias' },
+  { value: 'Mundi Desenvolvimento Humano', label: 'Mundi Desenvolvimento Humano' },
+  { value: 'Jaime Prux', label: 'Jaime Prux' },
+  { value: 'Mecanica Lorange', label: 'Mecanica Lorange' },
+  { value: 'Unimed', label: 'Unimed' },
+  { value: 'Pompeia Parking', label: 'Pompeia Parking' },
 ] as const;
 
 interface ExpenseFormFieldsProps {
   disabled?: boolean;
+  organizationId: string;
 }
 
-export function ExpenseFormFields({ disabled = false }: ExpenseFormFieldsProps) {
+export function ExpenseFormFields({ disabled = false, organizationId }: ExpenseFormFieldsProps) {
   const form = useFormContext<ExpenseFormData>();
+  const { categories, isLoading } = useCategories(organizationId);
 
   return (
     <div className="space-y-4">
-      {/* Description Field */}
       <FormField
         control={form.control}
         name="description"
@@ -118,7 +94,6 @@ export function ExpenseFormFields({ disabled = false }: ExpenseFormFieldsProps) 
         )}
       />
 
-      {/* Amount Field */}
       <FormField
         control={form.control}
         name="amount"
@@ -147,7 +122,6 @@ export function ExpenseFormFields({ disabled = false }: ExpenseFormFieldsProps) 
         )}
       />
 
-      {/* Due Date Field */}
       <FormField
         control={form.control}
         name="dueDate"
@@ -192,7 +166,6 @@ export function ExpenseFormFields({ disabled = false }: ExpenseFormFieldsProps) 
         )}
       />
 
-      {/* Category Field */}
       <FormField
         control={form.control}
         name="categoryId"
@@ -200,21 +173,32 @@ export function ExpenseFormFields({ disabled = false }: ExpenseFormFieldsProps) 
           <FormItem>
             <FormLabel>Categoria</FormLabel>
             <Select
-              disabled={disabled}
+              disabled={disabled || isLoading}
               onValueChange={field.onChange}
               value={field.value ?? undefined}
             >
               <FormControl>
                 <SelectTrigger aria-describedby="categoryId-error">
-                  <SelectValue placeholder="Selecione uma categoria" />
+                  <SelectValue placeholder={isLoading ? "Carregando..." : "Selecione uma categoria"} />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                {CATEGORY_OPTIONS.map((category) => (
-                  <SelectItem key={category.value} value={category.value}>
-                    {category.label}
+                {isLoading ? (
+                  <SelectItem value="__loading" disabled>
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Carregando categorias...
+                    </span>
                   </SelectItem>
-                ))}
+                ) : categories.length === 0 ? (
+                  <SelectItem value="__empty" disabled>Nenhuma categoria disponível</SelectItem>
+                ) : (
+                  categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
             <FormMessage id="categoryId-error" />
@@ -222,7 +206,6 @@ export function ExpenseFormFields({ disabled = false }: ExpenseFormFieldsProps) 
         )}
       />
 
-      {/* Receiver Field */}
       <FormField
         control={form.control}
         name="receiver"
@@ -252,7 +235,6 @@ export function ExpenseFormFields({ disabled = false }: ExpenseFormFieldsProps) 
         )}
       />
 
-      {/* Municipality Field */}
       <FormField
         control={form.control}
         name="municipality"
@@ -272,7 +254,6 @@ export function ExpenseFormFields({ disabled = false }: ExpenseFormFieldsProps) 
         )}
       />
 
-      {/* Payment Method Field */}
       <FormField
         control={form.control}
         name="paymentMethod"

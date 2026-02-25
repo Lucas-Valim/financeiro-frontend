@@ -1,0 +1,36 @@
+@layer base {
+  :root {
+    --calendar-bg: #FAFBFC;
+    --calendar-border: #E2E8F0;
+    --calendar-today: #EEF2FF;
+    --calendar-text-primary: #1E293B;
+    --calendar-text-secondary: #64748B;
+
+    --event-pending-bg: #FEF3C7;
+    --event-pending-text: #92400E;
+    --event-pending-border: #F59E0B;
+
+    --event-paid-bg: #D1FAE5;
+    --event-paid-text: #065F46;
+    --event-paid-border: #10B981;
+
+    --event-overdue-bg: #FEE2E2;
+    --event-overdue-text: #991B1B;
+    --event-overdue-border: #EF4444;
+
+    --accent-primary: #3B82F6;
+    --accent-hover: #2563EB;
+    --accent-text: #FFFFFF;
+
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 16px;
+    --space-lg: 24px;
+
+    --motion-view-switch: 300ms ease-out;
+    --motion-hover: 150ms ease-in-out;
+    --motion-modal: 200ms ease-out;
+    --motion-skeleton: 1.5s ease-in-out infinite;
+    --motion-navigate: 250ms ease-out;
+  }
+}

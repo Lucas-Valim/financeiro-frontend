@@ -99,15 +99,19 @@ Element.prototype.hasPointerCapture = vi.fn()
 Element.prototype.setPointerCapture = vi.fn()
 Element.prototype.releasePointerCapture = vi.fn()
 
-function createIconMock(name: string): ({ className }: { className?: string }) => React.ReactElement {
-  return ({ className }) =>
-    React.createElement('span', { 'data-testid': `${name.toLowerCase()}-icon`, className, 'aria-hidden': 'true' })
+// scrollIntoView polyfill for Radix UI Select
+Element.prototype.scrollIntoView = vi.fn()
+
+function createIconMock(name: string): (props: { className?: string; 'data-testid'?: string }) => React.ReactElement {
+  return ({ className, 'data-testid': testId }) =>
+    React.createElement('span', { 'data-testid': testId ?? `${name.toLowerCase()}-icon`, className, 'aria-hidden': 'true' })
 }
 
 vi.mock('lucide-react', () => ({
   Home: createIconMock('Home'),
   Wallet: createIconMock('Wallet'),
   BarChart3: createIconMock('BarChart3'),
+  Calendar: createIconMock('Calendar'),
   PanelLeft: createIconMock('PanelLeft'),
   X: createIconMock('X'),
   ChevronDown: createIconMock('ChevronDown'),
@@ -117,6 +121,13 @@ vi.mock('lucide-react', () => ({
   AlertCircle: createIconMock('AlertCircle'),
   Loader2: createIconMock('Loader2'),
   CalendarIcon: createIconMock('CalendarIcon'),
+  Clock: createIconMock('Clock'),
+  CheckCircle: createIconMock('CheckCircle'),
+  Upload: createIconMock('Upload'),
+  FileText: createIconMock('FileText'),
+  Image: createIconMock('Image'),
+  Trash2: createIconMock('Trash2'),
+  ExternalLink: createIconMock('ExternalLink'),
 }))
 
 vi.mock('@tanstack/react-router', () => ({

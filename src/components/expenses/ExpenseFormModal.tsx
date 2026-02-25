@@ -15,6 +15,8 @@ import { ExpenseUploadFields } from './ExpenseUploadFields';
 import { useExpenseForm } from '@/hooks/useExpenseForm';
 import type { ExpenseDTO } from '@/types/expenses';
 
+const DEFAULT_ORGANIZATION_ID = 'fca3c088-ba34-43a2-9b32-b2b1a1246915';
+
 export interface ExpenseFormModalProps {
   /** Controls whether the modal is open */
   isOpen: boolean;
@@ -24,6 +26,8 @@ export interface ExpenseFormModalProps {
   onSuccess?: (expense: ExpenseDTO) => void;
   /** Optional expense to edit. If provided, modal will be in edit mode */
   expense?: ExpenseDTO | null;
+  /** When true, displays the form in read-only mode without edit capabilities */
+  readonly?: boolean;
 }
 
 /**
@@ -39,14 +43,17 @@ export function ExpenseFormModal({
   onClose,
   onSuccess,
   expense = null,
+  readonly = false,
 }: ExpenseFormModalProps) {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   const isEditMode = Boolean(expense?.id);
-  const modalTitle = isEditMode ? 'Editar Despesa' : 'Nova Despesa';
-  const modalDescription = isEditMode
-    ? 'Altere os dados da despesa abaixo.'
-    : 'Preencha os dados para criar uma nova despesa.';
+  const modalTitle = readonly ? 'Detalhes da Despesa' : isEditMode ? 'Editar Despesa' : 'Nova Despesa';
+  const modalDescription = readonly
+    ? 'Visualize os dados da despesa.'
+    : isEditMode
+      ? 'Altere os dados da despesa abaixo.'
+      : 'Preencha os dados para criar uma nova despesa.';
   const submitButtonText = isEditMode ? 'Salvar Alterações' : 'Criar Despesa';
 
   const {
@@ -99,10 +106,14 @@ export function ExpenseFormModal({
   const handleOpenChange = useCallback(
     (open: boolean) => {
       if (!open) {
-        handleClose();
+        if (readonly) {
+          onClose();
+        } else {
+          handleClose();
+        }
       }
     },
-    [handleClose]
+    [handleClose, onClose, readonly]
   );
 
   // Handle form submission
@@ -118,62 +129,77 @@ export function ExpenseFormModal({
     <>
       {/* Main Form Modal */}
       <Dialog open={isOpen && !showConfirmDialog} onOpenChange={handleOpenChange}>
-        <DialogContent className="max-w-[95vw] sm:max-w-[500px] max-h-[90vh] overflow-x-hidden overflow-y-auto">
+        <DialogContent className="max-w-[95vw] sm:max-w-[500px] max-h-[90vh] flex flex-col overflow-hidden">
           <DialogHeader>
             <DialogTitle>{modalTitle}</DialogTitle>
             <DialogDescription>{modalDescription}</DialogDescription>
           </DialogHeader>
 
-          <Form {...form}>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <Tabs defaultValue="data" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="data">Dados</TabsTrigger>
-                  <TabsTrigger value="documents">Documentos</TabsTrigger>
-                </TabsList>
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <Form {...form}>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <Tabs defaultValue="data" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="data">Dados</TabsTrigger>
+                    <TabsTrigger value="documents">Documentos</TabsTrigger>
+                  </TabsList>
 
-                <TabsContent value="data" className="mt-4">
-                  <ExpenseFormFields disabled={isSubmitting} />
-                </TabsContent>
+                  <TabsContent value="data" className={`mt-4 ${readonly ? 'opacity-80' : ''}`}>
+                    <ExpenseFormFields disabled={isSubmitting || readonly} organizationId={DEFAULT_ORGANIZATION_ID} />
+                  </TabsContent>
 
-                <TabsContent value="documents" className="mt-4">
-                  <ExpenseUploadFields
-                    disabled={isSubmitting}
-                    existingServiceInvoiceUrl={existingServiceInvoiceUrl}
-                    existingBankBillUrl={existingBankBillUrl}
-                    onClearServiceInvoice={handleClearServiceInvoice}
-                    onClearBankBill={handleClearBankBill}
-                  />
-                </TabsContent>
-              </Tabs>
+                  <TabsContent value="documents" className={`mt-4 ${readonly ? 'opacity-80' : ''}`}>
+                    <ExpenseUploadFields
+                      disabled={isSubmitting || readonly}
+                      existingServiceInvoiceUrl={existingServiceInvoiceUrl}
+                      existingBankBillUrl={existingBankBillUrl}
+                      onClearServiceInvoice={handleClearServiceInvoice}
+                      onClearBankBill={handleClearBankBill}
+                    />
+                  </TabsContent>
+                </Tabs>
 
-              <DialogFooter className="gap-2 sm:gap-0">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => handleClose()}
-                  disabled={isSubmitting}
-                  className="w-full sm:w-auto"
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full sm:w-auto"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <span className="animate-spin mr-2">&#9696;</span>
-                      {isEditMode ? 'Salvando...' : 'Criando...'}
-                    </>
+                <DialogFooter className="gap-2 sm:gap-0">
+                  {readonly ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={onClose}
+                      className="w-full sm:w-auto"
+                    >
+                      Fechar
+                    </Button>
                   ) : (
-                    submitButtonText
+                    <>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => handleClose()}
+                        disabled={isSubmitting}
+                        className="w-full sm:w-auto"
+                      >
+                        Cancelar
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="w-full sm:w-auto"
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <span className="animate-spin mr-2">&#9696;</span>
+                            {isEditMode ? 'Salvando...' : 'Criando...'}
+                          </>
+                        ) : (
+                          submitButtonText
+                        )}
+                      </Button>
+                    </>
                   )}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+                </DialogFooter>
+              </form>
+            </Form>
+          </div>
         </DialogContent>
       </Dialog>
 
