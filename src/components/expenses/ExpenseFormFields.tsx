@@ -55,21 +55,29 @@ function applyCurrencyMask(value: string): string {
 
 const RECEIVER_OPTIONS = [
   { value: 'Advento Aprendizagem', label: 'Advento Aprendizagem' },
-  { value: 'Maria Cristina Tudium', label: 'Maria Cristina Tudium' },
-  { value: 'GFarias', label: 'GFarias' },
-  { value: 'Mundi Desenvolvimento Humano', label: 'Mundi Desenvolvimento Humano' },
-  { value: 'Jaime Prux', label: 'Jaime Prux' },
-  { value: 'Mecanica Lorange', label: 'Mecanica Lorange' },
-  { value: 'Unimed', label: 'Unimed' },
-  { value: 'Pompeia Parking', label: 'Pompeia Parking' },
-  { value: 'Planejar', label: 'Planejar' },
-  { value: 'DAS', label: 'DAS' },
-  { value: 'KingHost', label: 'KingHost' },
-  { value: 'IRRF', label: 'IRRF' },
-  { value: 'WisePark', label: 'WisePark' },
   { value: 'Carlo Valim Borges', label: 'Carlo Valim Borges' },
+  { value: 'DAS', label: 'DAS' },
   { value: 'Eduardo Pezzi', label: 'Eduardo Pezzi' },
+  { value: 'Enngeofood', label: 'Enngeofood' },
+  { value: 'GFarias', label: 'GFarias' },
+  { value: 'IRRF', label: 'IRRF' },
   { value: 'Jaciara Giordani', label: 'Jaciara Giordani' },
+  { value: 'Jaime Prux', label: 'Jaime Prux' },
+  { value: 'KingHost', label: 'KingHost' },
+  { value: 'Mecanica Lorange', label: 'Mecanica Lorange' },
+  { value: 'Maria Cristina Tudium', label: 'Maria Cristina Tudium' },
+  { value: 'Mundi Desenvolvimento Humano', label: 'Mundi Desenvolvimento Humano' },
+  { value: 'Planejar', label: 'Planejar' },
+  { value: 'Pompeia Parking', label: 'Pompeia Parking' },
+  { value: 'Unimed', label: 'Unimed' },
+  { value: 'WisePark', label: 'WisePark' },
+] as const;
+
+const MUNICIPALITY_OPTIONS = [
+  { value: 'Bento Gonçalves', label: 'Bento Gonçalves' },
+  { value: 'Caxias do Sul', label: 'Caxias do Sul' },
+  { value: 'Passo Fundo', label: 'Passo Fundo' },
+  { value: 'Porto Alegre', label: 'Porto Alegre' },
 ] as const;
 
 interface ExpenseFormFieldsProps {
@@ -249,14 +257,24 @@ export function ExpenseFormFields({ disabled = false, organizationId }: ExpenseF
         render={({ field }) => (
           <FormItem>
             <FormLabel required>Município</FormLabel>
-            <FormControl>
-              <Input
-                {...field}
-                placeholder="Digite o município"
-                disabled={disabled}
-                aria-describedby="municipality-error"
-              />
-            </FormControl>
+            <Select
+              disabled={disabled}
+              onValueChange={field.onChange}
+              value={field.value ?? ''}
+            >
+              <FormControl>
+                <SelectTrigger aria-describedby="municipality-error">
+                  <SelectValue placeholder="Selecione um município" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {MUNICIPALITY_OPTIONS.map((municipality) => (
+                  <SelectItem key={municipality.value} value={municipality.value}>
+                    {municipality.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <FormMessage id="municipality-error" />
           </FormItem>
         )}
