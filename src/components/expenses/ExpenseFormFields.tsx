@@ -62,6 +62,14 @@ const RECEIVER_OPTIONS = [
   { value: 'Mecanica Lorange', label: 'Mecanica Lorange' },
   { value: 'Unimed', label: 'Unimed' },
   { value: 'Pompeia Parking', label: 'Pompeia Parking' },
+  { value: 'Planejar', label: 'Planejar' },
+  { value: 'DAS', label: 'DAS' },
+  { value: 'KingHost', label: 'KingHost' },
+  { value: 'IRRF', label: 'IRRF' },
+  { value: 'WisePark', label: 'WisePark' },
+  { value: 'Carlo Valim Borges', label: 'Carlo Valim Borges' },
+  { value: 'Eduardo Pezzi', label: 'Eduardo Pezzi' },
+  { value: 'Jaciara Giordani', label: 'Jaciara Giordani' },
 ] as const;
 
 interface ExpenseFormFieldsProps {
