@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { X, FileText } from 'lucide-react';
+import { X, FileText, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -58,24 +58,21 @@ export function ImagePreview({
   const previewUrl = blobUrl || imageUrl;
   const sourceKey = file?.name || imageUrl || null;
 
-  // Create and manage blob URL for file previews
   useEffect(() => {
     let url: string | null = null;
 
-    // Only create blob URL if we have a file and it's an image
-    if (!imageUrl && file && isImage) {
+    if (!imageUrl && file) {
       url = URL.createObjectURL(file);
       /* eslint-disable-next-line react-hooks/set-state-in-effect */
       setBlobUrl(url);
     }
 
-    // Cleanup function - always revoke the URL created in this effect
     return () => {
       if (url) {
         URL.revokeObjectURL(url);
       }
     };
-  }, [file, isImage, imageUrl]);
+  }, [file, imageUrl]);
 
   const handleImageError = useCallback(() => {
     setImageError(true);
@@ -87,6 +84,18 @@ export function ImagePreview({
     setLastSourceKey(null);
     onRemove();
   }, [onRemove]);
+
+  const handleOpenInNewTab = useCallback(() => {
+    if (!previewUrl || disabled) return;
+    window.open(previewUrl, '_blank', 'noopener,noreferrer');
+  }, [previewUrl, disabled]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleOpenInNewTab();
+    }
+  }, [handleOpenInNewTab]);
 
   const sourceChanged = lastSourceKey !== sourceKey;
   const showImageError = !sourceChanged && imageError;
@@ -120,7 +129,17 @@ export function ImagePreview({
         <X className="h-3 w-3" />
       </Button>
 
-      <div className="flex items-center gap-2.5 overflow-hidden">
+      <div
+        className={cn(
+          'flex items-center gap-2.5 overflow-hidden',
+          previewUrl && !disabled && 'cursor-pointer hover:bg-muted/50 rounded-md -m-1 p-1'
+        )}
+        role={previewUrl && !disabled ? 'button' : undefined}
+        tabIndex={previewUrl && !disabled ? 0 : undefined}
+        onClick={handleOpenInNewTab}
+        onKeyDown={handleKeyDown}
+        data-testid="file-preview-click-area"
+      >
         {showImageError ? (
           <div className="flex items-center justify-center h-12 w-12 rounded-md bg-destructive/10 flex-shrink-0">
             <span className="text-xs text-destructive text-center p-1">
@@ -157,6 +176,10 @@ export function ImagePreview({
             {displaySize} • {displayType}
           </p>
         </div>
+
+        {previewUrl && !disabled && (
+          <ExternalLink className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" data-testid="open-link-icon" />
+        )}
       </div>
     </div>
   );

@@ -8,6 +8,7 @@ vi.mock('lucide-react', () => ({
   X: () => <span data-testid="x-icon">X</span>,
   FileText: (props: { 'data-testid'?: string }) => <span data-testid={props['data-testid'] || 'pdf-icon'}>FileText</span>,
   Loader2: () => <span data-testid="loader-icon">Loading...</span>,
+  ExternalLink: (props: { 'data-testid'?: string }) => <span data-testid={props['data-testid'] || 'open-link-icon'}>ExternalLink</span>,
 }));
 
 // Mock URL.createObjectURL and URL.revokeObjectURL
@@ -155,12 +156,135 @@ describe('ImagePreview', () => {
       expect(mockCreateObjectURL).toHaveBeenCalledWith(imageFile);
     });
 
-    it('does not create object URL for PDF files', () => {
+    it('creates object URL for PDF files to enable open in new tab', () => {
       const pdfFile = new File(['test'], 'test.pdf', { type: 'application/pdf' });
 
       render(<ImagePreview file={pdfFile} onRemove={mockOnRemove} />);
 
-      expect(mockCreateObjectURL).not.toHaveBeenCalled();
+      expect(mockCreateObjectURL).toHaveBeenCalledWith(pdfFile);
+    });
+  });
+
+  describe('Open in new tab', () => {
+    beforeEach(() => {
+      vi.stubGlobal('open', vi.fn());
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('opens imageUrl in new tab when clicking the preview', async () => {
+      render(
+        <ImagePreview
+          imageUrl="https://example.com/document.pdf"
+          displayName="Nota de Serviço"
+          onRemove={mockOnRemove}
+        />
+      );
+
+      await userEvent.click(screen.getByTestId('file-preview-click-area'));
+
+      expect(global.open).toHaveBeenCalledWith(
+        'https://example.com/document.pdf',
+        '_blank',
+        'noopener,noreferrer'
+      );
+    });
+
+    it('opens blob URL in new tab when clicking uploaded file preview', async () => {
+      const pdfFile = new File(['test content'], 'invoice.pdf', { type: 'application/pdf' });
+      Object.defineProperty(pdfFile, 'size', { value: 2048 });
+
+      render(<ImagePreview file={pdfFile} onRemove={mockOnRemove} />);
+
+      await userEvent.click(screen.getByTestId('file-preview-click-area'));
+
+      expect(global.open).toHaveBeenCalledWith(
+        'blob:test-url',
+        '_blank',
+        'noopener,noreferrer'
+      );
+    });
+
+    it('does not open in new tab when disabled', async () => {
+      render(
+        <ImagePreview
+          imageUrl="https://example.com/document.pdf"
+          onRemove={mockOnRemove}
+          disabled={true}
+        />
+      );
+
+      await userEvent.click(screen.getByTestId('file-preview-click-area'));
+
+      expect(global.open).not.toHaveBeenCalled();
+    });
+
+    it('renders click area with button role when file has blob URL', () => {
+      const pdfFile = new File(['test'], 'test.pdf', { type: 'application/pdf' });
+      render(<ImagePreview file={pdfFile} onRemove={mockOnRemove} />);
+
+      expect(screen.getByTestId('file-preview-click-area')).toHaveAttribute('role', 'button');
+    });
+
+    it('opens in new tab on Enter key press', async () => {
+      render(
+        <ImagePreview
+          imageUrl="https://example.com/document.pdf"
+          onRemove={mockOnRemove}
+        />
+      );
+
+      screen.getByTestId('file-preview-click-area').focus();
+      await userEvent.keyboard('{Enter}');
+
+      expect(global.open).toHaveBeenCalledWith(
+        'https://example.com/document.pdf',
+        '_blank',
+        'noopener,noreferrer'
+      );
+    });
+
+    it('opens in new tab on Space key press', async () => {
+      render(
+        <ImagePreview
+          imageUrl="https://example.com/document.pdf"
+          onRemove={mockOnRemove}
+        />
+      );
+
+      screen.getByTestId('file-preview-click-area').focus();
+      await userEvent.keyboard(' ');
+
+      expect(global.open).toHaveBeenCalledWith(
+        'https://example.com/document.pdf',
+        '_blank',
+        'noopener,noreferrer'
+      );
+    });
+
+    it('renders ExternalLink icon when URL is available', () => {
+      render(
+        <ImagePreview
+          imageUrl="https://example.com/document.pdf"
+          onRemove={mockOnRemove}
+        />
+      );
+
+      expect(screen.getByTestId('open-link-icon')).toBeInTheDocument();
+    });
+
+    it('does not render ExternalLink icon when disabled', () => {
+      render(
+        <ImagePreview
+          imageUrl="https://example.com/document.pdf"
+          onRemove={mockOnRemove}
+          disabled={true}
+        />
+      );
+
+      expect(screen.queryByTestId('open-link-icon')).not.toBeInTheDocument();
     });
   });
 });
