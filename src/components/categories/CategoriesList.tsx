@@ -59,7 +59,7 @@ export function CategoriesList({
   }
 
   return (
-    <div data-testid="categories-list" className="rounded-md border divide-y">
+    <div data-testid="categories-list" className="flex-1 overflow-auto rounded-md border divide-y">
       {categories.map((category) => (
         <CategoryRow
           key={category.id}
