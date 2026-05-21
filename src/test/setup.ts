@@ -128,6 +128,10 @@ vi.mock('lucide-react', () => ({
   Image: createIconMock('Image'),
   Trash2: createIconMock('Trash2'),
   ExternalLink: createIconMock('ExternalLink'),
+  Pencil: createIconMock('Pencil'),
+  Filter: createIconMock('Filter'),
+  Plus: createIconMock('Plus'),
+  Tags: createIconMock('Tags'),
 }))
 
 vi.mock('@tanstack/react-router', () => ({

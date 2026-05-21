@@ -36,3 +36,7 @@ tmp
 chats.db
 .opencode
 .agents
+.*
+skills
+coverage
+playwright-report

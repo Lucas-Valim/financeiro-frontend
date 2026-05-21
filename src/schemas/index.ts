@@ -10,6 +10,12 @@ export {
 } from './expense-form-schema';
 
 export {
+  categoryFormSchema,
+  defaultCategoryFormValues,
+  type CategoryFormData,
+} from './category-form-schema';
+
+export {
   paymentFormSchema,
   createPaymentSchema,
   defaultPaymentFormValues,
