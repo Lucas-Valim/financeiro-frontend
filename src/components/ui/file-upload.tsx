@@ -17,6 +17,7 @@ interface FileUploadProps {
   error?: string;
   className?: string;
   documentLabel?: string;
+  downloadFileName?: string;
 }
 
 function formatMaxSize(bytes: number): string {
@@ -38,6 +39,7 @@ export function FileUpload({
   error,
   className,
   documentLabel,
+  downloadFileName,
 }: FileUploadProps) {
   const [dragActive, setDragActive] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -172,6 +174,7 @@ export function FileUpload({
         <ImagePreview
           imageUrl={existingUrl}
           displayName={documentLabel}
+          downloadFileName={downloadFileName}
           onRemove={handleRemove}
           disabled={disabled}
         />
@@ -181,6 +184,7 @@ export function FileUpload({
         <ImagePreview
           file={value}
           displayName={documentLabel}
+          downloadFileName={downloadFileName}
           onRemove={handleRemove}
           disabled={disabled}
         />

@@ -31,6 +31,7 @@ export function ExpenseUploadFields({
   onClearBankBill,
 }: ExpenseUploadFieldsProps) {
   const form = useFormContext<ExpenseFormData>();
+  const description = form.watch('description');
 
   const handleServiceInvoiceChange = useCallback(
     (file: File | null) => {
@@ -73,6 +74,7 @@ export function ExpenseUploadFields({
                 disabled={disabled}
                 error={form.formState.errors.serviceInvoice?.message}
                 documentLabel="Nota de Serviço"
+                downloadFileName={description || undefined}
               />
             </FormControl>
             <FormMessage id="serviceInvoice-error" />
@@ -99,6 +101,7 @@ export function ExpenseUploadFields({
                 disabled={disabled}
                 error={form.formState.errors.bankBill?.message}
                 documentLabel="Boleto"
+                downloadFileName={description || undefined}
               />
             </FormControl>
             <FormMessage id="bankBill-error" />

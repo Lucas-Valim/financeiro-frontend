@@ -8,6 +8,7 @@ interface ImagePreviewProps {
   imageUrl?: string | null;
   fileName?: string;
   displayName?: string;
+  downloadFileName?: string;
   onRemove: () => void;
   className?: string;
   disabled?: boolean;
@@ -40,6 +41,7 @@ export function ImagePreview({
   imageUrl,
   fileName,
   displayName: label,
+  downloadFileName,
   onRemove,
   className,
   disabled = false,
@@ -85,17 +87,41 @@ export function ImagePreview({
     onRemove();
   }, [onRemove]);
 
-  const handleOpenInNewTab = useCallback(() => {
+  const handleClick = useCallback(async () => {
     if (!previewUrl || disabled) return;
+
+    if (downloadFileName) {
+      const ext = imageUrl
+        ? imageUrl.split('?')[0].split('.').pop()?.toLowerCase()
+        : file?.name.split('.').pop()?.toLowerCase();
+      const filename = ext ? `${downloadFileName}.${ext}` : downloadFileName;
+
+      try {
+        const response = await fetch(previewUrl);
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+      } catch {
+        window.open(previewUrl, '_blank', 'noopener,noreferrer');
+      }
+      return;
+    }
+
     window.open(previewUrl, '_blank', 'noopener,noreferrer');
-  }, [previewUrl, disabled]);
+  }, [previewUrl, disabled, downloadFileName, imageUrl, file]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      handleOpenInNewTab();
+      void handleClick();
     }
-  }, [handleOpenInNewTab]);
+  }, [handleClick]);
 
   const sourceChanged = lastSourceKey !== sourceKey;
   const showImageError = !sourceChanged && imageError;
@@ -136,7 +162,7 @@ export function ImagePreview({
         )}
         role={previewUrl && !disabled ? 'button' : undefined}
         tabIndex={previewUrl && !disabled ? 0 : undefined}
-        onClick={handleOpenInNewTab}
+        onClick={() => void handleClick()}
         onKeyDown={handleKeyDown}
         data-testid="file-preview-click-area"
       >
