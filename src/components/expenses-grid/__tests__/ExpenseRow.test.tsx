@@ -95,6 +95,7 @@ describe("ExpenseRow", () => {
   describe("Component Rendering", () => {
     it("renders all expense data fields", () => {
       render(<ExpenseRow expense={mockExpense} />)
+      expect(screen.getByText("Test Expense")).toBeInTheDocument()
       expect(screen.getByText(/R\$\s*1\.234,56/)).toBeInTheDocument()
       expect(screen.getByText("Test Receiver")).toBeInTheDocument()
       expect(screen.getByText(/14\/01\/2024|15\/01\/2024/)).toBeInTheDocument()
@@ -104,13 +105,28 @@ describe("ExpenseRow", () => {
     it("renders columns in correct order", () => {
       const { container } = render(<ExpenseRow expense={mockExpense} />)
       const cells = container.querySelectorAll("td")
-      expect(cells).toHaveLength(5)
+      expect(cells).toHaveLength(6)
       expect(cells[0].querySelector("button")).toBeInTheDocument()
-      expect(cells[1].textContent).toContain("R$")
-      expect(cells[1].textContent).toContain("1.234,56")
-      expect(cells[2].textContent).toBe("Test Receiver")
-      expect(cells[3].textContent).toMatch(/14\/01\/2024|15\/01\/2024/)
-      expect(cells[4].textContent).toBe("OPEN")
+      expect(cells[1].textContent).toBe("Test Expense")
+      expect(cells[2].textContent).toContain("R$")
+      expect(cells[2].textContent).toContain("1.234,56")
+      expect(cells[3].textContent).toBe("Test Receiver")
+      expect(cells[4].textContent).toMatch(/14\/01\/2024|15\/01\/2024/)
+      expect(cells[5].textContent).toBe("OPEN")
+    })
+
+    it("renders Descrição column with description value", () => {
+      render(<ExpenseRow expense={mockExpense} />)
+      expect(screen.getByText("Test Expense")).toBeInTheDocument()
+    })
+
+    it("handles null description with N/A fallback", () => {
+      const nullDescriptionExpense = {
+        ...mockExpense,
+        description: null as unknown as string,
+      }
+      render(<ExpenseRow expense={nullDescriptionExpense} />)
+      expect(screen.getByText("N/A")).toBeInTheDocument()
     })
 
     it("renders Fornecedor column with receiver value", () => {

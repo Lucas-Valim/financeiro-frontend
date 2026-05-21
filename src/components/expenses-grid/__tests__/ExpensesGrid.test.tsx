@@ -85,10 +85,25 @@ describe('ExpensesGrid', () => {
 
       // Use getAllByText since headers appear in multiple views
       expect(screen.getAllByText('Actions').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Descrição').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Valor').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Fornecedor').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Data de Vencimento').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Status').length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('renders Descrição column with description values in desktop view', () => {
+      render(<ExpensesGrid {...defaultProps} />);
+
+      expect(screen.getAllByText('Test expense 1').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Test expense 2').length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('renders Descrição field in mobile view', () => {
+      render(<ExpensesGrid {...defaultProps} />);
+
+      const descricaoLabels = screen.getAllByText('Descrição:');
+      expect(descricaoLabels.length).toBeGreaterThanOrEqual(2);
     });
 
     it('renders ExpenseRow component for each expense in array', () => {

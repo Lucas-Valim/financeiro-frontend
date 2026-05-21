@@ -99,6 +99,9 @@ function TableSkeleton() {
             <Skeleton className="h-8 w-8" />
           </td>
           <td className="p-4">
+            <Skeleton className="h-4 w-32" />
+          </td>
+          <td className="p-4">
             <Skeleton className="h-4 w-16" />
           </td>
           <td className="p-4">
@@ -148,10 +151,11 @@ function HorizontalCard({
   const statusColorClass = EXPENSE_STATUS_COLORS[expense.status] || '';
 
   return (
-    <div className="p-4 grid grid-cols-5 gap-4 items-center hover:bg-muted/50 border-b last:border-b-0">
+    <div className="p-4 grid grid-cols-6 gap-4 items-center hover:bg-muted/50 border-b last:border-b-0">
       <div className="w-[120px]">
         <ActionsDropdown expense={expense} onEdit={onEdit} />
       </div>
+      <div className="w-[200px] text-sm">{expense.description ?? 'N/A'}</div>
       <div className="w-[150px] text-sm">{formatAmount(expense.amount)}</div>
       <div className="w-[150px] text-sm">{expense.receiver ?? 'N/A'}</div>
       <div className="w-[150px] text-sm">{formatDate(expense.dueDate)}</div>
@@ -195,6 +199,10 @@ function VerticalCard({
         </Button>
       </div>
       <div className="space-y-2 text-sm">
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Descrição:</span>
+          <span>{expense.description ?? 'N/A'}</span>
+        </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">Valor:</span>
           <span>{formatAmount(expense.amount)}</span>
@@ -359,6 +367,12 @@ export function ExpensesGrid({
               </th>
               <th
                 className="h-12 px-4 text-left align-middle font-medium text-muted-foreground"
+                style={{ width: '200px' }}
+              >
+                Descrição
+              </th>
+              <th
+                className="h-12 px-4 text-left align-middle font-medium text-muted-foreground"
                 style={{ width: '150px' }}
               >
                 Valor
@@ -405,8 +419,9 @@ export function ExpensesGrid({
           className="relative overflow-auto flex-1 rounded-md border"
           data-testid="expenses-tablet-container"
         >
-          <div className="sticky top-0 z-10 bg-background border-b px-4 py-3 grid grid-cols-5 gap-4 font-medium text-sm text-muted-foreground">
+          <div className="sticky top-0 z-10 bg-background border-b px-4 py-3 grid grid-cols-6 gap-4 font-medium text-sm text-muted-foreground">
             <div style={{ width: '120px' }}>Actions</div>
+            <div style={{ width: '200px' }}>Descrição</div>
             <div style={{ width: '150px' }}>Amount</div>
             <div style={{ width: '150px' }}>Fornecedor</div>
             <div style={{ width: '150px' }}>Due Date</div>

@@ -80,6 +80,13 @@ const MUNICIPALITY_OPTIONS = [
   { value: 'Porto Alegre', label: 'Porto Alegre' },
 ] as const;
 
+const PAYMENT_METHOD_OPTIONS = [
+  { value: 'Boleto', label: 'Boleto' },
+  { value: 'PIX', label: 'PIX' },
+  { value: 'Transferência', label: 'Transferência' },
+  { value: 'Guia', label: 'Guia' },
+] as const;
+
 interface ExpenseFormFieldsProps {
   disabled?: boolean;
   organizationId: string;
@@ -286,15 +293,24 @@ export function ExpenseFormFields({ disabled = false, organizationId }: ExpenseF
         render={({ field }) => (
           <FormItem>
             <FormLabel>Forma de Pagamento</FormLabel>
-            <FormControl>
-              <Input
-                {...field}
-                value={field.value ?? ''}
-                placeholder="Ex: Boleto, PIX, Transferência"
-                disabled={disabled}
-                aria-describedby="paymentMethod-error"
-              />
-            </FormControl>
+            <Select
+              disabled={disabled}
+              onValueChange={field.onChange}
+              value={field.value ?? ''}
+            >
+              <FormControl>
+                <SelectTrigger aria-describedby="paymentMethod-error">
+                  <SelectValue placeholder="Selecione uma forma de pagamento" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {PAYMENT_METHOD_OPTIONS.map((method) => (
+                  <SelectItem key={method.value} value={method.value}>
+                    {method.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <FormMessage id="paymentMethod-error" />
           </FormItem>
         )}

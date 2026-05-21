@@ -89,6 +89,7 @@ export function ExpenseRow({ expense, onEdit }: ExpenseRowProps) {
             </DropdownMenuContent>
           </DropdownMenu>
         </td>
+        <td className="p-4 text-sm">{expense.description ?? "N/A"}</td>
         <td className="p-4 text-sm">{formattedAmount}</td>
         <td className="p-4 text-sm">{expense.receiver ?? "N/A"}</td>
         <td className="p-4 text-sm">{formattedDate}</td>
