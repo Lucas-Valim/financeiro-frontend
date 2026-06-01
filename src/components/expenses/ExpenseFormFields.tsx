@@ -71,6 +71,10 @@ const RECEIVER_OPTIONS = [
   { value: 'Pompeia Parking', label: 'Pompeia Parking' },
   { value: 'Unimed', label: 'Unimed' },
   { value: 'WisePark', label: 'WisePark' },
+  {value: 'CRA', label: 'CRA'},
+  {value: 'Rafaela Daros', label: 'Rafaela Daros'},
+  {value: 'Katia Santos', label: 'Katia Santos'},
+  {value: 'RB LEARNING', label: 'RB LEARNING'},
 ] as const;
 
 const MUNICIPALITY_OPTIONS = [
