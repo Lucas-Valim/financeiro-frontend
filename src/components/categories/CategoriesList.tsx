@@ -1,6 +1,7 @@
-import { Skeleton } from '@/components/ui/skeleton';
+import { DataGrid } from '@/components/shared/DataGrid/DataGrid';
+import type { Column } from '@/components/shared/DataGrid/types';
 import type { CategoryDTO } from '@/types/categories';
-import { CategoryRow } from './CategoryRow';
+import { CategoryActions } from './CategoryActions';
 
 export interface CategoriesListProps {
   categories: CategoryDTO[];
@@ -9,31 +10,22 @@ export interface CategoriesListProps {
   onDelete: (category: CategoryDTO) => void;
 }
 
-const SKELETON_ROW_COUNT = 3;
-
-function CategoriesListSkeleton() {
-  return (
-    <div
-      className="rounded-md border divide-y"
-      data-testid="categories-list-loading"
-      role="status"
-      aria-label="Carregando categorias"
-    >
-      {Array.from({ length: SKELETON_ROW_COUNT }).map((_, index) => (
-        <div key={index} className="flex items-center justify-between gap-4 p-4">
-          <div className="flex flex-col gap-2 flex-1">
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-3 w-48" />
-          </div>
-          <div className="flex items-center gap-1">
-            <Skeleton className="h-8 w-8" />
-            <Skeleton className="h-8 w-8" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
+const CATEGORY_COLUMNS: Column<CategoryDTO>[] = [
+  {
+    id: 'name',
+    header: 'Nome',
+    width: 'minmax(0,1fr)',
+    cardLabel: 'Nome:',
+    cell: (category) => category.name,
+  },
+  {
+    id: 'description',
+    header: 'Descrição',
+    width: 'minmax(0,1.5fr)',
+    cardLabel: 'Descrição:',
+    cell: (category) => category.description || '—',
+  },
+];
 
 export function CategoriesList({
   categories,
@@ -41,33 +33,17 @@ export function CategoriesList({
   onEdit,
   onDelete,
 }: CategoriesListProps) {
-  if (isLoading) {
-    return <CategoriesListSkeleton />;
-  }
-
-  if (categories.length === 0) {
-    return (
-      <div
-        data-testid="categories-list-empty"
-        className="rounded-md border p-8 text-center"
-      >
-        <p className="text-muted-foreground">
-          Nenhuma categoria cadastrada. Crie uma agora.
-        </p>
-      </div>
-    );
-  }
-
   return (
-    <div data-testid="categories-list" className="flex-1 overflow-auto rounded-md border divide-y">
-      {categories.map((category) => (
-        <CategoryRow
-          key={category.id}
-          category={category}
-          onEdit={onEdit}
-          onDelete={onDelete}
-        />
-      ))}
-    </div>
+    <DataGrid<CategoryDTO>
+      items={categories}
+      columns={CATEGORY_COLUMNS}
+      getRowId={(category) => category.id}
+      renderActions={(category) => (
+        <CategoryActions category={category} onEdit={onEdit} onDelete={onDelete} />
+      )}
+      isLoading={isLoading}
+      emptyMessage="Nenhuma categoria cadastrada. Crie uma agora."
+      testIdPrefix="categories"
+    />
   );
 }

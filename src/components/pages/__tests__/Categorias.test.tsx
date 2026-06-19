@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { ReactNode } from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Categorias } from '../Categorias';
@@ -83,6 +83,25 @@ function renderCategorias() {
   return render(<Categorias />, { wrapper });
 }
 
+/** Counts data rows in the canonical desktop table (excludes the header row). */
+function desktopRowCount() {
+  const table = screen.getByTestId('categories-table');
+  return within(table).getAllByRole('row').length - 1;
+}
+
+/** Opens a row's `⋮` menu (desktop instance) and selects the given action. */
+async function selectRowAction(
+  user: ReturnType<typeof userEvent.setup>,
+  name: string,
+  action: 'Editar' | 'Excluir'
+) {
+  const triggers = screen.getAllByRole('button', {
+    name: new RegExp(`ações de ${name}`, 'i'),
+  });
+  await user.click(triggers[0]);
+  await user.click(screen.getByText(action));
+}
+
 // ── Tests ───────────────────────────────────────────────────────────────────
 
 describe('Categorias', () => {
@@ -119,10 +138,10 @@ describe('Categorias', () => {
 
       renderCategorias();
 
-      expect(screen.getAllByTestId('category-row')).toHaveLength(3);
-      expect(screen.getByText('Alimentação')).toBeInTheDocument();
-      expect(screen.getByText('Transporte')).toBeInTheDocument();
-      expect(screen.getByText('Lazer')).toBeInTheDocument();
+      expect(desktopRowCount()).toBe(3);
+      expect(screen.getAllByText('Alimentação').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Transporte').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Lazer').length).toBeGreaterThanOrEqual(1);
     });
 
     it('invokes useCategories with the ORGANIZATION_ID constant', () => {
@@ -161,7 +180,7 @@ describe('Categorias', () => {
 
       renderCategorias();
 
-      expect(screen.queryByTestId('categories-list-empty')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('empty-state')).not.toBeInTheDocument();
     });
   });
 
@@ -175,7 +194,7 @@ describe('Categorias', () => {
 
       renderCategorias();
 
-      expect(screen.getByTestId('categories-list-empty')).toBeInTheDocument();
+      expect(screen.getByTestId('empty-state')).toBeInTheDocument();
       expect(
         screen.getByText('Nenhuma categoria cadastrada. Crie uma agora.')
       ).toBeInTheDocument();
@@ -200,7 +219,7 @@ describe('Categorias', () => {
       const input = screen.getByPlaceholderText('Buscar por nome');
       await user.type(input, 'Alim');
 
-      expect(screen.getByText('Alimentação')).toBeInTheDocument();
+      expect(screen.getAllByText('Alimentação').length).toBeGreaterThanOrEqual(1);
       expect(screen.queryByText('Transporte')).not.toBeInTheDocument();
     });
 
@@ -236,7 +255,7 @@ describe('Categorias', () => {
       const input = screen.getByPlaceholderText('Buscar por nome');
       await user.type(input, 'Anything');
 
-      expect(screen.getByTestId('categories-list-empty')).toBeInTheDocument();
+      expect(screen.getByTestId('empty-state')).toBeInTheDocument();
       expect(screen.queryByTestId('categories-no-results')).not.toBeInTheDocument();
     });
 
@@ -314,9 +333,7 @@ describe('Categorias', () => {
 
       renderCategorias();
 
-      await user.click(
-        screen.getByRole('button', { name: /editar categoria transporte/i })
-      );
+      await selectRowAction(user, 'Transporte', 'Editar');
 
       expect(screen.getByTestId('category-form-modal')).toBeInTheDocument();
       expect(screen.getByTestId('form-modal-mode')).toHaveTextContent('edit');
@@ -351,9 +368,7 @@ describe('Categorias', () => {
 
       renderCategorias();
 
-      await user.click(
-        screen.getByRole('button', { name: /editar categoria alimentação/i })
-      );
+      await selectRowAction(user, 'Alimentação', 'Editar');
       expect(screen.getByTestId('form-modal-mode')).toHaveTextContent('edit');
 
       await user.click(screen.getByTestId('form-modal-close'));
@@ -380,9 +395,7 @@ describe('Categorias', () => {
 
       renderCategorias();
 
-      await user.click(
-        screen.getByRole('button', { name: /excluir categoria transporte/i })
-      );
+      await selectRowAction(user, 'Transporte', 'Excluir');
 
       expect(screen.getByTestId('category-delete-dialog')).toBeInTheDocument();
       expect(screen.getByTestId('delete-dialog-category-id')).toHaveTextContent('cat-2');
@@ -399,9 +412,7 @@ describe('Categorias', () => {
 
       renderCategorias();
 
-      await user.click(
-        screen.getByRole('button', { name: /excluir categoria alimentação/i })
-      );
+      await selectRowAction(user, 'Alimentação', 'Excluir');
       expect(screen.getByTestId('category-delete-dialog')).toBeInTheDocument();
 
       await user.click(screen.getByTestId('delete-dialog-close'));

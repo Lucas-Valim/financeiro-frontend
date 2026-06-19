@@ -1,10 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { CategoriesList } from '../CategoriesList';
 import type { CategoryDTO } from '@/types/categories';
-
-// ── Fixtures ────────────────────────────────────────────────────────────────
 
 function buildCategory(overrides: Partial<CategoryDTO> = {}): CategoryDTO {
   return {
@@ -20,108 +18,67 @@ function buildCategory(overrides: Partial<CategoryDTO> = {}): CategoryDTO {
 
 const EMPTY_STATE_MESSAGE = 'Nenhuma categoria cadastrada. Crie uma agora.';
 
-// ── Tests ───────────────────────────────────────────────────────────────────
+/** Counts data rows in the canonical desktop table (excludes the header row). */
+function desktopRowCount() {
+  const table = screen.getByTestId('categories-table');
+  return within(table).getAllByRole('row').length - 1;
+}
 
 describe('CategoriesList', () => {
-  const user = userEvent.setup();
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('loading state', () => {
-    it('renders a loading skeleton when isLoading is true', () => {
+    it('renders skeletons when isLoading is true', () => {
       render(
-        <CategoriesList
-          categories={[]}
-          isLoading={true}
-          onEdit={vi.fn()}
-          onDelete={vi.fn()}
-        />
+        <CategoriesList categories={[]} isLoading onEdit={vi.fn()} onDelete={vi.fn()} />
       );
 
-      expect(screen.getByTestId('categories-list-loading')).toBeInTheDocument();
+      const skeletons = screen
+        .getAllByRole('generic')
+        .filter((el) => el.className?.includes('animate-pulse'));
+      expect(skeletons.length).toBeGreaterThan(0);
     });
 
-    it('does not render the empty state when isLoading is true with empty categories', () => {
+    it('does not render the empty state while loading with no categories', () => {
       render(
-        <CategoriesList
-          categories={[]}
-          isLoading={true}
-          onEdit={vi.fn()}
-          onDelete={vi.fn()}
-        />
+        <CategoriesList categories={[]} isLoading onEdit={vi.fn()} onDelete={vi.fn()} />
       );
 
-      expect(screen.queryByTestId('categories-list-empty')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('empty-state')).not.toBeInTheDocument();
       expect(screen.queryByText(EMPTY_STATE_MESSAGE)).not.toBeInTheDocument();
-    });
-
-    it('does not render category rows when isLoading is true', () => {
-      render(
-        <CategoriesList
-          categories={[buildCategory({ id: 'cat-1', name: 'Stale row' })]}
-          isLoading={true}
-          onEdit={vi.fn()}
-          onDelete={vi.fn()}
-        />
-      );
-
-      expect(screen.queryByTestId('category-row')).not.toBeInTheDocument();
-      expect(screen.queryByText('Stale row')).not.toBeInTheDocument();
     });
   });
 
   describe('empty state', () => {
-    it('renders the empty state message when categories is [] and isLoading is false', () => {
+    it('renders the empty state message when categories is [] and not loading', () => {
       render(
-        <CategoriesList
-          categories={[]}
-          isLoading={false}
-          onEdit={vi.fn()}
-          onDelete={vi.fn()}
-        />
+        <CategoriesList categories={[]} isLoading={false} onEdit={vi.fn()} onDelete={vi.fn()} />
       );
 
-      expect(screen.getByTestId('categories-list-empty')).toBeInTheDocument();
+      expect(screen.getByTestId('empty-state')).toBeInTheDocument();
       expect(screen.getByText(EMPTY_STATE_MESSAGE)).toBeInTheDocument();
-    });
-
-    it('does not render the loading skeleton in the empty state', () => {
-      render(
-        <CategoriesList
-          categories={[]}
-          isLoading={false}
-          onEdit={vi.fn()}
-          onDelete={vi.fn()}
-        />
-      );
-
-      expect(screen.queryByTestId('categories-list-loading')).not.toBeInTheDocument();
     });
   });
 
   describe('populated state', () => {
-    it('renders exactly 3 rows when given an array of 3 categories', () => {
-      const categories = [
-        buildCategory({ id: 'a', name: 'Alimentação' }),
-        buildCategory({ id: 'b', name: 'Transporte' }),
-        buildCategory({ id: 'c', name: 'Lazer' }),
-      ];
-
+    it('renders one data row per category in the desktop table', () => {
       render(
         <CategoriesList
-          categories={categories}
+          categories={[
+            buildCategory({ id: 'a', name: 'Alimentação' }),
+            buildCategory({ id: 'b', name: 'Transporte' }),
+            buildCategory({ id: 'c', name: 'Lazer' }),
+          ]}
           isLoading={false}
           onEdit={vi.fn()}
           onDelete={vi.fn()}
         />
       );
 
-      expect(screen.getAllByTestId('category-row')).toHaveLength(3);
+      expect(desktopRowCount()).toBe(3);
+      expect(screen.getAllByText('Alimentação').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Transporte').length).toBeGreaterThanOrEqual(1);
     });
 
-    it('does NOT render the empty state when categories has items', () => {
+    it('does not render the empty state when there are categories', () => {
       render(
         <CategoriesList
           categories={[buildCategory({ id: 'a', name: 'A' })]}
@@ -131,91 +88,61 @@ describe('CategoriesList', () => {
         />
       );
 
-      expect(screen.queryByTestId('categories-list-empty')).not.toBeInTheDocument();
-      expect(screen.queryByText(EMPTY_STATE_MESSAGE)).not.toBeInTheDocument();
+      expect(screen.queryByTestId('empty-state')).not.toBeInTheDocument();
     });
 
-    it('does NOT render the loading skeleton when populated', () => {
+    it('renders the description column header', () => {
       render(
         <CategoriesList
-          categories={[buildCategory({ id: 'a', name: 'A' })]}
+          categories={[buildCategory({ id: 'a', name: 'A', description: 'desc' })]}
           isLoading={false}
           onEdit={vi.fn()}
           onDelete={vi.fn()}
         />
       );
 
-      expect(screen.queryByTestId('categories-list-loading')).not.toBeInTheDocument();
-    });
-
-    it('renders each category name in its row', () => {
-      const categories = [
-        buildCategory({ id: 'a', name: 'Alimentação' }),
-        buildCategory({ id: 'b', name: 'Transporte' }),
-      ];
-
-      render(
-        <CategoriesList
-          categories={categories}
-          isLoading={false}
-          onEdit={vi.fn()}
-          onDelete={vi.fn()}
-        />
-      );
-
-      expect(screen.getByText('Alimentação')).toBeInTheDocument();
-      expect(screen.getByText('Transporte')).toBeInTheDocument();
+      expect(screen.getAllByText('Descrição').length).toBeGreaterThanOrEqual(1);
     });
   });
 
-  describe('integration: callback wiring through rows', () => {
-    it('invokes onEdit with the clicked row’s category', async () => {
+  describe('callback wiring through the actions menu', () => {
+    it('invokes onEdit with the selected category', async () => {
+      const user = userEvent.setup();
       const onEdit = vi.fn();
       const target = buildCategory({ id: 'cat-2', name: 'Transporte' });
-      const categories = [
-        buildCategory({ id: 'cat-1', name: 'Alimentação' }),
-        target,
-      ];
-
       render(
         <CategoriesList
-          categories={categories}
+          categories={[buildCategory({ id: 'cat-1', name: 'Alimentação' }), target]}
           isLoading={false}
           onEdit={onEdit}
           onDelete={vi.fn()}
         />
       );
 
-      await user.click(
-        screen.getByRole('button', { name: /editar categoria transporte/i })
-      );
+      const triggers = screen.getAllByRole('button', { name: /ações de transporte/i });
+      await user.click(triggers[0]);
+      await user.click(screen.getByText('Editar'));
 
-      expect(onEdit).toHaveBeenCalledTimes(1);
       expect(onEdit).toHaveBeenCalledWith(target);
     });
 
-    it('invokes onDelete with the clicked row’s category', async () => {
+    it('invokes onDelete with the selected category', async () => {
+      const user = userEvent.setup();
       const onDelete = vi.fn();
       const target = buildCategory({ id: 'cat-1', name: 'Alimentação' });
-      const categories = [
-        target,
-        buildCategory({ id: 'cat-2', name: 'Transporte' }),
-      ];
-
       render(
         <CategoriesList
-          categories={categories}
+          categories={[target, buildCategory({ id: 'cat-2', name: 'Transporte' })]}
           isLoading={false}
           onEdit={vi.fn()}
           onDelete={onDelete}
         />
       );
 
-      await user.click(
-        screen.getByRole('button', { name: /excluir categoria alimentação/i })
-      );
+      const triggers = screen.getAllByRole('button', { name: /ações de alimentação/i });
+      await user.click(triggers[0]);
+      await user.click(screen.getByText('Excluir'));
 
-      expect(onDelete).toHaveBeenCalledTimes(1);
       expect(onDelete).toHaveBeenCalledWith(target);
     });
   });

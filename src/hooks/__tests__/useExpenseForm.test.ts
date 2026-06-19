@@ -32,6 +32,7 @@ describe('useExpenseForm', () => {
     id: 'expense-1',
     organizationId: 'org-1',
     categoryId: null,
+    favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
     description: 'Test expense',
     amount: 100.50,
     currency: 'BRL',
@@ -58,7 +59,7 @@ describe('useExpenseForm', () => {
     status: ExpenseStatus.OPEN,
     categoryId: null,
     paymentMethod: null,
-    receiver: 'Valid Receiver',
+    favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
     municipality: 'Valid City',
     serviceInvoice: null,
   };
@@ -79,7 +80,7 @@ describe('useExpenseForm', () => {
       expect(result.current.form.getValues('status')).toBe(ExpenseStatus.OPEN);
       expect(result.current.form.getValues('categoryId')).toBeNull();
       expect(result.current.form.getValues('paymentMethod')).toBeNull();
-      expect(result.current.form.getValues('receiver')).toBe('');
+      expect(result.current.form.getValues('favorecidoId')).toBe('');
       expect(result.current.form.getValues('municipality')).toBe('');
       expect(result.current.form.getValues('serviceInvoice')).toBeNull();
       expect(result.current.isDirty).toBe(false);
@@ -96,7 +97,7 @@ describe('useExpenseForm', () => {
       expect(result.current.form.getValues('amount')).toBe(mockExpense.amount);
       expect(result.current.form.getValues('currency')).toBe(mockExpense.currency);
       expect(result.current.form.getValues('status')).toBe(mockExpense.status);
-      expect(result.current.form.getValues('receiver')).toBe(mockExpense.receiver);
+      expect(result.current.form.getValues('favorecidoId')).toBe(mockExpense.favorecidoId);
       expect(result.current.form.getValues('municipality')).toBe(mockExpense.municipality);
       expect(result.current.expense).toBe(mockExpense);
     });
@@ -121,7 +122,7 @@ describe('useExpenseForm', () => {
       const { result } = renderHook(() => useExpenseForm());
 
       // Trigger validation for specific fields
-      await result.current.form.trigger(['description', 'receiver', 'municipality']);
+      await result.current.form.trigger(['description', 'favorecidoId', 'municipality']);
 
       // Check the result of trigger() - RHF validates and returns result
       const isValid = await result.current.form.trigger();
@@ -237,6 +238,22 @@ describe('useExpenseForm', () => {
       expect(mockUpdate).not.toHaveBeenCalled();
     });
 
+    it('should send favorecidoId (not receiver) in the create payload', async () => {
+      const { result } = renderHook(() => useExpenseForm());
+
+      result.current.form.reset(validFormData);
+
+      await result.current.onSubmit();
+
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
+        })
+      );
+      const createPayload = mockCreate.mock.calls[0][0];
+      expect(createPayload).not.toHaveProperty('receiver');
+    });
+
     it('should display success toast on successful creation', async () => {
       const { result } = renderHook(() => useExpenseForm());
 
@@ -285,6 +302,23 @@ describe('useExpenseForm', () => {
 
       expect(mockUpdate).toHaveBeenCalledWith(mockExpense.id, expect.any(Object));
       expect(mockCreate).not.toHaveBeenCalled();
+    });
+
+    it('should send favorecidoId (not receiver) in the update payload', async () => {
+      const { result } = renderHook(() =>
+        useExpenseForm({ initialExpense: mockExpense })
+      );
+
+      await result.current.onSubmit();
+
+      expect(mockUpdate).toHaveBeenCalledWith(
+        mockExpense.id,
+        expect.objectContaining({
+          favorecidoId: mockExpense.favorecidoId,
+        })
+      );
+      const updatePayload = mockUpdate.mock.calls[0][1];
+      expect(updatePayload).not.toHaveProperty('receiver');
     });
 
     it('should display success toast on successful update', async () => {

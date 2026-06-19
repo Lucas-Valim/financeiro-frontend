@@ -15,6 +15,7 @@ describe('Type Definitions', () => {
         id: '123',
         organizationId: 'org-123',
         categoryId: null,
+        favorecidoId: null,
         description: 'Test expense',
         amount: 100,
         currency: 'BRL',
@@ -43,6 +44,7 @@ describe('Type Definitions', () => {
         'id',
         'organizationId',
         'categoryId',
+        'favorecidoId',
         'description',
         'amount',
         'currency',
@@ -59,7 +61,37 @@ describe('Type Definitions', () => {
         'updatedAt',
       ];
 
-      expect(requiredFields.length).toBe(17);
+      expect(requiredFields.length).toBe(18);
+    });
+
+    it('should include a nullable favorecidoId field', () => {
+      const dtoWithFavorecido: ExpenseDTO = {
+        id: '123',
+        organizationId: 'org-123',
+        categoryId: null,
+        favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
+        description: 'Test',
+        amount: 100,
+        currency: 'BRL',
+        dueDate: new Date(),
+        status: ExpenseStatus.OPEN,
+        paymentMethod: null,
+        paymentProof: null,
+        paymentProofUrl: null,
+        paymentDate: null,
+        receiver: 'Test',
+        municipality: 'City',
+        serviceInvoice: null,
+        serviceInvoiceUrl: null,
+        bankBillUrl: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      expect(dtoWithFavorecido.favorecidoId).toBe('550e8400-e29b-41d4-a716-446655440000');
+
+      const legacyDto: ExpenseDTO = { ...dtoWithFavorecido, favorecidoId: null };
+      expect(legacyDto.favorecidoId).toBeNull();
     });
   });
 
@@ -164,6 +196,7 @@ describe('Type Definitions', () => {
         id: '123',
         organizationId: 'org-123',
         categoryId: null,
+        favorecidoId: null,
         description: 'Test',
         amount: 100,
         currency: 'BRL',
@@ -203,48 +236,51 @@ describe('Type Definitions', () => {
   });
 
   describe('CreateExpenseInput', () => {
+    const FAVORECIDO_ID = '550e8400-e29b-41d4-a716-446655440000';
+
     it('should have correct structure with all required fields', () => {
       const input: CreateExpenseInput = {
         organizationId: 'org-123',
+        favorecidoId: FAVORECIDO_ID,
         description: 'Test expense',
         amount: 100.50,
         currency: 'BRL',
         dueDate: new Date('2024-12-31'),
-        receiver: 'Test Receiver',
         municipality: 'Test City',
       };
 
       expect(input.organizationId).toBe('org-123');
+      expect(input.favorecidoId).toBe(FAVORECIDO_ID);
       expect(input.description).toBe('Test expense');
       expect(input.amount).toBe(100.50);
       expect(input.currency).toBe('BRL');
       expect(input.dueDate).toBeInstanceOf(Date);
-      expect(input.receiver).toBe('Test Receiver');
       expect(input.municipality).toBe('Test City');
     });
 
-    it('should have all required fields defined', () => {
+    it('should have favorecidoId as a required field (not receiver)', () => {
       const requiredFields: (keyof CreateExpenseInput)[] = [
         'organizationId',
+        'favorecidoId',
         'description',
         'amount',
         'currency',
         'dueDate',
-        'receiver',
         'municipality',
       ];
 
+      expect(requiredFields).toContain('favorecidoId');
       expect(requiredFields.length).toBe(7);
     });
 
     it('should accept optional paymentMethod', () => {
       const inputWithPaymentMethod: CreateExpenseInput = {
         organizationId: 'org-123',
+        favorecidoId: FAVORECIDO_ID,
         description: 'Test expense',
         amount: 100,
         currency: 'BRL',
         dueDate: new Date(),
-        receiver: 'Test',
         municipality: 'City',
         paymentMethod: 'PIX',
       };
@@ -255,41 +291,41 @@ describe('Type Definitions', () => {
     it('should work without optional fields', () => {
       const input: CreateExpenseInput = {
         organizationId: 'org-123',
+        favorecidoId: FAVORECIDO_ID,
         description: 'Test expense',
         amount: 100,
         currency: 'BRL',
         dueDate: new Date(),
-        receiver: 'Test',
         municipality: 'City',
       };
 
       expect(input.paymentMethod).toBeUndefined();
     });
 
-    it('should accept string values for description and receiver', () => {
+    it('should accept string values for description and favorecidoId', () => {
       const input: CreateExpenseInput = {
         organizationId: 'org-123',
+        favorecidoId: FAVORECIDO_ID,
         description: 'A valid description',
         amount: 100,
         currency: 'BRL',
         dueDate: new Date(),
-        receiver: 'A valid receiver name',
         municipality: 'A valid city name',
       };
 
       expect(typeof input.description).toBe('string');
-      expect(typeof input.receiver).toBe('string');
+      expect(typeof input.favorecidoId).toBe('string');
       expect(typeof input.municipality).toBe('string');
     });
 
     it('should accept number for amount', () => {
       const input: CreateExpenseInput = {
         organizationId: 'org-123',
+        favorecidoId: FAVORECIDO_ID,
         description: 'Test',
         amount: 99999999.99,
         currency: 'BRL',
         dueDate: new Date(),
-        receiver: 'Test',
         municipality: 'City',
       };
 
@@ -299,13 +335,15 @@ describe('Type Definitions', () => {
   });
 
   describe('UpdateExpenseInput', () => {
+    const FAVORECIDO_ID = '550e8400-e29b-41d4-a716-446655440000';
+
     it('should have all fields optional', () => {
       const emptyInput: UpdateExpenseInput = {};
 
       expect(emptyInput.description).toBeUndefined();
       expect(emptyInput.amount).toBeUndefined();
       expect(emptyInput.dueDate).toBeUndefined();
-      expect(emptyInput.receiver).toBeUndefined();
+      expect(emptyInput.favorecidoId).toBeUndefined();
       expect(emptyInput.municipality).toBeUndefined();
       expect(emptyInput.paymentMethod).toBeUndefined();
     });
@@ -323,12 +361,12 @@ describe('Type Definitions', () => {
       const input: UpdateExpenseInput = {
         description: 'Updated',
         amount: 200,
-        receiver: 'New Receiver',
+        favorecidoId: FAVORECIDO_ID,
       };
 
       expect(input.description).toBe('Updated');
       expect(input.amount).toBe(200);
-      expect(input.receiver).toBe('New Receiver');
+      expect(input.favorecidoId).toBe(FAVORECIDO_ID);
     });
 
     it('should accept all optional fields', () => {
@@ -336,7 +374,7 @@ describe('Type Definitions', () => {
         description: 'Full update',
         amount: 500,
         dueDate: new Date('2025-01-01'),
-        receiver: 'New Receiver',
+        favorecidoId: FAVORECIDO_ID,
         municipality: 'New City',
         paymentMethod: 'Bank Transfer',
       };
@@ -344,7 +382,7 @@ describe('Type Definitions', () => {
       expect(fullInput.description).toBe('Full update');
       expect(fullInput.amount).toBe(500);
       expect(fullInput.dueDate).toBeInstanceOf(Date);
-      expect(fullInput.receiver).toBe('New Receiver');
+      expect(fullInput.favorecidoId).toBe(FAVORECIDO_ID);
       expect(fullInput.municipality).toBe('New City');
       expect(fullInput.paymentMethod).toBe('Bank Transfer');
     });
@@ -354,7 +392,7 @@ describe('Type Definitions', () => {
         description: 'Test',
         amount: 100,
         dueDate: new Date(),
-        receiver: 'Test',
+        favorecidoId: FAVORECIDO_ID,
         municipality: 'Test',
         paymentMethod: 'Test',
       };
@@ -362,7 +400,7 @@ describe('Type Definitions', () => {
       expect(typeof input.description).toBe('string');
       expect(typeof input.amount).toBe('number');
       expect(input.dueDate).toBeInstanceOf(Date);
-      expect(typeof input.receiver).toBe('string');
+      expect(typeof input.favorecidoId).toBe('string');
       expect(typeof input.municipality).toBe('string');
       expect(typeof input.paymentMethod).toBe('string');
     });

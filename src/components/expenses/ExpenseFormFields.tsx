@@ -1,3 +1,4 @@
+import { useState, useCallback } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -21,6 +22,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useCategories } from '@/hooks/use-categories';
+import { useFavorecidos } from '@/hooks/use-favorecidos';
+import { Combobox } from '@/components/ui/combobox';
+import { FavorecidoFormModal } from '@/components/favorecidos/FavorecidoFormModal';
+import type { FavorecidoDTO } from '@/types/favorecidos';
 import type { ExpenseFormData } from '@/schemas/expense-form-schema';
 import 'react-datepicker/dist/react-datepicker.css';
 
@@ -53,30 +58,6 @@ function applyCurrencyMask(value: string): string {
   return formatCurrency(floatValue);
 }
 
-const RECEIVER_OPTIONS = [
-  { value: 'Advento Aprendizagem', label: 'Advento Aprendizagem' },
-  { value: 'Carlo Valim Borges', label: 'Carlo Valim Borges' },
-  { value: 'DAS', label: 'DAS' },
-  { value: 'Eduardo Pezzi', label: 'Eduardo Pezzi' },
-  { value: 'Enngeofood', label: 'Enngeofood' },
-  { value: 'GFarias', label: 'GFarias' },
-  { value: 'IRRF', label: 'IRRF' },
-  { value: 'Jaciara Giordani', label: 'Jaciara Giordani' },
-  { value: 'Jaime Prux', label: 'Jaime Prux' },
-  { value: 'KingHost', label: 'KingHost' },
-  { value: 'Mecanica Lorange', label: 'Mecanica Lorange' },
-  { value: 'Maria Cristina Tudium', label: 'Maria Cristina Tudium' },
-  { value: 'Mundi Desenvolvimento Humano', label: 'Mundi Desenvolvimento Humano' },
-  { value: 'Planejar', label: 'Planejar' },
-  { value: 'Pompeia Parking', label: 'Pompeia Parking' },
-  { value: 'Unimed', label: 'Unimed' },
-  { value: 'WisePark', label: 'WisePark' },
-  {value: 'CRA', label: 'CRA'},
-  {value: 'Rafaela Daros', label: 'Rafaela Daros'},
-  {value: 'Katia Santos', label: 'Katia Santos'},
-  {value: 'RB LEARNING', label: 'RB LEARNING'},
-] as const;
-
 const MUNICIPALITY_OPTIONS = [
   { value: 'Bento Gonçalves', label: 'Bento Gonçalves' },
   { value: 'Caxias do Sul', label: 'Caxias do Sul' },
@@ -98,7 +79,23 @@ interface ExpenseFormFieldsProps {
 
 export function ExpenseFormFields({ disabled = false, organizationId }: ExpenseFormFieldsProps) {
   const form = useFormContext<ExpenseFormData>();
-  const { categories, isLoading } = useCategories(organizationId);
+  const { categories, isLoading: isLoadingCategories } = useCategories(organizationId);
+  const { favorecidos, isLoading: isLoadingFavorecidos } = useFavorecidos(organizationId);
+  const [isCreateFavorecidoOpen, setIsCreateFavorecidoOpen] = useState(false);
+
+  const favorecidoOptions = favorecidos.map((f: FavorecidoDTO) => ({
+    value: f.id,
+    label: f.name,
+    description: f.document,
+  }));
+
+  const handleFavorecidoCreated = useCallback(
+    (created: FavorecidoDTO) => {
+      form.setValue('favorecidoId', created.id, { shouldDirty: true });
+      setIsCreateFavorecidoOpen(false);
+    },
+    [form],
+  );
 
   return (
     <div className="space-y-4">
@@ -200,17 +197,17 @@ export function ExpenseFormFields({ disabled = false, organizationId }: ExpenseF
           <FormItem>
             <FormLabel>Categoria</FormLabel>
             <Select
-              disabled={disabled || isLoading}
+              disabled={disabled || isLoadingCategories}
               onValueChange={field.onChange}
               value={field.value ?? undefined}
             >
               <FormControl>
                 <SelectTrigger aria-describedby="categoryId-error">
-                  <SelectValue placeholder={isLoading ? "Carregando..." : "Selecione uma categoria"} />
+                  <SelectValue placeholder={isLoadingCategories ? "Carregando..." : "Selecione uma categoria"} />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                {isLoading ? (
+                {isLoadingCategories ? (
                   <SelectItem value="__loading" disabled>
                     <span className="flex items-center gap-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -235,31 +232,34 @@ export function ExpenseFormFields({ disabled = false, organizationId }: ExpenseF
 
       <FormField
         control={form.control}
-        name="receiver"
+        name="favorecidoId"
         render={({ field }) => (
           <FormItem>
             <FormLabel required>Favorecido</FormLabel>
-            <Select
-              disabled={disabled}
-              onValueChange={field.onChange}
-              value={field.value ?? ''}
-            >
-              <FormControl>
-                <SelectTrigger aria-describedby="receiver-error">
-                  <SelectValue placeholder="Selecione um favorecido" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                {RECEIVER_OPTIONS.map((receiver) => (
-                  <SelectItem key={receiver.value} value={receiver.value}>
-                    {receiver.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <FormMessage id="receiver-error" />
+            <FormControl>
+              <Combobox
+                options={favorecidoOptions}
+                value={field.value ?? ''}
+                onValueChange={field.onChange}
+                placeholder="Selecione um favorecido"
+                searchPlaceholder="Buscar por nome ou documento..."
+                emptyMessage="Nenhum favorecido encontrado."
+                disabled={disabled}
+                isLoading={isLoadingFavorecidos}
+                onCreateNew={() => setIsCreateFavorecidoOpen(true)}
+                createNewLabel="Cadastrar novo favorecido"
+                aria-describedby="favorecidoId-error"
+              />
+            </FormControl>
+            <FormMessage id="favorecidoId-error" />
           </FormItem>
         )}
+      />
+
+      <FavorecidoFormModal
+        isOpen={isCreateFavorecidoOpen}
+        onClose={() => setIsCreateFavorecidoOpen(false)}
+        onSuccess={handleFavorecidoCreated}
       />
 
       <FormField

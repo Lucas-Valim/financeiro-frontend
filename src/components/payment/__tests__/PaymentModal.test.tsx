@@ -66,6 +66,7 @@ const mockExpense: ExpenseDTO = {
   id: 'expense-123',
   organizationId: 'org-1',
   categoryId: 'cat-1',
+  favorecidoId: null,
   description: 'Test Expense',
   amount: 100.5,
   currency: 'BRL',

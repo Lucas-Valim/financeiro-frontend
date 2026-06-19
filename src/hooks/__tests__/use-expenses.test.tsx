@@ -35,6 +35,7 @@ describe('useExpenses', () => {
     id: '1',
     organizationId: 'fca3c088-ba34-43a2-9b32-b2b1a1246915',
     categoryId: null,
+    favorecidoId: null,
     description: 'Test expense',
     amount: 100,
     currency: 'BRL',

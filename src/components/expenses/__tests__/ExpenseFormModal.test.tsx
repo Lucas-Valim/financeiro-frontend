@@ -61,6 +61,7 @@ const mockExpense: ExpenseDTO = {
   dueDate: new Date('2024-01-15'),
   status: ExpenseStatus.OPEN,
   categoryId: 'cat-1',
+  favorecidoId: null,
   paymentMethod: 'PIX',
   paymentProof: null,
   paymentProofUrl: null,

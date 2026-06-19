@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm, FormProvider, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ExpenseFormFields } from '../ExpenseFormFields';
 import {
@@ -17,12 +17,52 @@ const mockCategories = [
   { id: 'cat-2', name: 'Alimentação', description: 'Alimentação' },
 ];
 
+const mockFavorecidos = [
+  { id: 'fav-1', name: 'Favorecido Um', document: '12345678901', organizationId: DEFAULT_ORGANIZATION_ID, documentType: 'CPF', zipCode: null, street: null, number: null, city: null, state: null, phone: null, email: null, createdAt: '', updatedAt: '' },
+  { id: 'fav-2', name: 'Favorecido Dois', document: '98765432100', organizationId: DEFAULT_ORGANIZATION_ID, documentType: 'CPF', zipCode: null, street: null, number: null, city: null, state: null, phone: null, email: null, createdAt: '', updatedAt: '' },
+];
+
 vi.mock('@/hooks/use-categories', () => ({
   useCategories: vi.fn(() => ({
     categories: mockCategories,
     isLoading: false,
     error: null,
   })),
+}));
+
+vi.mock('@/hooks/use-favorecidos', () => ({
+  useFavorecidos: vi.fn(() => ({
+    favorecidos: mockFavorecidos,
+    isLoading: false,
+    error: null,
+  })),
+}));
+
+const createdFavorecido = {
+  id: '7c9e6679-7425-40de-944b-e07fc1f90ae7',
+  name: 'Favorecido Novo',
+  document: '11122233344',
+};
+
+vi.mock('@/components/favorecidos/FavorecidoFormModal', () => ({
+  FavorecidoFormModal: ({
+    isOpen,
+    onClose,
+    onSuccess,
+  }: {
+    isOpen: boolean;
+    onClose: () => void;
+    onSuccess?: (created: { id: string; name: string; document: string }) => void;
+  }) =>
+    isOpen ? (
+      <div data-testid="favorecido-form-modal">
+        <span>Favorecido Modal</span>
+        <button data-testid="close-modal" onClick={onClose}>Fechar</button>
+        <button data-testid="submit-modal" onClick={() => onSuccess?.(createdFavorecido)}>
+          Salvar favorecido
+        </button>
+      </div>
+    ) : null,
 }));
 
 vi.mock('react-datepicker', () => ({
@@ -68,6 +108,11 @@ function FormWrapper({
   );
 }
 
+function FavorecidoIdProbe() {
+  const { watch } = useFormContext<ExpenseFormData>();
+  return <div data-testid="favorecido-id-value">{watch('favorecidoId')}</div>;
+}
+
 describe('ExpenseFormFields', () => {
   const user = userEvent.setup();
 
@@ -87,7 +132,7 @@ describe('ExpenseFormFields', () => {
       expect(screen.getByLabelText(/valor/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/data de vencimento/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/categoria/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/favorecido/i)).toBeInTheDocument();
+      expect(screen.getByRole('combobox', { name: /favorecido/i })).toBeInTheDocument();
       expect(screen.getByLabelText(/município/i)).toBeInTheDocument();
     });
 
@@ -210,31 +255,61 @@ describe('ExpenseFormFields', () => {
     });
   });
 
-  describe('Receiver Field', () => {
-    it('renders receiver dropdown trigger', () => {
+  describe('Favorecido Field', () => {
+    it('renders favorecido combobox trigger', () => {
       render(
         <FormWrapper>
           <ExpenseFormFields organizationId={DEFAULT_ORGANIZATION_ID} />
         </FormWrapper>
       );
 
-      const receiverTrigger = screen.getByRole('combobox', { name: /favorecido/i });
-      expect(receiverTrigger).toBeInTheDocument();
+      const favorecidoTrigger = screen.getByRole('combobox', { name: /favorecido/i });
+      expect(favorecidoTrigger).toBeInTheDocument();
+    });
+
+    it('does NOT render RECEIVER_OPTIONS hardcoded list', () => {
+      render(
+        <FormWrapper>
+          <ExpenseFormFields organizationId={DEFAULT_ORGANIZATION_ID} />
+        </FormWrapper>
+      );
+
+      expect(screen.queryByText('Advento Aprendizagem')).not.toBeInTheDocument();
+      expect(screen.queryByText('KingHost')).not.toBeInTheDocument();
+      expect(screen.queryByText('Unimed')).not.toBeInTheDocument();
+    });
+
+    it('loads favorecidos from useFavorecidos hook', async () => {
+      const { useFavorecidos } = await import('@/hooks/use-favorecidos');
+      const mockedUseFavorecidos = vi.mocked(useFavorecidos);
+
+      render(
+        <FormWrapper>
+          <ExpenseFormFields organizationId={DEFAULT_ORGANIZATION_ID} />
+        </FormWrapper>
+      );
+
+      expect(mockedUseFavorecidos).toHaveBeenCalledWith(DEFAULT_ORGANIZATION_ID);
     });
   });
 
   describe('Municipality Field', () => {
-    it('allows typing in municipality field', async () => {
+    it('allows selecting a municipality from the dropdown', async () => {
       render(
         <FormWrapper>
           <ExpenseFormFields organizationId={DEFAULT_ORGANIZATION_ID} />
         </FormWrapper>
       );
 
-      const municipalityInput = screen.getByLabelText(/município/i);
-      await user.type(municipalityInput, 'São Paulo');
+      const municipalityTrigger = screen.getByRole('combobox', { name: /município/i });
+      await user.click(municipalityTrigger);
 
-      expect(municipalityInput).toHaveValue('São Paulo');
+      const option = await screen.findByRole('option', { name: 'Porto Alegre' });
+      await user.click(option);
+
+      await waitFor(() => {
+        expect(municipalityTrigger).toHaveTextContent('Porto Alegre');
+      });
     });
   });
 
@@ -251,7 +326,7 @@ describe('ExpenseFormFields', () => {
       expect(screen.getByLabelText(/município/i)).toBeDisabled();
       expect(screen.getByTestId('date-picker')).toBeDisabled();
       expect(screen.getByRole('combobox', { name: /categoria/i })).toHaveAttribute('data-disabled');
-      expect(screen.getByRole('combobox', { name: /favorecido/i })).toHaveAttribute('data-disabled');
+      expect(screen.getByRole('combobox', { name: /favorecido/i })).toBeDisabled();
     });
 
     it('enables all fields when disabled prop is false', () => {
@@ -273,8 +348,8 @@ describe('ExpenseFormFields', () => {
         description: 'Existing expense',
         amount: 1500.5,
         dueDate: new Date('2024-12-31'),
-        receiver: 'google',
-        municipality: 'São Paulo',
+        favorecidoId: 'fav-1',
+        municipality: 'Porto Alegre',
         categoryId: 'cat-1',
       };
 
@@ -285,7 +360,7 @@ describe('ExpenseFormFields', () => {
       );
 
       expect(screen.getByLabelText(/descrição/i)).toHaveValue('Existing expense');
-      expect(screen.getByLabelText(/município/i)).toHaveValue('São Paulo');
+      expect(screen.getByRole('combobox', { name: /município/i })).toHaveTextContent('Porto Alegre');
     });
 
     it('pre-populates amount field with formatted currency', () => {
@@ -293,7 +368,7 @@ describe('ExpenseFormFields', () => {
         description: 'Test',
         amount: 1500.5,
         dueDate: new Date(),
-        receiver: 'test',
+        favorecidoId: 'fav-1',
         municipality: 'Test City',
       };
 
@@ -393,13 +468,14 @@ describe('ExpenseFormFields', () => {
       const datePickers = screen.queryAllByTestId('date-picker');
       const fileInputs = document.querySelectorAll('input[type="file"]');
 
-      expect(textInputs.length).toBeGreaterThanOrEqual(4);
-      expect(comboboxes.length).toBe(2);
+      // description + amount are textboxes; categoria/favorecido/município/forma de pagamento are comboboxes
+      expect(textInputs.length).toBe(2);
+      expect(comboboxes.length).toBe(4);
       expect(datePickers.length).toBe(1);
       expect(fileInputs.length).toBe(0);
     });
 
-    it('all 7 remaining text/select fields still work', async () => {
+    it('all 7 remaining text/select fields still work', () => {
       render(
         <FormWrapper>
           <ExpenseFormFields organizationId={DEFAULT_ORGANIZATION_ID} />
@@ -426,7 +502,7 @@ describe('ExpenseFormFields', () => {
       expect(screen.getByLabelText(/valor/i)).toBeDisabled();
       expect(screen.getByTestId('date-picker')).toBeDisabled();
       expect(screen.getByRole('combobox', { name: /categoria/i })).toHaveAttribute('data-disabled');
-      expect(screen.getByRole('combobox', { name: /favorecido/i })).toHaveAttribute('data-disabled');
+      expect(screen.getByRole('combobox', { name: /favorecido/i })).toBeDisabled();
       expect(screen.getByLabelText(/município/i)).toBeDisabled();
       expect(screen.getByLabelText(/forma de pagamento/i)).toBeDisabled();
     });
@@ -461,6 +537,136 @@ describe('ExpenseFormFields', () => {
         const alimentacaoOptions = screen.getAllByText('Alimentação');
         expect(combustivelOptions.length).toBeGreaterThan(0);
         expect(alimentacaoOptions.length).toBeGreaterThan(0);
+      });
+    });
+  });
+
+  describe('Dynamic Favorecidos via Combobox', () => {
+    it('should call useFavorecidos with organizationId prop', async () => {
+      const { useFavorecidos } = await import('@/hooks/use-favorecidos');
+      const mockedUseFavorecidos = vi.mocked(useFavorecidos);
+
+      render(
+        <FormWrapper>
+          <ExpenseFormFields organizationId={DEFAULT_ORGANIZATION_ID} />
+        </FormWrapper>
+      );
+
+      expect(mockedUseFavorecidos).toHaveBeenCalledWith(DEFAULT_ORGANIZATION_ID);
+    });
+
+    it('should show favorecidos from API in combobox', async () => {
+      render(
+        <FormWrapper>
+          <ExpenseFormFields organizationId={DEFAULT_ORGANIZATION_ID} />
+        </FormWrapper>
+      );
+
+      const favorecidoTrigger = screen.getByRole('combobox', { name: /favorecido/i });
+      await user.click(favorecidoTrigger);
+
+      await waitFor(() => {
+        expect(screen.getByText('Favorecido Um')).toBeInTheDocument();
+        expect(screen.getByText('Favorecido Dois')).toBeInTheDocument();
+      });
+    });
+
+    it('selecting a favorecido sets favorecidoId in the form', async () => {
+      render(
+        <FormWrapper>
+          <ExpenseFormFields organizationId={DEFAULT_ORGANIZATION_ID} />
+          <FavorecidoIdProbe />
+        </FormWrapper>
+      );
+
+      await user.click(screen.getByRole('combobox', { name: /favorecido/i }));
+      await user.click(await screen.findByText('Favorecido Um'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('favorecido-id-value')).toHaveTextContent('fav-1');
+      });
+    });
+
+    it('shows the "Cadastrar novo favorecido" action in the dropdown', async () => {
+      render(
+        <FormWrapper>
+          <ExpenseFormFields organizationId={DEFAULT_ORGANIZATION_ID} />
+        </FormWrapper>
+      );
+
+      await user.click(screen.getByRole('combobox', { name: /favorecido/i }));
+
+      expect(screen.getByText('Cadastrar novo favorecido')).toBeInTheDocument();
+    });
+
+    it('opens the FavorecidoFormModal and auto-selects the created favorecido', async () => {
+      render(
+        <FormWrapper>
+          <ExpenseFormFields organizationId={DEFAULT_ORGANIZATION_ID} />
+          <FavorecidoIdProbe />
+        </FormWrapper>
+      );
+
+      await user.click(screen.getByRole('combobox', { name: /favorecido/i }));
+      await user.click(screen.getByText('Cadastrar novo favorecido'));
+
+      expect(screen.getByTestId('favorecido-form-modal')).toBeInTheDocument();
+
+      await user.click(screen.getByTestId('submit-modal'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('favorecido-id-value')).toHaveTextContent(
+          '7c9e6679-7425-40de-944b-e07fc1f90ae7'
+        );
+      });
+      expect(screen.queryByTestId('favorecido-form-modal')).not.toBeInTheDocument();
+    });
+
+    it('starts with an empty combobox for legacy expenses without favorecidoId', () => {
+      const legacyExpense: Partial<ExpenseFormData> = {
+        description: 'Legacy expense',
+        amount: 500,
+        dueDate: new Date('2024-12-31'),
+        municipality: 'Porto Alegre',
+        favorecidoId: '',
+      };
+
+      render(
+        <FormWrapper defaultValues={legacyExpense}>
+          <ExpenseFormFields organizationId={DEFAULT_ORGANIZATION_ID} />
+        </FormWrapper>
+      );
+
+      const favorecidoTrigger = screen.getByRole('combobox', { name: /favorecido/i });
+      expect(favorecidoTrigger).toHaveTextContent('Selecione um favorecido');
+      expect(favorecidoTrigger).not.toHaveTextContent('Favorecido Um');
+    });
+
+    it('shows a validation error when submitting without selecting a favorecido', async () => {
+      function FormWithSubmit() {
+        const form = useForm<ExpenseFormData>({
+          // @ts-expect-error - Zod v4 resolver type inference issue
+          resolver: zodResolver(expenseFormSchema),
+          defaultValues: defaultExpenseFormValues as ExpenseFormData,
+          mode: 'onChange',
+        });
+
+        return (
+          <FormProvider {...form}>
+            <form onSubmit={form.handleSubmit(() => {})}>
+              <ExpenseFormFields organizationId={DEFAULT_ORGANIZATION_ID} />
+              <button type="submit">Salvar</button>
+            </form>
+          </FormProvider>
+        );
+      }
+
+      render(<FormWithSubmit />);
+
+      await user.click(screen.getByRole('button', { name: /salvar/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText('O favorecido é obrigatório')).toBeInTheDocument();
       });
     });
   });

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { ExpensesGrid } from '../ExpensesGrid';
 import type { ExpenseDTO } from '@/types/expenses';
 import { ExpenseStatus } from '@/constants/expenses';
@@ -24,6 +25,7 @@ const mockExpenses: ExpenseDTO[] = [
     id: '1',
     organizationId: 'org-1',
     categoryId: null,
+    favorecidoId: null,
     description: 'Test expense 1',
     amount: 100.50,
     currency: 'BRL',
@@ -45,6 +47,7 @@ const mockExpenses: ExpenseDTO[] = [
     id: '2',
     organizationId: 'org-1',
     categoryId: null,
+    favorecidoId: null,
     description: 'Test expense 2',
     amount: 200.75,
     currency: 'BRL',
@@ -330,34 +333,34 @@ describe('ExpensesGrid', () => {
   });
 
   describe('Edit Action', () => {
-    it('renders Edit button in mobile view', () => {
+    it('renders an actions dropdown trigger for each expense row', () => {
       render(<ExpensesGrid {...defaultProps} />);
 
-      // Mobile view has direct Edit buttons
-      const editButtons = screen.getAllByText('Edit');
-      expect(editButtons.length).toBeGreaterThan(0);
+      // The ⋮ trigger is rendered in each responsive view for every expense.
+      expect(screen.getAllByTestId('morevertical-icon').length).toBeGreaterThan(0);
     });
 
-    it('calls onEdit callback when Edit button is clicked in mobile view', () => {
+    it('calls onEdit callback when Editar is selected from the dropdown', async () => {
+      const user = userEvent.setup();
       const onEdit = vi.fn();
       render(<ExpensesGrid {...defaultProps} onEdit={onEdit} />);
 
-      // Click Edit in mobile view
-      const editButtons = screen.getAllByText('Edit');
-      fireEvent.click(editButtons[0]);
+      const triggers = screen.getAllByRole('button', { name: /open menu/i });
+      await user.click(triggers[0]);
+      await user.click(screen.getByText('Editar'));
 
       expect(onEdit).toHaveBeenCalledWith(mockExpenses[0]);
     });
 
-    it('does not throw error when onEdit is not provided', () => {
+    it('does not throw when onEdit is not provided', async () => {
+      const user = userEvent.setup();
       render(<ExpensesGrid {...defaultProps} />);
 
-      // Click Edit in mobile view - should not throw
-      const editButtons = screen.getAllByText('Edit');
-      fireEvent.click(editButtons[0]);
+      const triggers = screen.getAllByRole('button', { name: /open menu/i });
+      await user.click(triggers[0]);
+      await user.click(screen.getByText('Editar'));
 
-      // Should not throw error when onEdit is not provided
-      expect(editButtons[0]).toBeInTheDocument();
+      expect(screen.queryByText('Editar')).not.toBeInTheDocument();
     });
   });
 });

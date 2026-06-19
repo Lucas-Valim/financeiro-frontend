@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Despesa } from '../Despesa';
 import { ExpenseStatus } from '@/constants/expenses';
@@ -64,6 +65,7 @@ describe('Despesa', () => {
     id: '1',
     organizationId: 'fca3c088-ba34-43a2-9b32-b2b1a1246915',
     categoryId: null,
+    favorecidoId: null,
     description: 'Test expense',
     amount: 100,
     currency: 'BRL',
@@ -675,8 +677,10 @@ describe('Despesa', () => {
 
       // Simulate edit by clicking the Edit button in mobile view
       // Mobile view has a direct Edit button that's easier to test
-      const editButtons = screen.getAllByText('Edit');
-      fireEvent.click(editButtons[0]);
+      const user = userEvent.setup();
+      const triggers = screen.getAllByRole('button', { name: /open menu/i });
+      await user.click(triggers[0]);
+      await user.click(screen.getByText('Editar'));
 
       await waitFor(() => {
         expect(screen.getByTestId('expense-form-modal')).toBeInTheDocument();
@@ -697,8 +701,10 @@ describe('Despesa', () => {
       render(<Despesa />, { wrapper });
 
       // Click Edit in mobile view
-      const editButtons = screen.getAllByText('Edit');
-      fireEvent.click(editButtons[0]);
+      const user = userEvent.setup();
+      const triggers = screen.getAllByRole('button', { name: /open menu/i });
+      await user.click(triggers[0]);
+      await user.click(screen.getByText('Editar'));
 
       await waitFor(() => {
         expect(mockExpenseFormModal).toHaveBeenCalledWith(
@@ -723,8 +729,10 @@ describe('Despesa', () => {
       render(<Despesa />, { wrapper });
 
       // Open edit modal
-      const editButtons = screen.getAllByText('Edit');
-      fireEvent.click(editButtons[0]);
+      const user = userEvent.setup();
+      const triggers = screen.getAllByRole('button', { name: /open menu/i });
+      await user.click(triggers[0]);
+      await user.click(screen.getByText('Editar'));
 
       await waitFor(() => {
         expect(screen.getByTestId('expense-form-modal')).toBeInTheDocument();

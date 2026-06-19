@@ -25,7 +25,7 @@ const createValidExpenseData = (overrides?: Partial<ExpenseFormData>): ExpenseFo
   status: ExpenseStatus.OPEN,
   categoryId: 'category-123',
   paymentMethod: 'PIX',
-  receiver: 'John Doe',
+  favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
   municipality: 'São Paulo',
   serviceInvoice: null,
   bankBill: null,
@@ -47,7 +47,7 @@ describe('expenseFormSchema', () => {
         currency: 'BRL',
         dueDate: new Date(),
         status: ExpenseStatus.OPEN,
-        receiver: 'John',
+        favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
         municipality: 'City',
       };
       const result = expenseFormSchema.safeParse(minimalData);
@@ -63,7 +63,7 @@ describe('expenseFormSchema', () => {
         status: ExpenseStatus.OPEN,
         categoryId: null,
         paymentMethod: null,
-        receiver: 'John',
+        favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
         municipality: 'City',
         serviceInvoice: null,
         bankBill: null,
@@ -140,11 +140,22 @@ describe('expenseFormSchema', () => {
     });
   });
 
-  describe('receiver validation', () => {
-    it('should fail when receiver is empty', () => {
+  describe('favorecidoId validation', () => {
+    it('should fail when favorecidoId is missing', () => {
+      const { favorecidoId: _removed, ...dataWithoutFavorecido } = createValidExpenseData();
+      const result = expenseFormSchema.safeParse(dataWithoutFavorecido);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(
+          result.error.issues.some((issue) => issue.message === 'O favorecido é obrigatório')
+        ).toBe(true);
+      }
+    });
+
+    it('should fail when favorecidoId is empty', () => {
       const result = expenseFormSchema.safeParse({
         ...createValidExpenseData(),
-        receiver: '',
+        favorecidoId: '',
       });
       expect(result.success).toBe(false);
       if (!result.success) {
@@ -152,14 +163,14 @@ describe('expenseFormSchema', () => {
       }
     });
 
-    it('should fail when receiver exceeds 100 characters', () => {
+    it('should fail when favorecidoId is not a valid UUID', () => {
       const result = expenseFormSchema.safeParse({
         ...createValidExpenseData(),
-        receiver: 'a'.repeat(101),
+        favorecidoId: 'not-a-uuid',
       });
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error.issues[0].message).toBe('O favorecido deve ter no máximo 100 caracteres');
+        expect(result.error.issues[0].message).toBe('O favorecido deve ser um identificador válido');
       }
     });
   });
@@ -443,7 +454,7 @@ describe('defaultExpenseFormValues', () => {
     expect(defaultExpenseFormValues.status).toBe(ExpenseStatus.OPEN);
     expect(defaultExpenseFormValues.categoryId).toBeNull();
     expect(defaultExpenseFormValues.paymentMethod).toBeNull();
-    expect(defaultExpenseFormValues.receiver).toBe('');
+    expect(defaultExpenseFormValues.favorecidoId).toBe('');
     expect(defaultExpenseFormValues.municipality).toBe('');
     expect(defaultExpenseFormValues.serviceInvoice).toBeNull();
   });
@@ -491,7 +502,7 @@ describe('transformExpenseFormData', () => {
       status: ExpenseStatus.OPEN,
       categoryId: '',
       paymentMethod: '',
-      receiver: 'John Doe',
+      favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
       municipality: 'City',
       serviceInvoice: null,
       bankBill: null,
@@ -555,7 +566,7 @@ describe('type exports', () => {
       currency: 'BRL',
       dueDate: new Date(),
       status: ExpenseStatus.OPEN,
-      receiver: 'John',
+      favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
       municipality: 'City',
     };
     expect(data).toBeDefined();

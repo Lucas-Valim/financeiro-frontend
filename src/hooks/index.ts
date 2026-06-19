@@ -5,3 +5,6 @@ export { useCategories } from './use-categories';
 export { useExpenseCalendar } from './use-expense-calendar';
 export { useCategoryForm } from './useCategoryForm';
 export { useDeleteCategory } from './useDeleteCategory';
+export { useFavorecidos } from './use-favorecidos';
+export { useFavorecidoForm } from './useFavorecidoForm';
+export { useDeleteFavorecido } from './useDeleteFavorecido';

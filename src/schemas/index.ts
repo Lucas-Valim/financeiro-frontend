@@ -27,3 +27,9 @@ export {
   type PaymentRequest,
   type PaymentResponse,
 } from './payment-schema';
+
+export {
+  favorecidoFormSchema,
+  defaultFavorecidoFormValues,
+  type FavorecidoFormData,
+} from './favorecido-form-schema';

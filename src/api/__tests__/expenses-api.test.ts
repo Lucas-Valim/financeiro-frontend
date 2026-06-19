@@ -24,6 +24,7 @@ describe('ExpensesApiService', () => {
       id: '1',
       organizationId: 'org-123',
       categoryId: null,
+      favorecidoId: null,
       description: 'Test expense',
       amount: 100,
       currency: 'BRL',
@@ -195,6 +196,7 @@ describe('ExpensesApiService', () => {
       id: '123',
       organizationId: 'org-123',
       categoryId: null,
+      favorecidoId: null,
       description: 'Test expense',
       amount: 100,
       currency: 'BRL',
@@ -268,6 +270,7 @@ describe('ExpensesApiService', () => {
       id: 'new-123',
       organizationId: 'org-123',
       categoryId: null,
+      favorecidoId: null,
       description: 'New expense',
       amount: 500,
       currency: 'BRL',
@@ -295,7 +298,7 @@ describe('ExpensesApiService', () => {
         amount: 500,
         currency: 'BRL',
         dueDate: new Date('2024-06-15'),
-        receiver: 'New Receiver',
+        favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
         municipality: 'New City',
         paymentMethod: 'PIX',
       };
@@ -317,7 +320,7 @@ describe('ExpensesApiService', () => {
         amount: 100,
         currency: 'BRL',
         dueDate: new Date('2024-06-15'),
-        receiver: 'Receiver',
+        favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
         municipality: 'City',
       };
 
@@ -333,7 +336,7 @@ describe('ExpensesApiService', () => {
         amount: 500,
         currency: 'BRL',
         dueDate: new Date('2024-06-15'),
-        receiver: 'New Receiver',
+        favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
         municipality: 'New City',
       };
 
@@ -351,7 +354,7 @@ describe('ExpensesApiService', () => {
         amount: 500,
         currency: 'BRL',
         dueDate: new Date('2024-06-15'),
-        receiver: 'New Receiver',
+        favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
         municipality: 'New City',
       };
 
@@ -372,7 +375,7 @@ describe('ExpensesApiService', () => {
         amount: 100,
         currency: 'BRL',
         dueDate: new Date('2024-06-15'),
-        receiver: 'Receiver',
+        favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
         municipality: 'City',
       };
 
@@ -385,6 +388,7 @@ describe('ExpensesApiService', () => {
       id: '123',
       organizationId: 'org-123',
       categoryId: null,
+      favorecidoId: null,
       description: 'Updated expense',
       amount: 750,
       currency: 'BRL',
@@ -409,7 +413,7 @@ describe('ExpensesApiService', () => {
       const input: UpdateExpenseInput = {
         description: 'Updated expense',
         amount: 750,
-        receiver: 'Updated Receiver',
+        favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
       };
 
       const result = await service.update('123', input);
@@ -497,6 +501,7 @@ describe('ExpensesApiService', () => {
       id: 'new-123',
       organizationId: 'org-123',
       categoryId: null,
+      favorecidoId: null,
       description: 'New expense',
       amount: 500,
       currency: 'BRL',
@@ -523,7 +528,7 @@ describe('ExpensesApiService', () => {
         amount: 100,
         currency: 'BRL',
         dueDate: new Date('2024-12-31'),
-        receiver: 'Receiver',
+        favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
         municipality: 'City',
         serviceInvoice: file,
       };
@@ -546,7 +551,7 @@ describe('ExpensesApiService', () => {
         amount: 100,
         currency: 'BRL',
         dueDate: new Date('2024-12-31'),
-        receiver: 'Receiver',
+        favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
         municipality: 'City',
         bankBill: file,
       };
@@ -570,7 +575,7 @@ describe('ExpensesApiService', () => {
         amount: 100,
         currency: 'BRL',
         dueDate: new Date('2024-12-31'),
-        receiver: 'Receiver',
+        favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
         municipality: 'City',
         serviceInvoice: invoiceFile,
         bankBill: boletoFile,
@@ -593,7 +598,7 @@ describe('ExpensesApiService', () => {
         amount: 100,
         currency: 'BRL',
         dueDate: new Date('2024-12-31'),
-        receiver: 'Receiver',
+        favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
         municipality: 'City',
       };
 
@@ -611,7 +616,7 @@ describe('ExpensesApiService', () => {
         amount: 100,
         currency: 'BRL',
         dueDate: new Date('2024-12-31'),
-        receiver: 'Receiver',
+        favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
         municipality: 'City',
         serviceInvoice: file,
       };
@@ -631,7 +636,7 @@ describe('ExpensesApiService', () => {
         amount: 100,
         currency: 'BRL',
         dueDate: new Date('2024-12-31'),
-        receiver: 'Receiver',
+        favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
         municipality: 'City',
         bankBill: file,
       };
@@ -651,7 +656,7 @@ describe('ExpensesApiService', () => {
         amount: 150.50,
         currency: 'BRL',
         dueDate: new Date('2024-12-31T00:00:00.000Z'),
-        receiver: 'Test Receiver',
+        favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
         municipality: 'Test City',
         paymentMethod: 'PIX',
         serviceInvoice: file,
@@ -664,7 +669,7 @@ describe('ExpensesApiService', () => {
       expect(formData.get('description')).toBe('Test Description');
       expect(formData.get('amount')).toBe('150.5');
       expect(formData.get('currency')).toBe('BRL');
-      expect(formData.get('receiver')).toBe('Test Receiver');
+      expect(formData.get('favorecidoId')).toBe('550e8400-e29b-41d4-a716-446655440000');
       expect(formData.get('municipality')).toBe('Test City');
       expect(formData.get('paymentMethod')).toBe('PIX');
       expect(formData.get('organizationId')).toBe('org-123');
@@ -676,6 +681,7 @@ describe('ExpensesApiService', () => {
       id: '123',
       organizationId: 'org-123',
       categoryId: null,
+      favorecidoId: null,
       description: 'Updated expense',
       amount: 750,
       currency: 'BRL',
@@ -737,7 +743,7 @@ describe('ExpensesApiService', () => {
         amount: -100,
         currency: 'BRL',
         dueDate: new Date('2024-12-31'),
-        receiver: 'Receiver',
+        favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
         municipality: 'City',
       };
 
@@ -751,7 +757,7 @@ describe('ExpensesApiService', () => {
         amount: 0,
         currency: 'BRL',
         dueDate: new Date('2024-12-31'),
-        receiver: 'Receiver',
+        favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
         municipality: 'City',
       };
 
@@ -765,7 +771,7 @@ describe('ExpensesApiService', () => {
         amount: 100,
         currency: 'BRL',
         dueDate: new Date('2024-12-31'),
-        receiver: 'Receiver',
+        favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
         municipality: 'City',
       };
 
@@ -779,7 +785,7 @@ describe('ExpensesApiService', () => {
         amount: 100,
         currency: 'BRL',
         dueDate: '2024-12-31' as unknown as Date,
-        receiver: 'Receiver',
+        favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
         municipality: 'City',
       };
 
@@ -802,7 +808,7 @@ describe('ExpensesApiService', () => {
         amount: 100,
         currency: 'BRL',
         dueDate: new Date('2024-12-31'),
-        receiver: 'Receiver',
+        favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
         municipality: 'City',
         serviceInvoice: file,
       };
@@ -820,7 +826,7 @@ describe('ExpensesApiService', () => {
         amount: 100,
         currency: 'BRL',
         dueDate: new Date('2024-12-31'),
-        receiver: 'Receiver',
+        favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
         municipality: 'City',
         serviceInvoice: file,
       };

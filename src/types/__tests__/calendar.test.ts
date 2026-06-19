@@ -61,6 +61,7 @@ describe('Calendar Types', () => {
         id: 'exp-1',
         organizationId: 'org-1',
         categoryId: 'cat-1',
+        favorecidoId: null,
         description: 'Test Expense',
         amount: 100.00,
         currency: 'BRL',

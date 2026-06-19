@@ -9,6 +9,7 @@ function createMockExpense(overrides?: Partial<ExpenseDTO>): ExpenseDTO {
     id: 'expense-1',
     organizationId: 'org-1',
     categoryId: null,
+    favorecidoId: null,
     description: 'Test Expense',
     amount: 1500,
     currency: 'BRL',

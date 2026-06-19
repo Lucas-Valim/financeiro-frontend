@@ -15,11 +15,13 @@ describe('Sidebar', () => {
     )
   }
 
-  it('deve renderizar corretamente com 4 itens de navegação', () => {
+  it('deve renderizar corretamente com itens de navegação', () => {
     renderSidebar()
     expect(screen.getByText('Home')).toBeInTheDocument()
     expect(screen.getByText('Despesa')).toBeInTheDocument()
     expect(screen.getByText('Calendário')).toBeInTheDocument()
+    expect(screen.getByText('Categorias')).toBeInTheDocument()
+    expect(screen.getByText('Favorecidos')).toBeInTheDocument()
     expect(screen.getByText('Relatórios')).toBeInTheDocument()
   })
 

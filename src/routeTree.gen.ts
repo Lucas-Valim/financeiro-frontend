@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RelatoriosRouteImport } from './routes/relatorios'
+import { Route as FavorecidosRouteImport } from './routes/favorecidos'
 import { Route as DespesaRouteImport } from './routes/despesa'
 import { Route as CategoriasRouteImport } from './routes/categorias'
 import { Route as CalendarioRouteImport } from './routes/calendario'
@@ -18,6 +19,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const RelatoriosRoute = RelatoriosRouteImport.update({
   id: '/relatorios',
   path: '/relatorios',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FavorecidosRoute = FavorecidosRouteImport.update({
+  id: '/favorecidos',
+  path: '/favorecidos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DespesaRoute = DespesaRouteImport.update({
@@ -46,6 +52,7 @@ export interface FileRoutesByFullPath {
   '/calendario': typeof CalendarioRoute
   '/categorias': typeof CategoriasRoute
   '/despesa': typeof DespesaRoute
+  '/favorecidos': typeof FavorecidosRoute
   '/relatorios': typeof RelatoriosRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/calendario': typeof CalendarioRoute
   '/categorias': typeof CategoriasRoute
   '/despesa': typeof DespesaRoute
+  '/favorecidos': typeof FavorecidosRoute
   '/relatorios': typeof RelatoriosRoute
 }
 export interface FileRoutesById {
@@ -61,19 +69,33 @@ export interface FileRoutesById {
   '/calendario': typeof CalendarioRoute
   '/categorias': typeof CategoriasRoute
   '/despesa': typeof DespesaRoute
+  '/favorecidos': typeof FavorecidosRoute
   '/relatorios': typeof RelatoriosRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/calendario' | '/categorias' | '/despesa' | '/relatorios'
+  fullPaths:
+    | '/'
+    | '/calendario'
+    | '/categorias'
+    | '/despesa'
+    | '/favorecidos'
+    | '/relatorios'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/calendario' | '/categorias' | '/despesa' | '/relatorios'
+  to:
+    | '/'
+    | '/calendario'
+    | '/categorias'
+    | '/despesa'
+    | '/favorecidos'
+    | '/relatorios'
   id:
     | '__root__'
     | '/'
     | '/calendario'
     | '/categorias'
     | '/despesa'
+    | '/favorecidos'
     | '/relatorios'
   fileRoutesById: FileRoutesById
 }
@@ -82,6 +104,7 @@ export interface RootRouteChildren {
   CalendarioRoute: typeof CalendarioRoute
   CategoriasRoute: typeof CategoriasRoute
   DespesaRoute: typeof DespesaRoute
+  FavorecidosRoute: typeof FavorecidosRoute
   RelatoriosRoute: typeof RelatoriosRoute
 }
 
@@ -92,6 +115,13 @@ declare module '@tanstack/react-router' {
       path: '/relatorios'
       fullPath: '/relatorios'
       preLoaderRoute: typeof RelatoriosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/favorecidos': {
+      id: '/favorecidos'
+      path: '/favorecidos'
+      fullPath: '/favorecidos'
+      preLoaderRoute: typeof FavorecidosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/despesa': {
@@ -130,6 +160,7 @@ const rootRouteChildren: RootRouteChildren = {
   CalendarioRoute: CalendarioRoute,
   CategoriasRoute: CategoriasRoute,
   DespesaRoute: DespesaRoute,
+  FavorecidosRoute: FavorecidosRoute,
   RelatoriosRoute: RelatoriosRoute,
 }
 export const routeTree = rootRouteImport

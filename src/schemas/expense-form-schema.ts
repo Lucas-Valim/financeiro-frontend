@@ -59,16 +59,16 @@ export const expenseFormSchema = z.object({
     .nullable()
     .optional(),
 
+  favorecidoId: z
+    .string({ error: 'O favorecido é obrigatório' })
+    .min(1, { error: 'O favorecido é obrigatório' })
+    .uuid({ error: 'O favorecido deve ser um identificador válido' }),
+
   paymentMethod: z
     .string()
     .max(100, { error: 'A forma de pagamento deve ter no máximo 100 caracteres' })
     .nullable()
     .optional(),
-
-  receiver: z
-    .string({ error: 'O favorecido é obrigatório' })
-    .min(1, { error: 'O favorecido é obrigatório' })
-    .max(100, { error: 'O favorecido deve ter no máximo 100 caracteres' }),
 
   municipality: z
     .string({ error: 'O município é obrigatório' })
@@ -98,8 +98,8 @@ export const defaultExpenseFormValues: Partial<ExpenseFormData> = {
   dueDate: undefined,
   status: ExpenseStatus.OPEN,
   categoryId: null,
+  favorecidoId: '',
   paymentMethod: null,
-  receiver: '',
   municipality: '',
   serviceInvoice: null,
   bankBill: null,
@@ -113,8 +113,8 @@ export function transformExpenseFormData(data: ExpenseFormData): CreateExpenseIn
     dueDate: data.dueDate,
     status: data.status,
     categoryId: data.categoryId || null,
+    favorecidoId: data.favorecidoId,
     paymentMethod: data.paymentMethod || null,
-    receiver: data.receiver,
     municipality: data.municipality,
     serviceInvoice: data.serviceInvoice || null,
     bankBill: data.bankBill || null,

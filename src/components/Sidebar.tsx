@@ -11,7 +11,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 
-import { Home, Wallet, BarChart3, Calendar, Tags } from 'lucide-react'
+import { Home, Wallet, BarChart3, Calendar, Tags, Users } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import { EvoluireLogo } from './EvoluireLogo'
 import { PLACEHOLDER_USER } from '@/constants'
@@ -21,6 +21,7 @@ const navigationItems = [
   { to: '/calendario', label: 'Calendário', icon: Calendar, preload: true },
   { to: '/despesa', label: 'Despesa', icon: Wallet },
   { to: '/categorias', label: 'Categorias', icon: Tags },
+  { to: '/favorecidos', label: 'Favorecidos', icon: Users },
   { to: '/relatorios', label: 'Relatórios', icon: BarChart3 },
 ] as const
 

@@ -7,6 +7,7 @@ export interface ExpenseDTO {
   id: string;
   organizationId: string;
   categoryId: string | null;
+  favorecidoId: string | null;
   description: string;
   amount: number;
   currency: string;
@@ -31,11 +32,11 @@ export interface ExpenseDTO {
  */
 export interface CreateExpenseInput {
   organizationId: string;
+  favorecidoId: string;
   description: string;
   amount: number;
   currency: string;
   dueDate: Date;
-  receiver: string;
   municipality: string;
   paymentMethod?: string;
   categoryId?: string | null;
@@ -48,10 +49,10 @@ export interface CreateExpenseInput {
  * All fields are optional for partial updates
  */
 export interface UpdateExpenseInput {
+  favorecidoId?: string;
   description?: string;
   amount?: number;
   dueDate?: Date;
-  receiver?: string;
   municipality?: string;
   paymentMethod?: string;
   categoryId?: string | null;
@@ -83,6 +84,7 @@ export interface GetExpenseOutput {
   id: string;
   organizationId: string;
   categoryId: string | null;
+  favorecidoId: string | null;
   description: string;
   amount: number;
   currency: string;
