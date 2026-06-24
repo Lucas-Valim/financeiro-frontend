@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { formatDocument } from '@/lib/format-document';
 import { useCategories } from '@/hooks/use-categories';
 import { useFavorecidos } from '@/hooks/use-favorecidos';
 import { Combobox } from '@/components/ui/combobox';
@@ -86,7 +87,7 @@ export function ExpenseFormFields({ disabled = false, organizationId }: ExpenseF
   const favorecidoOptions = favorecidos.map((f: FavorecidoDTO) => ({
     value: f.id,
     label: f.name,
-    description: f.document,
+    description: f.document ? formatDocument(f.document) : undefined,
   }));
 
   const handleFavorecidoCreated = useCallback(

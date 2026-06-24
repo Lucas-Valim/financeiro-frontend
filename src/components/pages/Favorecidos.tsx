@@ -29,7 +29,8 @@ export function Favorecidos() {
     if (nameTerm === '' && documentTerm === '') return favorecidos;
     return favorecidos.filter((fav) => {
       const matchesName = nameTerm === '' || fav.name.toLowerCase().includes(nameTerm);
-      const matchesDocument = documentTerm === '' || fav.document.includes(documentTerm);
+      const matchesDocument =
+        documentTerm === '' || (fav.document ?? '').includes(documentTerm);
       return matchesName && matchesDocument;
     });
   }, [favorecidos, filter.name, filter.document]);

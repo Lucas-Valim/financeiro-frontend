@@ -98,7 +98,7 @@ export function FavorecidoFormModal({ isOpen, onClose, favorecido = null, onSucc
               name="document"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel required>Documento (CPF/CNPJ)</FormLabel>
+                  <FormLabel>Documento (CPF/CNPJ)</FormLabel>
                   <FormControl>
                     <Input
                       placeholder="000.000.000-00 ou 00.000.000/0000-00"

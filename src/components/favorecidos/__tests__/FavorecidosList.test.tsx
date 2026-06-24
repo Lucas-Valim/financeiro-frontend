@@ -99,6 +99,21 @@ describe('FavorecidosList', () => {
       expect(screen.getAllByText('123.456.789-01').length).toBeGreaterThanOrEqual(1);
     });
 
+    it('renders a dash placeholder when document is null', () => {
+      render(
+        <FavorecidosList
+          favorecidos={[
+            buildFavorecido({ id: 'a', name: 'Sem Documento', document: null, documentType: null }),
+          ]}
+          isLoading={false}
+          onEdit={vi.fn()}
+          onDelete={vi.fn()}
+        />
+      );
+
+      expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(1);
+    });
+
     it('does not render the empty state when there are favorecidos', () => {
       render(
         <FavorecidosList

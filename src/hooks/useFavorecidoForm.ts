@@ -38,7 +38,7 @@ export function useFavorecidoForm({
     if (favorecido) {
       return {
         name: favorecido.name,
-        document: favorecido.document,
+        document: favorecido.document ?? '',
         zipCode: favorecido.zipCode ?? '',
         street: favorecido.street ?? '',
         number: favorecido.number ?? '',
@@ -76,7 +76,7 @@ export function useFavorecidoForm({
           id: favorecido.id,
           organizationId,
           name: formData.name,
-          document: formData.document,
+          document: formData.document || null,
           zipCode: formData.zipCode || null,
           street: formData.street || null,
           number: formData.number || null,
@@ -93,7 +93,7 @@ export function useFavorecidoForm({
         const result = await favorecidosApiService.create({
           organizationId,
           name: formData.name,
-          document: formData.document,
+          document: formData.document || null,
           zipCode: formData.zipCode || null,
           street: formData.street || null,
           number: formData.number || null,
@@ -112,7 +112,7 @@ export function useFavorecidoForm({
       const normalizedMessage = errorMessage.toLowerCase();
       const isDuplicateOrInvalid = normalizedMessage.includes('já cadastrado') ||
         normalizedMessage.includes('já existe') ||
-        normalizedMessage.includes('inválido') ||
+        normalizedMessage.includes('documento inválido') ||
         normalizedMessage.includes('documento');
 
       if (isDuplicateOrInvalid) {

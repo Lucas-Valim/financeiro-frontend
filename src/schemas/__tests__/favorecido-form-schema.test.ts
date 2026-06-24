@@ -138,24 +138,33 @@ describe('favorecidoFormSchema', () => {
   });
 
   describe('document validation', () => {
-    it('should fail when document is missing', () => {
-      const result = favorecidoFormSchema.safeParse({
-        name: 'João Silva',
-      });
-      expect(result.success).toBe(false);
+    it('should pass when document key is omitted entirely', () => {
+      const result = favorecidoFormSchema.safeParse({ name: 'João Silva' });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.document).toBe('');
+      }
     });
 
-    it('should fail when document is empty', () => {
+    it('should pass when document is empty (optional)', () => {
       const result = favorecidoFormSchema.safeParse({
         name: 'João Silva',
         document: '',
       });
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        const docIssue = result.error.issues.find((i) =>
-          i.path.includes('document')
-        );
-        expect(docIssue).toBeDefined();
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.document).toBe('');
+      }
+    });
+
+    it('should pass when document is only mask characters (normalized to empty)', () => {
+      const result = favorecidoFormSchema.safeParse({
+        name: 'João Silva',
+        document: '.-/',
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.document).toBe('');
       }
     });
 

@@ -8,15 +8,12 @@ export const favorecidoFormSchema = z.object({
     .max(100, { error: 'O nome deve ter no máximo 100 caracteres' }),
 
   document: z
-    .string({ error: 'O documento é obrigatório' })
+    .string()
+    .default('')
     .transform((val) => val.replace(/\D/g, ''))
-    .pipe(
-      z.string()
-        .min(1, { error: 'O documento é obrigatório' })
-        .refine((val) => val.length === 11 || val.length === 14, {
-          error: 'Documento deve conter 11 (CPF) ou 14 (CNPJ) dígitos',
-        })
-    ),
+    .refine((val) => val === '' || val.length === 11 || val.length === 14, {
+      error: 'Documento deve conter 11 (CPF) ou 14 (CNPJ) dígitos',
+    }),
 
   zipCode: z
     .string()

@@ -58,7 +58,7 @@ function setupHookMock() {
       defaultValues: fav
         ? {
             name: fav.name,
-            document: fav.document,
+            document: fav.document ?? '',
             zipCode: fav.zipCode ?? '',
             street: fav.street ?? '',
             number: fav.number ?? '',
@@ -86,7 +86,7 @@ function setupHookMock() {
         fav
           ? {
               name: fav.name,
-              document: fav.document,
+              document: fav.document ?? '',
               zipCode: fav.zipCode ?? '',
               street: fav.street ?? '',
               number: fav.number ?? '',
@@ -175,7 +175,7 @@ describe('FavorecidoFormModal', () => {
 
       expect(screen.getByText('Editar Favorecido')).toBeInTheDocument();
       expect(screen.getByDisplayValue(mockFavorecido.name)).toBeInTheDocument();
-      expect(screen.getByDisplayValue(mockFavorecido.document)).toBeInTheDocument();
+      expect(screen.getByDisplayValue(mockFavorecido.document!)).toBeInTheDocument();
     });
   });
 
@@ -238,6 +238,18 @@ describe('FavorecidoFormModal', () => {
 
       await user.type(screen.getByPlaceholderText('Nome do favorecido'), 'Maria Santos');
       await user.type(screen.getByPlaceholderText('000.000.000-00 ou 00.000.000/0000-00'), '12345678901');
+      await user.click(screen.getByRole('button', { name: /^salvar$/i }));
+
+      await waitFor(() => {
+        expect(onClose).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    it('calls onClose after submitting with only the name (no document)', async () => {
+      const onClose = vi.fn();
+      render(<FavorecidoFormModal isOpen={true} onClose={onClose} />);
+
+      await user.type(screen.getByPlaceholderText('Nome do favorecido'), 'Maria Santos');
       await user.click(screen.getByRole('button', { name: /^salvar$/i }));
 
       await waitFor(() => {

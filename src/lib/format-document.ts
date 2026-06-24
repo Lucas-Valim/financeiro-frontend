@@ -1,4 +1,8 @@
-export function formatDocument(document: string): string {
+export function formatDocument(document: string | null | undefined): string {
+  if (!document) {
+    return '—';
+  }
+
   const digits = document.replace(/\D/g, '');
 
   if (digits.length === 11) {

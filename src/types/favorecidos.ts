@@ -4,8 +4,8 @@ export interface FavorecidoDTO {
   id: string;
   organizationId: string;
   name: string;
-  document: string;
-  documentType: DocumentType;
+  document: string | null;
+  documentType: DocumentType | null;
   zipCode: string | null;
   street: string | null;
   number: string | null;
@@ -31,7 +31,7 @@ export interface FavorecidosListResponse {
 export interface CreateFavorecidoInput {
   organizationId: string;
   name: string;
-  document: string;
+  document?: string | null;
   zipCode?: string | null;
   street?: string | null;
   number?: string | null;
@@ -45,7 +45,7 @@ export interface UpdateFavorecidoInput {
   id: string;
   organizationId: string;
   name?: string;
-  document?: string;
+  document?: string | null;
   zipCode?: string | null;
   street?: string | null;
   number?: string | null;
@@ -55,14 +55,5 @@ export interface UpdateFavorecidoInput {
   email?: string | null;
 }
 
-export interface FavorecidoFormData {
-  name: string;
-  document: string;
-  zipCode: string;
-  street: string;
-  number: string;
-  city: string;
-  state: string;
-  phone: string;
-  email: string;
-}
+// FavorecidoFormData is derived from the Zod schema — see
+// `@/schemas/favorecido-form-schema` (single source of truth).

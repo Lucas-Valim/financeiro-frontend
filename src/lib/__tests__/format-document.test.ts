@@ -12,7 +12,12 @@ describe('formatDocument', () => {
 
   it('returns raw value for non-standard lengths', () => {
     expect(formatDocument('12345')).toBe('12345');
-    expect(formatDocument('')).toBe('');
+  });
+
+  it('returns a dash placeholder when document is absent', () => {
+    expect(formatDocument('')).toBe('—');
+    expect(formatDocument(null)).toBe('—');
+    expect(formatDocument(undefined)).toBe('—');
   });
 
   it('strips non-digits before formatting', () => {
