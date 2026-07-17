@@ -9,6 +9,10 @@ describe('StatusCards', () => {
     overdueCount: 3,
     paidCount: 10,
     cancelledCount: 2,
+    openTotal: 1500.5,
+    overdueTotal: 300,
+    paidTotal: 10000,
+    cancelledTotal: 0,
     onCardClick: vi.fn(),
   };
 
@@ -54,6 +58,16 @@ describe('StatusCards', () => {
       expect(screen.getByTestId('status-count-overdue')).toHaveTextContent('0');
       expect(screen.getByTestId('status-count-paid')).toHaveTextContent('1');
       expect(screen.getByTestId('status-count-cancelled')).toHaveTextContent('100');
+    });
+
+    it('renders the BRL formatted total per status from props', () => {
+      render(<StatusCards {...defaultProps} />);
+
+      expect(screen.getByTestId('status-total-open')).toHaveTextContent('R$');
+      expect(screen.getByTestId('status-total-open')).toHaveTextContent('1.500,50');
+      expect(screen.getByTestId('status-total-overdue')).toHaveTextContent('300,00');
+      expect(screen.getByTestId('status-total-paid')).toHaveTextContent('10.000,00');
+      expect(screen.getByTestId('status-total-cancelled')).toHaveTextContent('0,00');
     });
   });
 

@@ -1,5 +1,6 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 import { useExpenses } from '@/hooks/use-expenses';
+import { useExpensesSummary } from '@/hooks/use-expenses-summary';
 import { StatusCards } from '@/components/status-cards/StatusCards';
 import { FilterModal } from '@/components/filter-modal/FilterModal';
 import { ExpensesGrid } from '@/components/expenses-grid/ExpensesGrid';
@@ -7,11 +8,15 @@ import { ExpenseFormModal } from '@/components/expenses/ExpenseFormModal';
 import { Button } from '@/components/ui/button';
 import { Loader2, Filter, AlertCircle, X } from 'lucide-react';
 import type { ExpenseFilter, ExpenseDTO } from '@/types/expenses';
-import { ExpenseStatus } from '@/constants/expenses';
+import {
+  ExpenseStatus,
+  getDefaultExpenseFilters,
+  isDefaultExpenseFilters,
+} from '@/constants/expenses';
 import { PageCard } from '@/components/shared/PageCard';
 
 export function Despesa() {
-  const [filters, setFilters] = useState<ExpenseFilter>({});
+  const [filters, setFilters] = useState<ExpenseFilter>(getDefaultExpenseFilters);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<ExpenseDTO | null>(null);
@@ -26,33 +31,7 @@ export function Despesa() {
     reset,
   } = useExpenses({ filters });
 
-  const statusCounts = useMemo(() => {
-    const counts = {
-      openCount: 0,
-      overdueCount: 0,
-      paidCount: 0,
-      cancelledCount: 0,
-    };
-
-    expenses.forEach((expense) => {
-      switch (expense.status) {
-        case ExpenseStatus.OPEN:
-          counts.openCount++;
-          break;
-        case ExpenseStatus.OVERDUE:
-          counts.overdueCount++;
-          break;
-        case ExpenseStatus.PAID:
-          counts.paidCount++;
-          break;
-        case ExpenseStatus.CANCELLED:
-          counts.cancelledCount++;
-          break;
-      }
-    });
-
-    return counts;
-  }, [expenses]);
+  const { summary } = useExpensesSummary({ filters });
 
   const handleOpenFilterModal = useCallback(() => {
     setIsFilterModalOpen(true);
@@ -72,7 +51,7 @@ export function Despesa() {
   );
 
   const handleClearFilters = useCallback(() => {
-    setFilters({});
+    setFilters(getDefaultExpenseFilters());
     reset();
     setIsFilterModalOpen(false);
   }, [reset]);
@@ -80,7 +59,8 @@ export function Despesa() {
   const handleFilterByStatus = useCallback(
     (status: ExpenseStatus) => {
       if (filters.status === status) {
-        setFilters({});
+        const { status: _removedStatus, ...remainingFilters } = filters;
+        setFilters(remainingFilters);
         reset();
         return;
       }
@@ -159,16 +139,20 @@ export function Despesa() {
 
           <div className="flex-1 flex justify-center">
             <StatusCards
-              openCount={statusCounts.openCount}
-              overdueCount={statusCounts.overdueCount}
-              paidCount={statusCounts.paidCount}
-              cancelledCount={statusCounts.cancelledCount}
+              openCount={summary.OPEN.count}
+              overdueCount={summary.OVERDUE.count}
+              paidCount={summary.PAID.count}
+              cancelledCount={summary.CANCELLED.count}
+              openTotal={summary.OPEN.total}
+              overdueTotal={summary.OVERDUE.total}
+              paidTotal={summary.PAID.total}
+              cancelledTotal={summary.CANCELLED.total}
               onCardClick={handleFilterByStatus}
               activeStatus={filters.status || null}
             />
           </div>
 
-          {Object.keys(filters).length > 0 && (
+          {!isDefaultExpenseFilters(filters) && (
             <Button
               onClick={handleClearFilters}
               variant="ghost"

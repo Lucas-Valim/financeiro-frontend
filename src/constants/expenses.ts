@@ -1,3 +1,6 @@
+import { startOfMonth, endOfMonth } from 'date-fns';
+import type { ExpenseFilter } from '@/types/expenses';
+
 export const EXPENSE_STATUS_COLORS = {
   OPEN: 'bg-blue-100 text-blue-800',
   OVERDUE: 'bg-red-100 text-red-800',
@@ -22,3 +25,34 @@ export const EXPENSE_STATUS_LABELS = {
   PAID: 'Paga',
   CANCELLED: 'Cancelada',
 } as const;
+
+/**
+ * Builds the default expense filters applied when the page first loads:
+ * open expenses within the current month. Returns fresh Date instances on
+ * every call to avoid sharing mutable Date objects across renders.
+ */
+export function getDefaultExpenseFilters(): ExpenseFilter {
+  const now = new Date();
+  return {
+    status: ExpenseStatus.OPEN,
+    dueDateStart: startOfMonth(now),
+    dueDateEnd: endOfMonth(now),
+  };
+}
+
+/**
+ * Checks whether the given filters match the default view (open + current
+ * month with no extra filters). Used to decide when to show the "Limpar
+ * Filtros" button.
+ */
+export function isDefaultExpenseFilters(filters: ExpenseFilter): boolean {
+  const defaults = getDefaultExpenseFilters();
+  return (
+    filters.status === defaults.status &&
+    filters.dueDateStart?.getTime() === defaults.dueDateStart?.getTime() &&
+    filters.dueDateEnd?.getTime() === defaults.dueDateEnd?.getTime() &&
+    !filters.receiver &&
+    !filters.municipality &&
+    !filters.categoryId
+  );
+}

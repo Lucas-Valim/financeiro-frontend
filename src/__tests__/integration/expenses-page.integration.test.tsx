@@ -11,6 +11,23 @@ vi.mock('@/hooks/use-expenses', () => ({
   useExpenses: (...args: unknown[]) => mockUseExpenses(...args),
 }));
 
+const mockUseExpensesSummary = vi.fn();
+
+const buildSummary = (overrides: Partial<Record<
+  'OPEN' | 'OVERDUE' | 'PAID' | 'CANCELLED',
+  { count: number; total: number }
+>> = {}) => ({
+  OPEN: { count: 0, total: 0 },
+  OVERDUE: { count: 0, total: 0 },
+  PAID: { count: 0, total: 0 },
+  CANCELLED: { count: 0, total: 0 },
+  ...overrides,
+});
+
+vi.mock('@/hooks/use-expenses-summary', () => ({
+  useExpensesSummary: (...args: unknown[]) => mockUseExpensesSummary(...args),
+}));
+
 vi.mock('lucide-react', async (importOriginal) => {
   const actual = await importOriginal<typeof import('lucide-react')>();
   return {
@@ -57,6 +74,11 @@ describe('ExpensesPage Integration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     queryClient.clear();
+    mockUseExpensesSummary.mockReturnValue({
+      summary: buildSummary(),
+      isLoading: false,
+      error: null,
+    });
   });
 
   describe('full filter change flow', () => {
@@ -315,21 +337,25 @@ describe('ExpensesPage Integration', () => {
     });
   });
 
-  describe('status counts calculation', () => {
-    it('should correctly calculate status counts from expenses data', () => {
+  describe('status summary display', () => {
+    it('should render counts and totals from the summary hook', () => {
       mockUseExpenses.mockReturnValue({
-        data: [
-          createMockExpense('1', ExpenseStatus.OPEN),
-          createMockExpense('2', ExpenseStatus.OPEN),
-          createMockExpense('3', ExpenseStatus.PAID),
-          createMockExpense('4', ExpenseStatus.OVERDUE),
-          createMockExpense('5', ExpenseStatus.CANCELLED),
-        ],
+        data: [],
         isLoading: false,
         error: null,
         hasMore: false,
         loadMore: vi.fn(),
         reset: vi.fn(),
+      });
+      mockUseExpensesSummary.mockReturnValue({
+        summary: buildSummary({
+          OPEN: { count: 2, total: 500 },
+          PAID: { count: 1, total: 300 },
+          OVERDUE: { count: 1, total: 150 },
+          CANCELLED: { count: 1, total: 75 },
+        }),
+        isLoading: false,
+        error: null,
       });
 
       render(<Despesa />, { wrapper });
@@ -338,6 +364,8 @@ describe('ExpensesPage Integration', () => {
       expect(screen.getByTestId('status-count-paid')).toHaveTextContent('1');
       expect(screen.getByTestId('status-count-overdue')).toHaveTextContent('1');
       expect(screen.getByTestId('status-count-cancelled')).toHaveTextContent('1');
+      expect(screen.getByTestId('status-total-open')).toHaveTextContent('500,00');
+      expect(screen.getByTestId('status-total-overdue')).toHaveTextContent('150,00');
     });
   });
 });

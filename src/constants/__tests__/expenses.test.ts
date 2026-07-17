@@ -1,10 +1,13 @@
 import { describe, it, expect } from 'vitest';
+import { startOfMonth, endOfMonth } from 'date-fns';
 import {
   EXPENSE_STATUS_COLORS,
   EXPENSE_PAGE_LIMIT,
   ORGANIZATION_ID,
   ExpenseStatus,
   EXPENSE_STATUS_LABELS,
+  getDefaultExpenseFilters,
+  isDefaultExpenseFilters,
 } from '../expenses';
 
 describe('Constants', () => {
@@ -122,6 +125,69 @@ describe('Constants', () => {
       const labels = EXPENSE_STATUS_LABELS;
       
       expect(labels.OPEN).toBe('Aberta');
+    });
+  });
+
+  describe('getDefaultExpenseFilters', () => {
+    it('should default status to OPEN', () => {
+      expect(getDefaultExpenseFilters().status).toBe(ExpenseStatus.OPEN);
+    });
+
+    it('should default the date range to the current month', () => {
+      const now = new Date();
+      const filters = getDefaultExpenseFilters();
+
+      expect(filters.dueDateStart?.getTime()).toBe(startOfMonth(now).getTime());
+      expect(filters.dueDateEnd?.getTime()).toBe(endOfMonth(now).getTime());
+    });
+
+    it('should return fresh Date instances on each call', () => {
+      const first = getDefaultExpenseFilters();
+      const second = getDefaultExpenseFilters();
+
+      expect(first.dueDateStart).not.toBe(second.dueDateStart);
+      expect(first.dueDateEnd).not.toBe(second.dueDateEnd);
+    });
+
+    it('should not include extra filters', () => {
+      const filters = getDefaultExpenseFilters();
+
+      expect(filters.receiver).toBeUndefined();
+      expect(filters.municipality).toBeUndefined();
+      expect(filters.categoryId).toBeUndefined();
+    });
+  });
+
+  describe('isDefaultExpenseFilters', () => {
+    it('should return true for the default filters', () => {
+      expect(isDefaultExpenseFilters(getDefaultExpenseFilters())).toBe(true);
+    });
+
+    it('should return false when the status differs from default', () => {
+      const filters = { ...getDefaultExpenseFilters(), status: ExpenseStatus.PAID };
+
+      expect(isDefaultExpenseFilters(filters)).toBe(false);
+    });
+
+    it('should return false when the status is removed', () => {
+      const { status: _removed, ...filters } = getDefaultExpenseFilters();
+
+      expect(isDefaultExpenseFilters(filters)).toBe(false);
+    });
+
+    it('should return false when the date range differs from the current month', () => {
+      const filters = {
+        ...getDefaultExpenseFilters(),
+        dueDateStart: new Date('2020-01-01'),
+      };
+
+      expect(isDefaultExpenseFilters(filters)).toBe(false);
+    });
+
+    it('should return false when an extra filter is present', () => {
+      const filters = { ...getDefaultExpenseFilters(), receiver: 'ACME' };
+
+      expect(isDefaultExpenseFilters(filters)).toBe(false);
     });
   });
 

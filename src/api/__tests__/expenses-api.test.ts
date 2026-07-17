@@ -191,6 +191,48 @@ describe('ExpensesApiService', () => {
     });
   });
 
+  describe('fetchExpensesSummary', () => {
+    const mockSummary = {
+      OPEN: { count: 2, total: 500 },
+      OVERDUE: { count: 1, total: 150 },
+      PAID: { count: 3, total: 900 },
+      CANCELLED: { count: 0, total: 0 },
+    };
+
+    it('should call the summary endpoint with organizationId', async () => {
+      mockedApiClient.get.mockResolvedValue(mockSummary);
+
+      const result = await service.fetchExpensesSummary({});
+
+      expect(mockedApiClient.get).toHaveBeenCalledWith('/expenses/summary', {
+        params: expect.any(URLSearchParams),
+      });
+
+      const callParams = mockedApiClient.get.mock.calls[0][1]!.params as URLSearchParams;
+      expect(callParams.get('organizationId')).toBeTruthy();
+      expect(result).toEqual(mockSummary);
+    });
+
+    it('should forward date range and column filters but omit status', async () => {
+      mockedApiClient.get.mockResolvedValue(mockSummary);
+
+      await service.fetchExpensesSummary({
+        status: ExpenseStatus.OPEN,
+        receiver: 'Test Receiver',
+        categoryId: 'cat-456',
+        dueDateStart: new Date('2026-07-01T00:00:00.000Z'),
+        dueDateEnd: new Date('2026-07-31T00:00:00.000Z'),
+      });
+
+      const callParams = mockedApiClient.get.mock.calls[0][1]!.params as URLSearchParams;
+      expect(callParams.get('status')).toBeNull();
+      expect(callParams.get('receiver')).toBe('Test Receiver');
+      expect(callParams.get('categoryId')).toBe('cat-456');
+      expect(callParams.get('dueDateStart')).toBe('2026-07-01T00:00:00.000Z');
+      expect(callParams.get('dueDateEnd')).toBe('2026-07-31T00:00:00.000Z');
+    });
+  });
+
   describe('fetchExpenseById', () => {
     const mockExpense: ExpenseDTO = {
       id: '123',

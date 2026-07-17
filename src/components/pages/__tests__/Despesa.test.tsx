@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { startOfMonth, endOfMonth } from 'date-fns';
 import { Despesa } from '../Despesa';
 import { ExpenseStatus } from '@/constants/expenses';
 import type { ExpenseDTO } from '@/types/expenses';
@@ -39,6 +40,23 @@ const mockUseExpenses = vi.fn();
 
 vi.mock('@/hooks/use-expenses', () => ({
   useExpenses: (...args: unknown[]) => mockUseExpenses(...args),
+}));
+
+const mockUseExpensesSummary = vi.fn();
+
+const buildSummary = (overrides: Partial<Record<
+  'OPEN' | 'OVERDUE' | 'PAID' | 'CANCELLED',
+  { count: number; total: number }
+>> = {}) => ({
+  OPEN: { count: 0, total: 0 },
+  OVERDUE: { count: 0, total: 0 },
+  PAID: { count: 0, total: 0 },
+  CANCELLED: { count: 0, total: 0 },
+  ...overrides,
+});
+
+vi.mock('@/hooks/use-expenses-summary', () => ({
+  useExpensesSummary: (...args: unknown[]) => mockUseExpensesSummary(...args),
 }));
 
 vi.mock('lucide-react', async (importOriginal) => {
@@ -88,6 +106,11 @@ describe('Despesa', () => {
     vi.clearAllMocks();
     mockExpenseFormModal.mockClear();
     queryClient.clear();
+    mockUseExpensesSummary.mockReturnValue({
+      summary: buildSummary(),
+      isLoading: false,
+      error: null,
+    });
   });
 
   describe('rendering', () => {
@@ -125,13 +148,10 @@ describe('Despesa', () => {
     });
   });
 
-  describe('StatusCards', () => {
-    it('should render StatusCards with correct counts', () => {
+  describe('default filters', () => {
+    it('should load with open status and current month range by default', () => {
       mockUseExpenses.mockReturnValue({
-        data: [
-          { ...mockExpense, status: ExpenseStatus.OPEN },
-          { ...mockExpense, id: '2', status: ExpenseStatus.PAID },
-        ],
+        data: [],
         isLoading: false,
         error: null,
         hasMore: false,
@@ -141,8 +161,59 @@ describe('Despesa', () => {
 
       render(<Despesa />, { wrapper });
 
+      const now = new Date();
+      expect(mockUseExpenses).toHaveBeenCalledWith({
+        filters: {
+          status: ExpenseStatus.OPEN,
+          dueDateStart: startOfMonth(now),
+          dueDateEnd: endOfMonth(now),
+        },
+      });
+    });
+
+    it('should mark the "Abertas" status card as active by default', () => {
+      mockUseExpenses.mockReturnValue({
+        data: [],
+        isLoading: false,
+        error: null,
+        hasMore: false,
+        loadMore: vi.fn(),
+        reset: vi.fn(),
+      });
+
+      render(<Despesa />, { wrapper });
+
+      expect(screen.getByTestId('status-card-open').className).toContain(
+        'ring-primary'
+      );
+    });
+  });
+
+  describe('StatusCards', () => {
+    it('should render StatusCards with counts and totals from the summary', () => {
+      mockUseExpenses.mockReturnValue({
+        data: [],
+        isLoading: false,
+        error: null,
+        hasMore: false,
+        loadMore: vi.fn(),
+        reset: vi.fn(),
+      });
+      mockUseExpensesSummary.mockReturnValue({
+        summary: buildSummary({
+          OPEN: { count: 1, total: 150.5 },
+          PAID: { count: 1, total: 300 },
+        }),
+        isLoading: false,
+        error: null,
+      });
+
+      render(<Despesa />, { wrapper });
+
       expect(screen.getByTestId('status-count-open')).toHaveTextContent('1');
       expect(screen.getByTestId('status-count-paid')).toHaveTextContent('1');
+      expect(screen.getByTestId('status-total-open')).toHaveTextContent('150,50');
+      expect(screen.getByTestId('status-total-paid')).toHaveTextContent('300,00');
     });
 
     it('should filter by status when clicking on status card', async () => {
@@ -158,15 +229,15 @@ describe('Despesa', () => {
 
       render(<Despesa />, { wrapper });
 
-      const openCard = screen.getByTestId('status-card-open');
-      fireEvent.click(openCard);
+      const paidCard = screen.getByTestId('status-card-paid');
+      fireEvent.click(paidCard);
 
       await waitFor(() => {
         expect(resetMock).toHaveBeenCalled();
       });
     });
 
-    it('should clear filters when clicking same status card again', async () => {
+    it('should toggle a status filter off when clicking the same status card again', async () => {
       const resetMock = vi.fn();
       mockUseExpenses.mockReturnValue({
         data: [],
@@ -179,14 +250,14 @@ describe('Despesa', () => {
 
       render(<Despesa />, { wrapper });
 
-      const openCard = screen.getByTestId('status-card-open');
-      fireEvent.click(openCard);
+      const paidCard = screen.getByTestId('status-card-paid');
+      fireEvent.click(paidCard);
 
       await waitFor(() => {
         expect(resetMock).toHaveBeenCalledTimes(1);
       });
 
-      fireEvent.click(openCard);
+      fireEvent.click(paidCard);
 
       await waitFor(() => {
         expect(resetMock).toHaveBeenCalledTimes(2);
@@ -195,7 +266,7 @@ describe('Despesa', () => {
   });
 
   describe('Clear Filters Button', () => {
-    it('should not show clear filters button when no filters are active', () => {
+    it('should not show clear filters button on default filters', () => {
       mockUseExpenses.mockReturnValue({
         data: [],
         isLoading: false,
@@ -210,7 +281,7 @@ describe('Despesa', () => {
       expect(screen.queryByTestId('clear-filters-button')).not.toBeInTheDocument();
     });
 
-    it('should show clear filters button when filters are active', async () => {
+    it('should show clear filters button when filters differ from default', async () => {
       mockUseExpenses.mockReturnValue({
         data: [],
         isLoading: false,
@@ -222,15 +293,15 @@ describe('Despesa', () => {
 
       render(<Despesa />, { wrapper });
 
-      const openCard = screen.getByTestId('status-card-open');
-      fireEvent.click(openCard);
+      const paidCard = screen.getByTestId('status-card-paid');
+      fireEvent.click(paidCard);
 
       await waitFor(() => {
         expect(screen.getByTestId('clear-filters-button')).toBeInTheDocument();
       });
     });
 
-    it('should clear filters and trigger reset when clear filters button is clicked', async () => {
+    it('should reset to default filters and hide the button when clear filters is clicked', async () => {
       const resetMock = vi.fn();
       mockUseExpenses.mockReturnValue({
         data: [],
@@ -243,8 +314,8 @@ describe('Despesa', () => {
 
       render(<Despesa />, { wrapper });
 
-      const openCard = screen.getByTestId('status-card-open');
-      fireEvent.click(openCard);
+      const paidCard = screen.getByTestId('status-card-paid');
+      fireEvent.click(paidCard);
 
       await waitFor(() => {
         expect(screen.getByTestId('clear-filters-button')).toBeInTheDocument();
@@ -509,8 +580,8 @@ describe('Despesa', () => {
 
       render(<Despesa />, { wrapper });
 
-      const openCard = screen.getByTestId('status-card-open');
-      fireEvent.click(openCard);
+      const paidCard = screen.getByTestId('status-card-paid');
+      fireEvent.click(paidCard);
 
       await waitFor(() => {
         expect(resetMock).toHaveBeenCalled();

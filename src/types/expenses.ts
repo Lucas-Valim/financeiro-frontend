@@ -69,6 +69,16 @@ export interface ExpenseFilter {
   categoryId?: string;
 }
 
+export interface ExpenseStatusSummaryItem {
+  count: number;
+  total: number;
+}
+
+export type ExpenseStatusSummary = Record<
+  ExpenseStatus,
+  ExpenseStatusSummaryItem
+>;
+
 export interface Pagination {
   page: number;
   limit: number;

@@ -1,5 +1,5 @@
 import { apiClient } from '../lib/api-client';
-import type { ExpenseDTO, ExpenseFilter, ListExpensesOutput, CreateExpenseInput, UpdateExpenseInput } from '../types/expenses';
+import type { ExpenseDTO, ExpenseFilter, ExpenseStatusSummary, ListExpensesOutput, CreateExpenseInput, UpdateExpenseInput } from '../types/expenses';
 import type { PaymentRequest, PaymentResponse } from '../schemas/payment-schema';
 import { ORGANIZATION_ID } from '../constants/expenses';
 
@@ -105,6 +105,29 @@ export class ExpensesApiService {
     params.append('limit', String(pagination.limit));
 
     return apiClient.get<ListExpensesOutput>('/expenses', { params }) as unknown as Promise<ListExpensesOutput>;
+  }
+
+  async fetchExpensesSummary(filters: ExpenseFilter = {}): Promise<ExpenseStatusSummary> {
+    const params = new URLSearchParams();
+
+    params.append('organizationId', ORGANIZATION_ID);
+
+    Object.entries(filters).forEach(([key, value]) => {
+      // The summary always returns all four status buckets, so the status
+      // filter must not be forwarded (it would zero out the other buckets).
+      if (key === 'status') {
+        return;
+      }
+      if (value !== undefined && value !== null && value !== '') {
+        if (value instanceof Date) {
+          params.append(key, value.toISOString());
+        } else {
+          params.append(key, String(value));
+        }
+      }
+    });
+
+    return apiClient.get<ExpenseStatusSummary>('/expenses/summary', { params }) as unknown as Promise<ExpenseStatusSummary>;
   }
 
   async fetchExpenseById(id: string): Promise<ExpenseDTO> {
