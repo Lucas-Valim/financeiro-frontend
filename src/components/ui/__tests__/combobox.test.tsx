@@ -129,6 +129,22 @@ describe('Combobox', () => {
       expect(screen.queryByText('Apple')).not.toBeInTheDocument()
     })
 
+    it('filters accented labels when typing without accents', async () => {
+      const user = userEvent.setup()
+      renderCombobox({
+        options: [
+          { value: 'joao', label: 'João da Silva Jr' },
+          { value: 'maria', label: 'Maria Oliveira' },
+        ],
+      })
+
+      await user.click(screen.getByRole('combobox'))
+      await user.type(screen.getByPlaceholderText(SEARCH_PLACEHOLDER), 'Joao')
+
+      expect(screen.getByText('João da Silva Jr')).toBeInTheDocument()
+      expect(screen.queryByText('Maria Oliveira')).not.toBeInTheDocument()
+    })
+
     it('shows the empty message when no results match the search', async () => {
       const user = userEvent.setup()
       renderCombobox({ emptyMessage: 'Nenhum resultado encontrado.' })

@@ -211,6 +211,64 @@ describe('PaymentModal', () => {
     });
   });
 
+  describe('Documents tab', () => {
+    const expenseWithDocs: ExpenseDTO = {
+      ...mockExpense,
+      serviceInvoiceUrl: 'https://example.com/nota.png',
+      bankBillUrl: 'https://example.com/boleto.pdf',
+    };
+
+    it('pay mode shows Pagamento and Documentos tabs', () => {
+      render(
+        <PaymentModal
+          isOpen={true}
+          onClose={mockOnClose}
+          onSuccess={mockOnSuccess}
+          expense={mockExpense}
+        />,
+        { wrapper: createWrapper() }
+      );
+
+      expect(screen.getByRole('tab', { name: /Pagamento/i })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: /Documentos/i })).toBeInTheDocument();
+    });
+
+    it('pay mode reveals expense documents when Documentos tab is clicked', async () => {
+      const user = userEvent.setup();
+
+      render(
+        <PaymentModal
+          isOpen={true}
+          onClose={mockOnClose}
+          onSuccess={mockOnSuccess}
+          expense={expenseWithDocs}
+        />,
+        { wrapper: createWrapper() }
+      );
+
+      await user.click(screen.getByRole('tab', { name: /Documentos/i }));
+
+      expect(screen.getByTestId('expense-documents-view')).toBeInTheDocument();
+      expect(screen.getByText('Nota de Serviço')).toBeInTheDocument();
+      expect(screen.getByText('Boleto')).toBeInTheDocument();
+    });
+
+    it('view mode shows Comprovante and Documentos tabs', () => {
+      render(
+        <PaymentModal
+          isOpen={true}
+          onClose={mockOnClose}
+          onSuccess={mockOnSuccess}
+          expense={mockPaidExpense}
+        />,
+        { wrapper: createWrapper() }
+      );
+
+      expect(screen.getByRole('tab', { name: /Comprovante/i })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: /Documentos/i })).toBeInTheDocument();
+    });
+  });
+
   describe('Modal interactions', () => {
     it('calls onClose when cancel button is clicked', async () => {
       const user = userEvent.setup();

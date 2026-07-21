@@ -15,9 +15,11 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PaymentFormFields } from './PaymentFormFields';
 import { PaymentProofDisplay } from './PaymentProofDisplay';
 import { PaymentProofViewer } from './PaymentProofViewer';
+import { ExpenseDocumentsView } from './ExpenseDocumentsView';
 import { usePayExpense } from '@/hooks/usePayExpense';
 import { toast } from 'sonner';
 import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
@@ -60,7 +62,7 @@ export function PaymentModal({
 }: PaymentModalProps) {
   const [submissionState, setSubmissionState] = useState<SubmissionState>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
+  const [viewerImageUrl, setViewerImageUrl] = useState<string | null>(null);
 
   const payExpenseMutation = usePayExpense();
 
@@ -88,7 +90,7 @@ export function PaymentModal({
       });
       setSubmissionState('idle');
       setErrorMessage(null);
-      setIsImageViewerOpen(false);
+      setViewerImageUrl(null);
     }
   }, [expense, reset]);
 
@@ -166,17 +168,17 @@ export function PaymentModal({
         <DialogContent 
           className="max-w-[95vw] sm:max-w-[500px] max-h-[90vh] overflow-y-auto"
           onPointerDownOutside={(e) => {
-            if (isImageViewerOpen) {
+            if (viewerImageUrl !== null) {
               e.preventDefault();
             }
           }}
           onInteractOutside={(e) => {
-            if (isImageViewerOpen) {
+            if (viewerImageUrl !== null) {
               e.preventDefault();
             }
           }}
           onEscapeKeyDown={(e) => {
-            if (isImageViewerOpen) {
+            if (viewerImageUrl !== null) {
               e.preventDefault();
             }
           }}
@@ -194,22 +196,41 @@ export function PaymentModal({
           </DialogHeader>
 
           {isViewMode ? (
-            <div className="space-y-4" data-testid="view-mode-content">
-              <div className="space-y-2">
-                <Label>Data do Pagamento</Label>
-                <p className="text-sm font-medium" data-testid="payment-date-value">
-                  {formattedPaymentDate}
-                </p>
-              </div>
+            <Tabs defaultValue="comprovante" className="w-full" data-testid="view-mode-content">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="comprovante">Comprovante</TabsTrigger>
+                <TabsTrigger value="documentos">Documentos</TabsTrigger>
+              </TabsList>
 
-              <div className="space-y-2">
-                <Label>Comprovante de Pagamento</Label>
-                <PaymentProofDisplay
-                  proofUrl={expense.paymentProofUrl}
-                  onImageClick={() => setIsImageViewerOpen(true)}
+              <TabsContent value="comprovante" className="mt-4 space-y-4">
+                <div className="space-y-2">
+                  <Label>Data do Pagamento</Label>
+                  <p className="text-sm font-medium" data-testid="payment-date-value">
+                    {formattedPaymentDate}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Comprovante de Pagamento</Label>
+                  <PaymentProofDisplay
+                    proofUrl={expense.paymentProofUrl}
+                    onImageClick={
+                      expense.paymentProofUrl
+                        ? () => setViewerImageUrl(expense.paymentProofUrl)
+                        : undefined
+                    }
+                  />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="documentos" className="mt-4">
+                <ExpenseDocumentsView
+                  serviceInvoiceUrl={expense.serviceInvoiceUrl}
+                  bankBillUrl={expense.bankBillUrl}
+                  onViewImage={setViewerImageUrl}
                 />
-              </div>
-            </div>
+              </TabsContent>
+            </Tabs>
           ) : (
             <>
               {isSuccess && (
@@ -225,7 +246,24 @@ export function PaymentModal({
               {!isSuccess && (
                 <FormProvider {...form}>
                   <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-                    <PaymentFormFields disabled={isSubmitting} />
+                    <Tabs defaultValue="pagamento" className="w-full">
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="pagamento">Pagamento</TabsTrigger>
+                        <TabsTrigger value="documentos">Documentos</TabsTrigger>
+                      </TabsList>
+
+                      <TabsContent value="pagamento" className="mt-4">
+                        <PaymentFormFields disabled={isSubmitting} />
+                      </TabsContent>
+
+                      <TabsContent value="documentos" className="mt-4">
+                        <ExpenseDocumentsView
+                          serviceInvoiceUrl={expense.serviceInvoiceUrl}
+                          bankBillUrl={expense.bankBillUrl}
+                          onViewImage={setViewerImageUrl}
+                        />
+                      </TabsContent>
+                    </Tabs>
 
                     {isError && errorMessage && (
                       <div
@@ -280,10 +318,10 @@ export function PaymentModal({
       </Dialog>
 
       <PaymentProofViewer
-        isOpen={isImageViewerOpen}
-        imageUrl={expense?.paymentProofUrl || ''}
-        fileName={expense?.paymentProofUrl?.split('/').pop()}
-        onClose={() => setIsImageViewerOpen(false)}
+        isOpen={viewerImageUrl !== null}
+        imageUrl={viewerImageUrl ?? ''}
+        fileName={viewerImageUrl?.split('/').pop()}
+        onClose={() => setViewerImageUrl(null)}
       />
     </>
   );
