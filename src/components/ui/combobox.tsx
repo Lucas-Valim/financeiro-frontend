@@ -22,6 +22,15 @@ export interface ComboboxOption {
   description?: string
 }
 
+const normalizeSearchText = (text: string) =>
+  text
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+
+const filterByNormalizedText = (value: string, search: string) =>
+  normalizeSearchText(value).includes(normalizeSearchText(search)) ? 1 : 0
+
 export interface ComboboxProps {
   options: ComboboxOption[]
   value?: string
@@ -70,7 +79,7 @@ export function Combobox({
   }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen} modal>
       <PopoverTrigger asChild>
         <Button
           type="button"
@@ -95,7 +104,7 @@ export function Combobox({
         className="w-[--radix-popover-trigger-width] p-0 pointer-events-auto"
         align="start"
       >
-        <Command>
+        <Command filter={filterByNormalizedText}>
           <CommandInput placeholder={searchPlaceholder} />
           <CommandList>
             {isLoading ? (

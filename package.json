@@ -13,6 +13,9 @@
     "test:run": "vitest run",
     "typecheck": "tsc --noEmit"
   },
+  "overrides": {
+    "@radix-ui/react-focus-scope": "1.1.9"
+  },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-dialog": "^1.1.15",
