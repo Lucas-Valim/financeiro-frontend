@@ -64,9 +64,10 @@ export interface ExpenseFilter {
   status?: ExpenseStatus;
   receiver?: string;
   municipality?: string;
+  paymentMethod?: string;
+  categoryId?: string;
   dueDateStart?: Date;
   dueDateEnd?: Date;
-  categoryId?: string;
 }
 
 export interface ExpenseStatusSummaryItem {

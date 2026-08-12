@@ -8,6 +8,7 @@ import {
   EXPENSE_STATUS_LABELS,
   getDefaultExpenseFilters,
   isDefaultExpenseFilters,
+  isExpenseEditable,
 } from '../expenses';
 
 describe('Constants', () => {
@@ -128,6 +129,24 @@ describe('Constants', () => {
     });
   });
 
+  describe('isExpenseEditable', () => {
+    it('should return true for OPEN status', () => {
+      expect(isExpenseEditable(ExpenseStatus.OPEN)).toBe(true);
+    });
+
+    it('should return true for OVERDUE status', () => {
+      expect(isExpenseEditable(ExpenseStatus.OVERDUE)).toBe(true);
+    });
+
+    it('should return false for PAID status', () => {
+      expect(isExpenseEditable(ExpenseStatus.PAID)).toBe(false);
+    });
+
+    it('should return false for CANCELLED status', () => {
+      expect(isExpenseEditable(ExpenseStatus.CANCELLED)).toBe(false);
+    });
+  });
+
   describe('getDefaultExpenseFilters', () => {
     it('should default status to OPEN', () => {
       expect(getDefaultExpenseFilters().status).toBe(ExpenseStatus.OPEN);
@@ -186,6 +205,18 @@ describe('Constants', () => {
 
     it('should return false when an extra filter is present', () => {
       const filters = { ...getDefaultExpenseFilters(), receiver: 'ACME' };
+
+      expect(isDefaultExpenseFilters(filters)).toBe(false);
+    });
+
+    it('should return false when only the payment method is filtered', () => {
+      const filters = { ...getDefaultExpenseFilters(), paymentMethod: 'PIX' };
+
+      expect(isDefaultExpenseFilters(filters)).toBe(false);
+    });
+
+    it('should return false when only the category is filtered', () => {
+      const filters = { ...getDefaultExpenseFilters(), categoryId: 'cat-1' };
 
       expect(isDefaultExpenseFilters(filters)).toBe(false);
     });

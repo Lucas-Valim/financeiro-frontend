@@ -1,5 +1,31 @@
 import { describe, it, expect } from 'vitest';
-import { apiClient } from '../../lib/api-client';
+import type { InternalAxiosRequestConfig } from 'axios';
+import { apiClient, injectOrganizationId } from '../../lib/api-client';
+import { ORGANIZATION_ID } from '../../constants/expenses';
+
+function makeConfig(url: string): InternalAxiosRequestConfig {
+  return { url, headers: {} } as InternalAxiosRequestConfig;
+}
+
+describe('injectOrganizationId', () => {
+  it('injects organizationId for a /reports request', () => {
+    const config = injectOrganizationId(makeConfig('/reports/expenses/summary'));
+
+    expect(config.params?.organizationId).toBe(ORGANIZATION_ID);
+  });
+
+  it('keeps injecting organizationId for an /expenses request', () => {
+    const config = injectOrganizationId(makeConfig('/expenses'));
+
+    expect(config.params?.organizationId).toBe(ORGANIZATION_ID);
+  });
+
+  it('does not inject organizationId for a URL of another prefix', () => {
+    const config = injectOrganizationId(makeConfig('/categories'));
+
+    expect(config.params).toBeUndefined();
+  });
+});
 
 describe('ApiClient', () => {
   it('should export apiClient as singleton', () => {

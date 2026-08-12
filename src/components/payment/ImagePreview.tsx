@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { X, FileText, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { downloadFile } from '@/lib/download-file';
 import { Button } from '@/components/ui/button';
 
 interface ImagePreviewProps {
@@ -99,14 +100,7 @@ export function ImagePreview({
       try {
         const response = await fetch(previewUrl);
         const blob = await response.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(blobUrl);
+        downloadFile(blob, filename);
       } catch {
         window.open(previewUrl, '_blank', 'noopener,noreferrer');
       }

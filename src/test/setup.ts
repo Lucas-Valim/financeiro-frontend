@@ -116,6 +116,7 @@ vi.mock('lucide-react', () => ({
   X: createIconMock('X'),
   ChevronDown: createIconMock('ChevronDown'),
   ChevronUp: createIconMock('ChevronUp'),
+  ChevronRight: createIconMock('ChevronRight'),
   Check: createIconMock('Check'),
   MoreVertical: createIconMock('MoreVertical'),
   AlertCircle: createIconMock('AlertCircle'),
@@ -135,6 +136,10 @@ vi.mock('lucide-react', () => ({
   Users: createIconMock('Users'),
   Search: createIconMock('Search'),
   ChevronsUpDown: createIconMock('ChevronsUpDown'),
+  Download: createIconMock('Download'),
+  Receipt: createIconMock('Receipt'),
+  Paperclip: createIconMock('Paperclip'),
+  AlertTriangle: createIconMock('AlertTriangle'),
 }))
 
 vi.mock('@tanstack/react-router', () => ({

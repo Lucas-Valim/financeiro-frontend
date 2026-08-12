@@ -12,6 +12,7 @@ import {
   ExpenseStatus,
   getDefaultExpenseFilters,
   isDefaultExpenseFilters,
+  isExpenseEditable,
 } from '@/constants/expenses';
 import { PageCard } from '@/components/shared/PageCard';
 
@@ -93,6 +94,9 @@ export function Despesa() {
   const handleExpenseSuccess = useCallback(() => {
     reset();
   }, [reset]);
+
+  const isExpenseReadonly =
+    selectedExpense !== null && !isExpenseEditable(selectedExpense.status);
 
   if (error && !isLoading && expenses.length === 0) {
     return (
@@ -204,6 +208,7 @@ export function Despesa() {
           onClose={handleCloseExpenseModal}
           onSuccess={handleExpenseSuccess}
           expense={selectedExpense}
+          readonly={isExpenseReadonly}
         />
       </div>
     </PageCard>

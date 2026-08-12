@@ -4,7 +4,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Layout } from '@/components/Layout'
 import { Home } from '@/components/pages/Home'
 import { Despesa } from '@/components/pages/Despesa'
-import { Relatorios } from '@/components/pages/Relatorios'
 
 const mockUseExpenses = vi.fn()
 
@@ -68,9 +67,6 @@ describe('Integration: Navegação Completa', () => {
 
     render(<Despesa />, { wrapper })
     expect(screen.getByText('Gerenciamento de Despesas')).toBeInTheDocument()
-
-    render(<Relatorios />)
-    expect(screen.getByText('Relatórios Financeiros')).toBeInTheDocument()
   })
 
   it('deve ter todos os itens de navegação disponíveis', () => {

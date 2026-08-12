@@ -25,6 +25,7 @@ import { formatDocument } from '@/lib/format-document';
 import { useCategories } from '@/hooks/use-categories';
 import { useFavorecidos } from '@/hooks/use-favorecidos';
 import { Combobox } from '@/components/ui/combobox';
+import { PAYMENT_METHODS } from '@/constants/expenses';
 import { FavorecidoFormModal } from '@/components/favorecidos/FavorecidoFormModal';
 import type { FavorecidoDTO } from '@/types/favorecidos';
 import type { ExpenseFormData } from '@/schemas/expense-form-schema';
@@ -66,12 +67,6 @@ const MUNICIPALITY_OPTIONS = [
   { value: 'Porto Alegre', label: 'Porto Alegre' },
 ] as const;
 
-const PAYMENT_METHOD_OPTIONS = [
-  { value: 'Boleto', label: 'Boleto' },
-  { value: 'PIX', label: 'PIX' },
-  { value: 'Transferência', label: 'Transferência' },
-  { value: 'Guia', label: 'Guia' },
-] as const;
 
 interface ExpenseFormFieldsProps {
   disabled?: boolean;
@@ -309,9 +304,9 @@ export function ExpenseFormFields({ disabled = false, organizationId }: ExpenseF
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                {PAYMENT_METHOD_OPTIONS.map((method) => (
-                  <SelectItem key={method.value} value={method.value}>
-                    {method.label}
+                {PAYMENT_METHODS.map((method) => (
+                  <SelectItem key={method} value={method}>
+                    {method}
                   </SelectItem>
                 ))}
               </SelectContent>

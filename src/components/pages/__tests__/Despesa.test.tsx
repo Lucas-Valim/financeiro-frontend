@@ -15,6 +15,7 @@ vi.mock('@/components/expenses/ExpenseFormModal', () => ({
     onClose: () => void;
     onSuccess?: (expense: ExpenseDTO) => void;
     expense?: ExpenseDTO | null;
+    readonly?: boolean;
   }) => {
     mockExpenseFormModal(props);
     return props.isOpen ? (
@@ -57,6 +58,16 @@ const buildSummary = (overrides: Partial<Record<
 
 vi.mock('@/hooks/use-expenses-summary', () => ({
   useExpensesSummary: (...args: unknown[]) => mockUseExpensesSummary(...args),
+}));
+
+// O FilterModal renderiza os campos compartilhados, que buscam categorias e
+// favorecidos; sem estes mocks os testes bateriam na API real.
+vi.mock('@/hooks/use-categories', () => ({
+  useCategories: () => ({ categories: [], isLoading: false, error: null }),
+}));
+
+vi.mock('@/hooks/use-favorecidos', () => ({
+  useFavorecidos: () => ({ favorecidos: [], isLoading: false, error: null }),
 }));
 
 vi.mock('lucide-react', async (importOriginal) => {
@@ -782,6 +793,118 @@ describe('Despesa', () => {
           expect.objectContaining({
             isOpen: true,
             expense: mockExpense,
+          })
+        );
+      });
+    });
+
+    it('should open the modal in editable mode for an OPEN expense', async () => {
+      mockUseExpenses.mockReturnValue({
+        data: [mockExpense],
+        isLoading: false,
+        error: null,
+        hasMore: false,
+        loadMore: vi.fn(),
+        reset: vi.fn(),
+      });
+
+      render(<Despesa />, { wrapper });
+
+      const user = userEvent.setup();
+      const triggers = screen.getAllByRole('button', { name: /open menu/i });
+      await user.click(triggers[0]);
+      await user.click(screen.getByText('Editar'));
+
+      await waitFor(() => {
+        expect(mockExpenseFormModal).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            isOpen: true,
+            expense: mockExpense,
+            readonly: false,
+          })
+        );
+      });
+    });
+
+    it('should open the modal in readonly mode for a PAID expense', async () => {
+      const paidExpense = { ...mockExpense, status: ExpenseStatus.PAID };
+      mockUseExpenses.mockReturnValue({
+        data: [paidExpense],
+        isLoading: false,
+        error: null,
+        hasMore: false,
+        loadMore: vi.fn(),
+        reset: vi.fn(),
+      });
+
+      render(<Despesa />, { wrapper });
+
+      const user = userEvent.setup();
+      const triggers = screen.getAllByRole('button', { name: /open menu/i });
+      await user.click(triggers[0]);
+      await user.click(screen.getByText('Ver Detalhes'));
+
+      await waitFor(() => {
+        expect(mockExpenseFormModal).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            isOpen: true,
+            expense: paidExpense,
+            readonly: true,
+          })
+        );
+      });
+    });
+
+    it('should open the modal in readonly mode for a CANCELLED expense', async () => {
+      const cancelledExpense = { ...mockExpense, status: ExpenseStatus.CANCELLED };
+      mockUseExpenses.mockReturnValue({
+        data: [cancelledExpense],
+        isLoading: false,
+        error: null,
+        hasMore: false,
+        loadMore: vi.fn(),
+        reset: vi.fn(),
+      });
+
+      render(<Despesa />, { wrapper });
+
+      const user = userEvent.setup();
+      const triggers = screen.getAllByRole('button', { name: /open menu/i });
+      await user.click(triggers[0]);
+      await user.click(screen.getByText('Ver Detalhes'));
+
+      await waitFor(() => {
+        expect(mockExpenseFormModal).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            isOpen: true,
+            expense: cancelledExpense,
+            readonly: true,
+          })
+        );
+      });
+    });
+
+    it('should not open the modal in readonly mode when creating a new expense', async () => {
+      mockUseExpenses.mockReturnValue({
+        data: [],
+        isLoading: false,
+        error: null,
+        hasMore: false,
+        loadMore: vi.fn(),
+        reset: vi.fn(),
+      });
+
+      render(<Despesa />, { wrapper });
+
+      const createButton = screen.getByText('Nova Despesa');
+      fireEvent.click(createButton);
+
+      await waitFor(() => {
+        expect(mockExpenseFormModal).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            isOpen: true,
+            expense: null,
+            readonly: false,
           })
         );
       });

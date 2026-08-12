@@ -4,6 +4,29 @@ import { ORGANIZATION_ID } from '../constants/expenses';
 
 const API_TIMEOUT = 10000;
 
+/**
+ * URL prefixes whose requests get the organization scope injected. The report
+ * export uses its own axios instance (to read `content-disposition`), so this
+ * is exported and reused there rather than duplicated (ADR-007).
+ */
+const ORGANIZATION_SCOPED_PREFIXES = ['/expenses', '/reports'] as const;
+
+/**
+ * Request interceptor that injects `organizationId` into the query for the
+ * organization-scoped namespaces. Shared between the main `apiClient` and the
+ * report export instance.
+ */
+export function injectOrganizationId(
+  config: InternalAxiosRequestConfig
+): InternalAxiosRequestConfig {
+  const url = config.url || '';
+  if (ORGANIZATION_SCOPED_PREFIXES.some((prefix) => url.startsWith(prefix))) {
+    config.params = config.params || {};
+    config.params.organizationId = ORGANIZATION_ID;
+  }
+  return config;
+}
+
 function createApiClient(): AxiosInstance {
   const instance = axios.create({
     baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
@@ -14,14 +37,7 @@ function createApiClient(): AxiosInstance {
   });
 
   instance.interceptors.request.use(
-    (config: InternalAxiosRequestConfig) => {
-      const url = config.url || '';
-      if (url.startsWith('/expenses')) {
-        config.params = config.params || {};
-        config.params.organizationId = ORGANIZATION_ID;
-      }
-      return config;
-    },
+    injectOrganizationId,
     (error: unknown) => Promise.reject(error)
   );
 

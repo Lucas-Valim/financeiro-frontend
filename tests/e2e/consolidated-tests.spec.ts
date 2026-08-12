@@ -12,7 +12,7 @@ test.describe('E2E: Testes Consolidados - Layout e Responsividade', () => {
   test('Layout: deve renderizar Sidebar com itens de navegação', async ({ page }) => {
     await expect(page.getByRole('link', { name: 'Home' })).toBeVisible()
     await expect(page.getByRole('link', { name: 'Despesa' })).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Relatórios' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Relatórios' })).toBeVisible()
   })
 
   test('Layout: deve renderizar Header com título e botão de logout', async ({ page }) => {

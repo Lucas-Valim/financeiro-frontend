@@ -9,18 +9,14 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as RelatoriosRouteImport } from './routes/relatorios'
 import { Route as FavorecidosRouteImport } from './routes/favorecidos'
 import { Route as DespesaRouteImport } from './routes/despesa'
 import { Route as CategoriasRouteImport } from './routes/categorias'
 import { Route as CalendarioRouteImport } from './routes/calendario'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as RelatoriosIndexRouteImport } from './routes/relatorios.index'
+import { Route as RelatoriosDespesasRouteImport } from './routes/relatorios.despesas'
 
-const RelatoriosRoute = RelatoriosRouteImport.update({
-  id: '/relatorios',
-  path: '/relatorios',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const FavorecidosRoute = FavorecidosRouteImport.update({
   id: '/favorecidos',
   path: '/favorecidos',
@@ -46,6 +42,16 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RelatoriosIndexRoute = RelatoriosIndexRouteImport.update({
+  id: '/relatorios/',
+  path: '/relatorios/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RelatoriosDespesasRoute = RelatoriosDespesasRouteImport.update({
+  id: '/relatorios/despesas',
+  path: '/relatorios/despesas',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -53,7 +59,8 @@ export interface FileRoutesByFullPath {
   '/categorias': typeof CategoriasRoute
   '/despesa': typeof DespesaRoute
   '/favorecidos': typeof FavorecidosRoute
-  '/relatorios': typeof RelatoriosRoute
+  '/relatorios/despesas': typeof RelatoriosDespesasRoute
+  '/relatorios/': typeof RelatoriosIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -61,7 +68,8 @@ export interface FileRoutesByTo {
   '/categorias': typeof CategoriasRoute
   '/despesa': typeof DespesaRoute
   '/favorecidos': typeof FavorecidosRoute
-  '/relatorios': typeof RelatoriosRoute
+  '/relatorios/despesas': typeof RelatoriosDespesasRoute
+  '/relatorios': typeof RelatoriosIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -70,7 +78,8 @@ export interface FileRoutesById {
   '/categorias': typeof CategoriasRoute
   '/despesa': typeof DespesaRoute
   '/favorecidos': typeof FavorecidosRoute
-  '/relatorios': typeof RelatoriosRoute
+  '/relatorios/despesas': typeof RelatoriosDespesasRoute
+  '/relatorios/': typeof RelatoriosIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -80,7 +89,8 @@ export interface FileRouteTypes {
     | '/categorias'
     | '/despesa'
     | '/favorecidos'
-    | '/relatorios'
+    | '/relatorios/despesas'
+    | '/relatorios/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -88,6 +98,7 @@ export interface FileRouteTypes {
     | '/categorias'
     | '/despesa'
     | '/favorecidos'
+    | '/relatorios/despesas'
     | '/relatorios'
   id:
     | '__root__'
@@ -96,7 +107,8 @@ export interface FileRouteTypes {
     | '/categorias'
     | '/despesa'
     | '/favorecidos'
-    | '/relatorios'
+    | '/relatorios/despesas'
+    | '/relatorios/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -105,18 +117,12 @@ export interface RootRouteChildren {
   CategoriasRoute: typeof CategoriasRoute
   DespesaRoute: typeof DespesaRoute
   FavorecidosRoute: typeof FavorecidosRoute
-  RelatoriosRoute: typeof RelatoriosRoute
+  RelatoriosDespesasRoute: typeof RelatoriosDespesasRoute
+  RelatoriosIndexRoute: typeof RelatoriosIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/relatorios': {
-      id: '/relatorios'
-      path: '/relatorios'
-      fullPath: '/relatorios'
-      preLoaderRoute: typeof RelatoriosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/favorecidos': {
       id: '/favorecidos'
       path: '/favorecidos'
@@ -152,6 +158,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/relatorios/': {
+      id: '/relatorios/'
+      path: '/relatorios'
+      fullPath: '/relatorios/'
+      preLoaderRoute: typeof RelatoriosIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/relatorios/despesas': {
+      id: '/relatorios/despesas'
+      path: '/relatorios/despesas'
+      fullPath: '/relatorios/despesas'
+      preLoaderRoute: typeof RelatoriosDespesasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -161,7 +181,8 @@ const rootRouteChildren: RootRouteChildren = {
   CategoriasRoute: CategoriasRoute,
   DespesaRoute: DespesaRoute,
   FavorecidosRoute: FavorecidosRoute,
-  RelatoriosRoute: RelatoriosRoute,
+  RelatoriosDespesasRoute: RelatoriosDespesasRoute,
+  RelatoriosIndexRoute: RelatoriosIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

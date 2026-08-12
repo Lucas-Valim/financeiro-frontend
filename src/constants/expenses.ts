@@ -19,12 +19,33 @@ export enum ExpenseStatus {
   CANCELLED = 'CANCELLED',
 }
 
+/**
+ * Canonical payment methods accepted by the expense form and matched exactly by
+ * the list/report queries (`payment_method` is compared verbatim on the
+ * backend), which is why both the form and the filters offer a fixed list
+ * instead of free text.
+ */
+export const PAYMENT_METHODS = [
+  'Boleto',
+  'PIX',
+  'Transferência',
+  'Guia',
+] as const;
+
 export const EXPENSE_STATUS_LABELS = {
   OPEN: 'Aberta',
   OVERDUE: 'Atrasada',
   PAID: 'Paga',
   CANCELLED: 'Cancelada',
 } as const;
+
+/**
+ * Espelha a regra de domínio do backend (`ExpenseStatus.allowsEditing`):
+ * despesas PAID e CANCELLED são estados terminais e não podem ser editadas.
+ */
+export function isExpenseEditable(status: ExpenseStatus): boolean {
+  return status === ExpenseStatus.OPEN || status === ExpenseStatus.OVERDUE;
+}
 
 /**
  * Builds the default expense filters applied when the page first loads:
@@ -53,6 +74,7 @@ export function isDefaultExpenseFilters(filters: ExpenseFilter): boolean {
     filters.dueDateEnd?.getTime() === defaults.dueDateEnd?.getTime() &&
     !filters.receiver &&
     !filters.municipality &&
+    !filters.paymentMethod &&
     !filters.categoryId
   );
 }

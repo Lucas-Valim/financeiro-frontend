@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import {
   Sidebar as SidebarBase,
   SidebarContent,
@@ -6,15 +7,28 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   SidebarHeader,
   SidebarRail,
   useSidebar,
 } from '@/components/ui/sidebar'
 
-import { Home, Wallet, BarChart3, Calendar, Tags, Users } from 'lucide-react'
+import {
+  Home,
+  Wallet,
+  BarChart3,
+  Calendar,
+  Tags,
+  Users,
+  ChevronRight,
+  Receipt,
+} from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import { EvoluireLogo } from './EvoluireLogo'
 import { PLACEHOLDER_USER } from '@/constants'
+import { cn } from '@/lib/utils'
 
 const navigationItems = [
   { to: '/', label: 'Home', icon: Home },
@@ -22,7 +36,12 @@ const navigationItems = [
   { to: '/despesa', label: 'Despesa', icon: Wallet },
   { to: '/categorias', label: 'Categorias', icon: Tags },
   { to: '/favorecidos', label: 'Favorecidos', icon: Users },
-  { to: '/relatorios', label: 'Relatórios', icon: BarChart3 },
+] as const
+
+const REPORTS_BASE_PATH = '/relatorios'
+
+const reportSubItems = [
+  { to: '/relatorios/despesas', label: 'Despesas', icon: Receipt },
 ] as const
 
 interface SidebarProps {
@@ -30,7 +49,18 @@ interface SidebarProps {
 }
 
 export function Sidebar({ currentPath }: SidebarProps) {
-  const { isMobile, setOpenMobile } = useSidebar()
+  const { isMobile, setOpenMobile, state, setOpen } = useSidebar()
+
+  const isReportsActive = currentPath.startsWith(REPORTS_BASE_PATH)
+  const [isReportsOpen, setIsReportsOpen] = useState(isReportsActive)
+
+  // Keep the group expanded while the client navigates inside the reports area
+  // (and pre-expand it on mount when deep linking into a report route).
+  useEffect(() => {
+    if (isReportsActive) {
+      setIsReportsOpen(true)
+    }
+  }, [isReportsActive])
 
   const handleNavigation = () => {
     if (isMobile) {
@@ -42,6 +72,18 @@ export function Sidebar({ currentPath }: SidebarProps) {
     if ('preload' in item && item.preload) {
       import('@/components/calendar/CalendarPage')
     }
+  }
+
+  const handleReportsToggle = () => {
+    // In the collapsed icon rail the submenu primitives are hidden by
+    // construction, so activating the group expands the bar and the group
+    // together, revealing the subitem in one interaction.
+    if (state === 'collapsed' && !isMobile) {
+      setOpen(true)
+      setIsReportsOpen(true)
+      return
+    }
+    setIsReportsOpen((open) => !open)
   }
 
   return (
@@ -60,9 +102,9 @@ export function Sidebar({ currentPath }: SidebarProps) {
                 const Icon = item.icon
                 return (
                   <SidebarMenuItem key={item.to}>
-                    <Link 
-                      to={item.to} 
-                      className="w-full" 
+                    <Link
+                      to={item.to}
+                      className="w-full"
                       onClick={handleNavigation}
                       onMouseEnter={() => handlePreload(item)}
                     >
@@ -79,6 +121,46 @@ export function Sidebar({ currentPath }: SidebarProps) {
                   </SidebarMenuItem>
                 )
               })}
+
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={handleReportsToggle}
+                  isActive={isReportsActive}
+                  tooltip="Relatórios"
+                  aria-label="Relatórios"
+                  aria-expanded={isReportsOpen}
+                  className="h-11"
+                >
+                  <BarChart3 />
+                  <span className="group-data-[collapsible=icon]:hidden">Relatórios</span>
+                  <ChevronRight
+                    className={cn(
+                      'ml-auto transition-transform duration-200 group-data-[collapsible=icon]:hidden',
+                      isReportsOpen && 'rotate-90'
+                    )}
+                  />
+                </SidebarMenuButton>
+                {isReportsOpen && (
+                  <SidebarMenuSub>
+                    {reportSubItems.map((sub) => {
+                      const SubIcon = sub.icon
+                      return (
+                        <SidebarMenuSubItem key={sub.to}>
+                          <SidebarMenuSubButton
+                            asChild
+                            isActive={currentPath === sub.to}
+                          >
+                            <Link to={sub.to} onClick={handleNavigation}>
+                              <SubIcon />
+                              <span>{sub.label}</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      )
+                    })}
+                  </SidebarMenuSub>
+                )}
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

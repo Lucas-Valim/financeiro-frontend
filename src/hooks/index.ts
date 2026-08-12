@@ -8,3 +8,5 @@ export { useDeleteCategory } from './useDeleteCategory';
 export { useFavorecidos } from './use-favorecidos';
 export { useFavorecidoForm } from './useFavorecidoForm';
 export { useDeleteFavorecido } from './useDeleteFavorecido';
+export { useExpenseReportSummary } from './use-expense-report-summary';
+export { useExportExpenseReport } from './use-export-expense-report';

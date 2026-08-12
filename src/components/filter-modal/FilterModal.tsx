@@ -1,6 +1,5 @@
 import * as React from 'react';
-import { useMemo } from 'react';
-import { ExpenseStatus } from '@/constants/expenses';
+import { useCallback, useMemo } from 'react';
 import { ExpenseFilter } from '@/types/expenses';
 import {
   Dialog,
@@ -10,15 +9,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { EXPENSE_STATUS_LABELS } from '@/constants/expenses';
+import { ExpenseFilterFields } from '@/components/filters/ExpenseFilterFields';
 
 export interface FilterModalProps {
   filters: ExpenseFilter;
@@ -28,6 +19,11 @@ export interface FilterModalProps {
   isOpen: boolean;
 }
 
+/**
+ * Filter dialog for the expense grid. It renders the same fields as the report
+ * screen ({@link ExpenseFilterFields}) but buffers the changes in a local draft
+ * so nothing is fetched until the user confirms with "Aplicar".
+ */
 export function FilterModal({
   filters,
   onApply,
@@ -36,59 +32,28 @@ export function FilterModal({
   isOpen,
 }: FilterModalProps) {
   const safeFilters = useMemo(() => filters ?? {}, [filters]);
-  const [localFilters, setLocalFilters] = React.useState<ExpenseFilter>(safeFilters);
+  const [localFilters, setLocalFilters] =
+    React.useState<ExpenseFilter>(safeFilters);
 
   React.useEffect(() => {
     setLocalFilters(safeFilters);
   }, [safeFilters]);
 
-  const handleStatusChange = (value: string) => {
-    setLocalFilters((prev) => ({
-      ...prev,
-      status: value as ExpenseStatus,
-    }));
-  };
-
-  const handleRecipientChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setLocalFilters((prev) => ({
-      ...prev,
-      receiver: e.target.value || undefined,
-    }));
-  };
-
-  const handleMunicipalityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setLocalFilters((prev) => ({
-      ...prev,
-      municipality: e.target.value || undefined,
-    }));
-  };
-
-  const handleDueDateStartChange = (date: Date | null) => {
-    setLocalFilters((prev) => ({
-      ...prev,
-      dueDateStart: date || undefined,
-    }));
-  };
-
-  const handleDueDateEndChange = (date: Date | null) => {
-    setLocalFilters((prev) => ({
-      ...prev,
-      dueDateEnd: date || undefined,
-    }));
-  };
+  const handleFieldsChange = useCallback((patch: Partial<ExpenseFilter>) => {
+    setLocalFilters((prev) => ({ ...prev, ...patch }));
+  }, []);
 
   const handleApply = () => {
     onApply(localFilters);
   };
 
   const handleClear = () => {
-    const clearedFilters: ExpenseFilter = {};
-    setLocalFilters(clearedFilters);
+    setLocalFilters({});
     onClear();
   };
 
   const handleCancel = () => {
-    setLocalFilters(filters);
+    setLocalFilters(safeFilters);
     onClose();
   };
 
@@ -98,103 +63,12 @@ export function FilterModal({
         <DialogHeader>
           <DialogTitle>Filtrar Despesas</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <label htmlFor="status" className="text-sm font-medium">
-              Status
-            </label>
-            <Select
-              value={localFilters.status ?? ''}
-              onValueChange={handleStatusChange}
-            >
-              <SelectTrigger id="status">
-                <SelectValue placeholder="Selecione o status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ExpenseStatus.OPEN}>
-                  {EXPENSE_STATUS_LABELS.OPEN}
-                </SelectItem>
-                <SelectItem value={ExpenseStatus.OVERDUE}>
-                  {EXPENSE_STATUS_LABELS.OVERDUE}
-                </SelectItem>
-                <SelectItem value={ExpenseStatus.PAID}>
-                  {EXPENSE_STATUS_LABELS.PAID}
-                </SelectItem>
-                <SelectItem value={ExpenseStatus.CANCELLED}>
-                  {EXPENSE_STATUS_LABELS.CANCELLED}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
 
-          <div className="grid gap-2">
-            <label htmlFor="receiver" className="text-sm font-medium">
-              Recebedor
-            </label>
-            <Input
-              id="receiver"
-              type="text"
-              placeholder="Buscar por recebedor"
-              value={localFilters.receiver || ''}
-              onChange={handleRecipientChange}
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <label htmlFor="municipality" className="text-sm font-medium">
-              Município
-            </label>
-            <Input
-              id="municipality"
-              type="text"
-              placeholder="Buscar por município"
-              value={localFilters.municipality || ''}
-              onChange={handleMunicipalityChange}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <label htmlFor="dueDateStart" className="text-sm font-medium">
-                Data Inicial
-              </label>
-              <Input
-                id="dueDateStart"
-                type="date"
-                value={
-                  localFilters.dueDateStart
-                    ? localFilters.dueDateStart.toISOString().split('T')[0]
-                    : ''
-                }
-                onChange={(e) =>
-                  handleDueDateStartChange(
-                    e.target.value ? new Date(e.target.value) : null
-                  )
-                }
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <label htmlFor="dueDateEnd" className="text-sm font-medium">
-                Data Final
-              </label>
-              <Input
-                id="dueDateEnd"
-                type="date"
-                value={
-                  localFilters.dueDateEnd
-                    ? localFilters.dueDateEnd.toISOString().split('T')[0]
-                    : ''
-                }
-                onChange={(e) =>
-                  handleDueDateEndChange(
-                    e.target.value ? new Date(e.target.value) : null
-                  )
-                }
-              />
-            </div>
-          </div>
-        </div>
+        <ExpenseFilterFields
+          filters={localFilters}
+          onChange={handleFieldsChange}
+          className="grid-cols-1 py-4"
+        />
 
         <DialogFooter className="flex-col-reverse sm:flex-row">
           <Button

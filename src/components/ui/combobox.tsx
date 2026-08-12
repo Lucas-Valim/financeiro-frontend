@@ -65,6 +65,19 @@ export function Combobox({
   'aria-invalid': ariaInvalid,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
+  const triggerRef = React.useRef<HTMLButtonElement>(null)
+  const [container, setContainer] = React.useState<HTMLElement | null>(null)
+
+  // Renderiza o popover dentro do dialog ancestral (quando houver) para que o
+  // focus-trap do Dialog não roube o foco do input de busca — sem um container,
+  // o Portal cai no default (document.body) e o comportamento fica inalterado.
+  React.useEffect(() => {
+    if (open) {
+      setContainer(
+        triggerRef.current?.closest<HTMLElement>('[role="dialog"]') ?? null,
+      )
+    }
+  }, [open])
 
   const selectedOption = options.find((option) => option.value === value)
 
@@ -82,6 +95,7 @@ export function Combobox({
     <Popover open={open} onOpenChange={setOpen} modal>
       <PopoverTrigger asChild>
         <Button
+          ref={triggerRef}
           type="button"
           id={id}
           variant="outline"
@@ -101,6 +115,7 @@ export function Combobox({
         </Button>
       </PopoverTrigger>
       <PopoverContent
+        container={container}
         className="w-[--radix-popover-trigger-width] p-0 pointer-events-auto"
         align="start"
       >

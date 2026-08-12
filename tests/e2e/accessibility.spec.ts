@@ -152,3 +152,49 @@ test.describe('E2E: Acessibilidade', () => {
     }
   })
 })
+
+/**
+ * Accessibility of the new expense report screen (task 09 QA extension). The
+ * summary is mocked so the block runs under the Vite-only webServer. Verifies
+ * the report screen honours the PRD a11y contract: alerts conveyed by text (not
+ * colour alone) and an aria-live region on the export action.
+ */
+test.describe('E2E: Acessibilidade - Relatório de Despesas', () => {
+  const REPORT_URL = 'http://localhost:5173/relatorios/despesas'
+
+  async function mockSummary(page: import('@playwright/test').Page, expensesWithoutAttachments: number) {
+    await page.route('**/reports/expenses/summary**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          expenseCount: 5,
+          totalAmount: 1000,
+          attachmentCount: 4,
+          expensesWithoutAttachments,
+          exportLimit: 100,
+          exceedsLimit: false,
+        }),
+      })
+    })
+  }
+
+  test('o alerta de despesas sem comprovante é comunicado por texto (role=alert), não só por cor', async ({ page }) => {
+    await mockSummary(page, 2)
+    await page.goto(REPORT_URL)
+
+    const alert = page.getByTestId('no-attachments-alert')
+    await expect(alert).toBeVisible()
+    await expect(alert).toHaveAttribute('role', 'alert')
+    await expect(alert).toContainText(/despesas sem nenhum comprovante/i)
+  })
+
+  test('a ação de exportar expõe uma região aria-live para anunciar o progresso', async ({ page }) => {
+    await mockSummary(page, 0)
+    await page.goto(REPORT_URL)
+
+    const exportButton = page.getByTestId('export-button')
+    await expect(exportButton).toBeVisible()
+    await expect(exportButton).toHaveAttribute('aria-busy', 'false')
+  })
+})

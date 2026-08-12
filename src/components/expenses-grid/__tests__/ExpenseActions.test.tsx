@@ -125,6 +125,60 @@ describe('ExpenseActions', () => {
     });
   });
 
+  describe('Edit Action Label', () => {
+    it('shows Editar for OPEN status', async () => {
+      const user = userEvent.setup();
+      render(<ExpenseActions expense={{ ...mockExpense, status: ExpenseStatus.OPEN }} />);
+
+      await user.click(screen.getByRole('button'));
+
+      expect(screen.getByText('Editar')).toBeInTheDocument();
+      expect(screen.queryByText('Ver Detalhes')).not.toBeInTheDocument();
+    });
+
+    it('shows Editar for OVERDUE status', async () => {
+      const user = userEvent.setup();
+      render(<ExpenseActions expense={{ ...mockExpense, status: ExpenseStatus.OVERDUE }} />);
+
+      await user.click(screen.getByRole('button'));
+
+      expect(screen.getByText('Editar')).toBeInTheDocument();
+      expect(screen.queryByText('Ver Detalhes')).not.toBeInTheDocument();
+    });
+
+    it('shows Ver Detalhes instead of Editar for PAID status', async () => {
+      const user = userEvent.setup();
+      render(<ExpenseActions expense={{ ...mockExpense, status: ExpenseStatus.PAID }} />);
+
+      await user.click(screen.getByRole('button'));
+
+      expect(screen.getByText('Ver Detalhes')).toBeInTheDocument();
+      expect(screen.queryByText('Editar')).not.toBeInTheDocument();
+    });
+
+    it('shows Ver Detalhes instead of Editar for CANCELLED status', async () => {
+      const user = userEvent.setup();
+      render(<ExpenseActions expense={{ ...mockExpense, status: ExpenseStatus.CANCELLED }} />);
+
+      await user.click(screen.getByRole('button'));
+
+      expect(screen.getByText('Ver Detalhes')).toBeInTheDocument();
+      expect(screen.queryByText('Editar')).not.toBeInTheDocument();
+    });
+
+    it('still calls onEdit when Ver Detalhes is selected for a PAID expense', async () => {
+      const user = userEvent.setup();
+      const onEdit = vi.fn();
+      const paidExpense = { ...mockExpense, status: ExpenseStatus.PAID };
+      render(<ExpenseActions expense={paidExpense} onEdit={onEdit} />);
+
+      await user.click(screen.getByRole('button'));
+      await user.click(screen.getByText('Ver Detalhes'));
+
+      expect(onEdit).toHaveBeenCalledWith(paidExpense);
+    });
+  });
+
   describe('PaymentModal Integration', () => {
     it('does not render PaymentModal initially', () => {
       render(<ExpenseActions expense={mockExpense} />);

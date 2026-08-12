@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { PaymentModal } from '@/components/payment/PaymentModal';
-import { ExpenseStatus } from '@/constants/expenses';
+import { ExpenseStatus, isExpenseEditable } from '@/constants/expenses';
 import type { ExpenseDTO } from '@/types/expenses';
 
 interface ExpenseActionsProps {
@@ -23,6 +23,9 @@ export function ExpenseActions({ expense, onEdit }: ExpenseActionsProps) {
   const isPayable = expense.status !== ExpenseStatus.CANCELLED;
   const payMenuLabel =
     expense.status === ExpenseStatus.PAID ? 'Ver Comprovante' : 'Pagar';
+  const editMenuLabel = isExpenseEditable(expense.status)
+    ? 'Editar'
+    : 'Ver Detalhes';
 
   const handleEdit = () => {
     onEdit?.(expense);
@@ -47,7 +50,7 @@ export function ExpenseActions({ expense, onEdit }: ExpenseActionsProps) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem className="cursor-pointer" onSelect={handleEdit}>
-            Editar
+            {editMenuLabel}
           </DropdownMenuItem>
           {isPayable && (
             <DropdownMenuItem className="cursor-pointer" onSelect={handlePay}>
