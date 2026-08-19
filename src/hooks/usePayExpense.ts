@@ -40,9 +40,15 @@ export function usePayExpense(): UseMutationResult<
   return useMutation({
     mutationFn: (data: PaymentRequest) => expensesApiService.pay(data),
     onSuccess: () => {
-      // Invalidate all expense queries to refresh the UI
-      // This will refetch the expense list and update the grid
+      // As três invalidações são necessárias: `['expenses']` casa por prefixo
+      // com a lista (`['expenses', filters]`) e com o calendário
+      // (`['expenses', 'calendar', ...]`), mas os cards de status leem
+      // `['expenses-summary', ...]` e os totais do relatório leem
+      // `['expense-report-summary', ...]` — outras raízes. Sem elas o card
+      // "Abertas" e o relatório continuariam contando a despesa como aberta.
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['expenses-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['expense-report-summary'] });
     },
   });
 }

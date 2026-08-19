@@ -9,6 +9,9 @@ import {
   getDefaultExpenseFilters,
   isDefaultExpenseFilters,
   isExpenseEditable,
+  isExpenseCancellable,
+  CANCEL_EXPENSE_ERROR_MESSAGES,
+  translateCancelExpenseError,
 } from '../expenses';
 
 describe('Constants', () => {
@@ -144,6 +147,69 @@ describe('Constants', () => {
 
     it('should return false for CANCELLED status', () => {
       expect(isExpenseEditable(ExpenseStatus.CANCELLED)).toBe(false);
+    });
+  });
+
+  describe('isExpenseCancellable', () => {
+    it('should return true for OPEN status', () => {
+      expect(isExpenseCancellable(ExpenseStatus.OPEN)).toBe(true);
+    });
+
+    it('should return true for OVERDUE status', () => {
+      expect(isExpenseCancellable(ExpenseStatus.OVERDUE)).toBe(true);
+    });
+
+    it('should return false for PAID status', () => {
+      expect(isExpenseCancellable(ExpenseStatus.PAID)).toBe(false);
+    });
+
+    it('should return false for CANCELLED status', () => {
+      expect(isExpenseCancellable(ExpenseStatus.CANCELLED)).toBe(false);
+    });
+  });
+
+  describe('translateCancelExpenseError', () => {
+    it('should map the status-guard message to the not-cancellable text', () => {
+      expect(translateCancelExpenseError('Cannot cancel expense with status PAID')).toBe(
+        CANCEL_EXPENSE_ERROR_MESSAGES.NOT_CANCELLABLE
+      );
+    });
+
+    it('should map the CANCELLED status-guard message to the not-cancellable text', () => {
+      expect(translateCancelExpenseError('Cannot cancel expense with status CANCELLED')).toBe(
+        CANCEL_EXPENSE_ERROR_MESSAGES.NOT_CANCELLABLE
+      );
+    });
+
+    // A única origem real dessa mensagem é `Expense.cancel()`, que sempre
+    // interpola o status. Qualquer outro "Cannot cancel ..." vem de outro
+    // domínio e não deve virar o texto de despesa paga/cancelada.
+    it('should fall back to the generic text for an unrelated Cannot cancel message', () => {
+      expect(translateCancelExpenseError('Cannot cancel a paid expense')).toBe(
+        CANCEL_EXPENSE_ERROR_MESSAGES.DEFAULT
+      );
+    });
+
+    it('should map the domain not-found message to the not-found text', () => {
+      expect(translateCancelExpenseError('Expense with id abc not found')).toBe(
+        CANCEL_EXPENSE_ERROR_MESSAGES.NOT_FOUND
+      );
+    });
+
+    it('should map the api-client 404 fallback to the not-found text', () => {
+      expect(translateCancelExpenseError('Resource not found')).toBe(
+        CANCEL_EXPENSE_ERROR_MESSAGES.NOT_FOUND
+      );
+    });
+
+    it('should fall back to the generic text for an unknown message', () => {
+      expect(translateCancelExpenseError('Internal server error')).toBe(
+        CANCEL_EXPENSE_ERROR_MESSAGES.DEFAULT
+      );
+    });
+
+    it('should fall back to the generic text for an empty message', () => {
+      expect(translateCancelExpenseError('')).toBe(CANCEL_EXPENSE_ERROR_MESSAGES.DEFAULT);
     });
   });
 

@@ -160,6 +160,16 @@ export class ExpensesApiService {
     return apiClient.put(`/expenses/${id}`, data) as Promise<ExpenseDTO>;
   }
 
+  /**
+   * Cancela uma despesa (backend: DELETE /expenses/:id) e devolve o DTO
+   * atualizado com status CANCELLED. O `organizationId` é injetado pelo
+   * interceptor do api-client para o namespace `/expenses`, por isso a URL
+   * não monta a query string manualmente.
+   */
+  async cancel(id: string): Promise<ExpenseDTO> {
+    return apiClient.delete(`/expenses/${id}`) as unknown as Promise<ExpenseDTO>;
+  }
+
   async pay(data: PaymentRequest): Promise<PaymentResponse> {
     const formData = new FormData();
     formData.append('id', data.id);

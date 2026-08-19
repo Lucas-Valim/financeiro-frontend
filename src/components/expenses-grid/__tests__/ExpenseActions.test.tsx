@@ -18,6 +18,19 @@ vi.mock('@/components/payment/PaymentModal', () => ({
   }),
 }));
 
+vi.mock('@/components/expenses/ExpenseCancelDialog', () => ({
+  ExpenseCancelDialog: vi.fn(({ isOpen, onClose, expense }) => {
+    if (!isOpen || !expense) return null;
+    return (
+      <div data-testid="cancel-dialog" data-expense-id={expense.id}>
+        <button onClick={onClose} data-testid="close-cancel-dialog-button">
+          Fechar
+        </button>
+      </div>
+    );
+  }),
+}));
+
 const mockExpense: ExpenseDTO = {
   id: 'expense-1',
   organizationId: 'org-1',
@@ -207,6 +220,85 @@ describe('ExpenseActions', () => {
       await user.click(screen.getByTestId('close-modal-button'));
 
       expect(screen.queryByTestId('payment-modal')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Cancel Action Visibility', () => {
+    it('shows Cancelar for OPEN status', async () => {
+      const user = userEvent.setup();
+      render(<ExpenseActions expense={{ ...mockExpense, status: ExpenseStatus.OPEN }} />);
+
+      await user.click(screen.getByRole('button'));
+
+      expect(screen.getByText('Cancelar')).toBeInTheDocument();
+    });
+
+    it('shows Cancelar for OVERDUE status', async () => {
+      const user = userEvent.setup();
+      render(<ExpenseActions expense={{ ...mockExpense, status: ExpenseStatus.OVERDUE }} />);
+
+      await user.click(screen.getByRole('button'));
+
+      expect(screen.getByText('Cancelar')).toBeInTheDocument();
+    });
+
+    it('does NOT show Cancelar for PAID status', async () => {
+      const user = userEvent.setup();
+      render(<ExpenseActions expense={{ ...mockExpense, status: ExpenseStatus.PAID }} />);
+
+      await user.click(screen.getByRole('button'));
+
+      expect(screen.queryByText('Cancelar')).not.toBeInTheDocument();
+    });
+
+    it('does NOT show Cancelar for CANCELLED status', async () => {
+      const user = userEvent.setup();
+      render(<ExpenseActions expense={{ ...mockExpense, status: ExpenseStatus.CANCELLED }} />);
+
+      await user.click(screen.getByRole('button'));
+
+      expect(screen.queryByText('Cancelar')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('ExpenseCancelDialog Integration', () => {
+    it('does not render ExpenseCancelDialog initially', () => {
+      render(<ExpenseActions expense={mockExpense} />);
+
+      expect(screen.queryByTestId('cancel-dialog')).not.toBeInTheDocument();
+    });
+
+    it('opens ExpenseCancelDialog with the correct expense when Cancelar is selected', async () => {
+      const user = userEvent.setup();
+      render(<ExpenseActions expense={mockExpense} />);
+
+      await user.click(screen.getByRole('button'));
+      await user.click(screen.getByText('Cancelar'));
+
+      const dialog = screen.getByTestId('cancel-dialog');
+      expect(dialog).toBeInTheDocument();
+      expect(dialog).toHaveAttribute('data-expense-id', mockExpense.id);
+    });
+
+    it('does not open the PaymentModal when Cancelar is selected', async () => {
+      const user = userEvent.setup();
+      render(<ExpenseActions expense={mockExpense} />);
+
+      await user.click(screen.getByRole('button'));
+      await user.click(screen.getByText('Cancelar'));
+
+      expect(screen.queryByTestId('payment-modal')).not.toBeInTheDocument();
+    });
+
+    it('closes ExpenseCancelDialog when onClose is invoked', async () => {
+      const user = userEvent.setup();
+      render(<ExpenseActions expense={mockExpense} />);
+
+      await user.click(screen.getByRole('button'));
+      await user.click(screen.getByText('Cancelar'));
+      await user.click(screen.getByTestId('close-cancel-dialog-button'));
+
+      expect(screen.queryByTestId('cancel-dialog')).not.toBeInTheDocument();
     });
   });
 

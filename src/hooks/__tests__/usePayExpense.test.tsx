@@ -102,7 +102,7 @@ describe('usePayExpense', () => {
       });
     });
 
-    it('should invalidate expense queries on successful payment', async () => {
+    it('should invalidate the expenses list, the status summary and the report summary', async () => {
       const { Wrapper, queryClient } = createWrapper();
       const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
@@ -115,6 +115,11 @@ describe('usePayExpense', () => {
       });
 
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['expenses'] });
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['expenses-summary'] });
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: ['expense-report-summary'],
+      });
+      expect(invalidateSpy).toHaveBeenCalledTimes(3);
     });
   });
 

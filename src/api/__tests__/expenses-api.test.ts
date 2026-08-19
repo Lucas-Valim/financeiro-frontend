@@ -12,6 +12,7 @@ describe('ExpensesApiService', () => {
     get: ReturnType<typeof vi.fn>;
     post: ReturnType<typeof vi.fn>;
     put: ReturnType<typeof vi.fn>;
+    delete: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(() => {
@@ -876,6 +877,48 @@ describe('ExpensesApiService', () => {
       mockedApiClient.post.mockRejectedValue(new Error('timeout of 10000ms exceeded'));
 
       await expect(service.create(input)).rejects.toThrow('timeout of 10000ms exceeded');
+    });
+  });
+
+  describe('cancel', () => {
+    const cancelledExpense = {
+      id: '1',
+      status: ExpenseStatus.CANCELLED,
+    } as ExpenseDTO;
+
+    it('should call apiClient.delete with the expense route', async () => {
+      mockedApiClient.delete.mockResolvedValue(cancelledExpense);
+
+      await service.cancel('1');
+
+      expect(mockedApiClient.delete).toHaveBeenCalledWith('/expenses/1');
+      expect(mockedApiClient.delete).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not build the organizationId query manually (injected by the interceptor)', async () => {
+      mockedApiClient.delete.mockResolvedValue(cancelledExpense);
+
+      await service.cancel('1');
+
+      expect(mockedApiClient.delete.mock.calls[0]).toHaveLength(1);
+    });
+
+    it('should return the cancelled expense returned by the backend', async () => {
+      mockedApiClient.delete.mockResolvedValue(cancelledExpense);
+
+      const result = await service.cancel('1');
+
+      expect(result.status).toBe(ExpenseStatus.CANCELLED);
+    });
+
+    it('should propagate the backend error when the expense cannot be cancelled', async () => {
+      mockedApiClient.delete.mockRejectedValue(
+        new Error('Cannot cancel expense with status PAID')
+      );
+
+      await expect(service.cancel('1')).rejects.toThrow(
+        'Cannot cancel expense with status PAID'
+      );
     });
   });
 });

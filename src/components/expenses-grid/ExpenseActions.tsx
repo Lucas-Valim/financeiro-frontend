@@ -8,7 +8,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { PaymentModal } from '@/components/payment/PaymentModal';
-import { ExpenseStatus, isExpenseEditable } from '@/constants/expenses';
+import { ExpenseCancelDialog } from '@/components/expenses/ExpenseCancelDialog';
+import {
+  ExpenseStatus,
+  isExpenseCancellable,
+  isExpenseEditable,
+} from '@/constants/expenses';
 import type { ExpenseDTO } from '@/types/expenses';
 
 interface ExpenseActionsProps {
@@ -19,8 +24,10 @@ interface ExpenseActionsProps {
 
 export function ExpenseActions({ expense, onEdit }: ExpenseActionsProps) {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
 
   const isPayable = expense.status !== ExpenseStatus.CANCELLED;
+  const isCancellable = isExpenseCancellable(expense.status);
   const payMenuLabel =
     expense.status === ExpenseStatus.PAID ? 'Ver Comprovante' : 'Pagar';
   const editMenuLabel = isExpenseEditable(expense.status)
@@ -37,6 +44,14 @@ export function ExpenseActions({ expense, onEdit }: ExpenseActionsProps) {
 
   const handleClosePaymentModal = () => {
     setIsPaymentModalOpen(false);
+  };
+
+  const handleCancel = () => {
+    setIsCancelDialogOpen(true);
+  };
+
+  const handleCloseCancelDialog = () => {
+    setIsCancelDialogOpen(false);
   };
 
   return (
@@ -57,12 +72,24 @@ export function ExpenseActions({ expense, onEdit }: ExpenseActionsProps) {
               {payMenuLabel}
             </DropdownMenuItem>
           )}
-          <DropdownMenuItem className="cursor-pointer">Cancelar</DropdownMenuItem>
+          {isCancellable && (
+            <DropdownMenuItem
+              className="cursor-pointer text-destructive focus:text-destructive"
+              onSelect={handleCancel}
+            >
+              Cancelar
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
       <PaymentModal
         isOpen={isPaymentModalOpen}
         onClose={handleClosePaymentModal}
+        expense={expense}
+      />
+      <ExpenseCancelDialog
+        isOpen={isCancelDialogOpen}
+        onClose={handleCloseCancelDialog}
         expense={expense}
       />
     </>

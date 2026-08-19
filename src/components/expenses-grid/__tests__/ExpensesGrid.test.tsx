@@ -1,9 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import type { ReactElement } from 'react';
+import { render as rtlRender, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ExpensesGrid } from '../ExpensesGrid';
 import type { ExpenseDTO } from '@/types/expenses';
 import { ExpenseStatus } from '@/constants/expenses';
+import { createQueryWrapper } from '@/test/helpers';
+
+/**
+ * Cada linha do grid monta um ExpenseActions, que por sua vez monta o
+ * ExpenseCancelDialog — e este usa `useQueryClient`. Por isso todo render
+ * aqui precisa do provider. Um QueryClient novo por render mantém os testes
+ * independentes entre si.
+ */
+function render(ui: ReactElement) {
+  const { Wrapper } = createQueryWrapper();
+  return rtlRender(ui, { wrapper: Wrapper });
+}
 
 vi.mock('lucide-react', async (importOriginal) => {
   const actual = await importOriginal<typeof import('lucide-react')>();
@@ -12,7 +25,7 @@ vi.mock('lucide-react', async (importOriginal) => {
   };
 });
 
-// Mock the PaymentModal component to avoid QueryClient dependency
+// Isola o grid dos detalhes internos do PaymentModal
 vi.mock('@/components/payment/PaymentModal', () => ({
   PaymentModal: vi.fn(({ isOpen, expense }) => {
     if (!isOpen || !expense) return null;

@@ -48,6 +48,41 @@ export function isExpenseEditable(status: ExpenseStatus): boolean {
 }
 
 /**
+ * Espelha a regra de domínio do backend (`ExpenseStatus.allowsCancellation`):
+ * apenas despesas OPEN e OVERDUE podem ser canceladas. Mantida separada de
+ * `isExpenseEditable` porque são regras distintas no backend que hoje apenas
+ * coincidem.
+ */
+export function isExpenseCancellable(status: ExpenseStatus): boolean {
+  return status === ExpenseStatus.OPEN || status === ExpenseStatus.OVERDUE;
+}
+
+/** Trechos das mensagens de domínio (em inglês) devolvidas pelo backend. */
+const CANNOT_CANCEL_BACKEND_PREFIX = 'Cannot cancel expense with status';
+const NOT_FOUND_BACKEND_SUFFIX = 'not found';
+
+export const CANCEL_EXPENSE_ERROR_MESSAGES = {
+  NOT_CANCELLABLE: 'Não é possível cancelar uma despesa paga ou já cancelada',
+  NOT_FOUND: 'Despesa não encontrada',
+  DEFAULT: 'Ocorreu um erro ao cancelar a despesa',
+} as const;
+
+/**
+ * Traduz a mensagem de domínio do backend para o texto exibido no toast.
+ * Qualquer mensagem desconhecida (inclusive erro de rede) cai no texto
+ * genérico, para nunca vazar inglês ou detalhe técnico para o usuário.
+ */
+export function translateCancelExpenseError(message: string): string {
+  if (message.startsWith(CANNOT_CANCEL_BACKEND_PREFIX)) {
+    return CANCEL_EXPENSE_ERROR_MESSAGES.NOT_CANCELLABLE;
+  }
+  if (message.endsWith(NOT_FOUND_BACKEND_SUFFIX)) {
+    return CANCEL_EXPENSE_ERROR_MESSAGES.NOT_FOUND;
+  }
+  return CANCEL_EXPENSE_ERROR_MESSAGES.DEFAULT;
+}
+
+/**
  * Builds the default expense filters applied when the page first loads:
  * open expenses within the current month. Returns fresh Date instances on
  * every call to avoid sharing mutable Date objects across renders.
