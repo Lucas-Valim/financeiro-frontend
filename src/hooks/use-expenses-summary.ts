@@ -5,11 +5,18 @@ import type { ExpenseFilter, ExpenseStatusSummary } from '../types/expenses';
 
 const expensesApiService = new ExpensesApiService();
 
+const EMPTY_SUMMARY_ITEM = {
+  count: 0,
+  total: 0,
+  estimatedCount: 0,
+  estimatedTotal: 0,
+} as const;
+
 const EMPTY_SUMMARY: ExpenseStatusSummary = {
-  [ExpenseStatus.OPEN]: { count: 0, total: 0 },
-  [ExpenseStatus.OVERDUE]: { count: 0, total: 0 },
-  [ExpenseStatus.PAID]: { count: 0, total: 0 },
-  [ExpenseStatus.CANCELLED]: { count: 0, total: 0 },
+  [ExpenseStatus.OPEN]: { ...EMPTY_SUMMARY_ITEM },
+  [ExpenseStatus.OVERDUE]: { ...EMPTY_SUMMARY_ITEM },
+  [ExpenseStatus.PAID]: { ...EMPTY_SUMMARY_ITEM },
+  [ExpenseStatus.CANCELLED]: { ...EMPTY_SUMMARY_ITEM },
 };
 
 interface UseExpensesSummaryParams {

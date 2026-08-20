@@ -22,6 +22,10 @@ export interface ExpenseDTO {
   serviceInvoice: string | null;
   serviceInvoiceUrl: string | null;
   bankBillUrl: string | null;
+  recurringExpenseId: string | null; // origem; null em despesa manual
+  occurrenceMonth: Date | null; // competência da ocorrência
+  amountPendingConfirmation: boolean; // bloqueia o pagamento
+  documentPending: boolean; // derivado pela API, nunca recalculado
   createdAt: Date;
   updatedAt: Date;
 }
@@ -72,7 +76,9 @@ export interface ExpenseFilter {
 
 export interface ExpenseStatusSummaryItem {
   count: number;
-  total: number;
+  total: number; // soma completa — inclui o estimado
+  estimatedCount: number; // usado na sublinha do card: "N de M estimadas"
+  estimatedTotal: number;
 }
 
 export type ExpenseStatusSummary = Record<
@@ -91,6 +97,13 @@ export interface ListExpensesOutput {
   pagination: Pagination;
 }
 
+/**
+ * Quase-duplicata de `ExpenseDTO` (contrato do `GET /expenses/:id`). Ela
+ * deliberadamente NÃO recebeu os quatro campos novos da recorrência
+ * (`recurringExpenseId`, `occurrenceMonth`, `amountPendingConfirmation`,
+ * `documentPending`): nenhum consumidor deste tipo os lê, então a divergência é
+ * intencional e fica registrada aqui para não ser "corrigida" por engano.
+ */
 export interface GetExpenseOutput {
   id: string;
   organizationId: string;
@@ -109,6 +122,36 @@ export interface GetExpenseOutput {
   serviceInvoice: string | null;
   serviceInvoiceUrl: string | null;
   bankBillUrl: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * Resposta de `POST /expenses/:id/confirm-amount`. NÃO é um `ExpenseDTO`
+ * completo: o backend projeta um tipo reduzido, sem `favorecidoId`,
+ * `bankBillUrl`, `recurringExpenseId`, `occurrenceMonth`, `documentPending` nem
+ * `paymentDate`. Por isso a confirmação nunca é escrita no cache com
+ * `setQueryData` (apagaria os campos que os marcadores leem) — a atualização das
+ * telas vem sempre da invalidação (ADR-006). O `amountPendingConfirmation` volta
+ * `false` após a confirmação.
+ */
+export interface ConfirmExpenseAmountOutput {
+  id: string;
+  organizationId: string;
+  categoryId: string | null;
+  description: string;
+  amount: number;
+  currency: string;
+  dueDate: Date;
+  status: ExpenseStatus;
+  paymentMethod: string | null;
+  paymentProof: string | null;
+  paymentProofUrl: string | null;
+  receiver: string;
+  municipality: string;
+  serviceInvoice: string | null;
+  serviceInvoiceUrl: string | null;
+  amountPendingConfirmation: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -1,16 +1,10 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { EXPENSE_STATUS_COLORS, ExpenseStatus } from '@/constants/expenses';
 import { formatCurrency } from '@/lib/formatCurrency';
+import type { ExpenseStatusSummary } from '@/types/expenses';
 
 export interface StatusCardsProps {
-  openCount: number;
-  overdueCount: number;
-  paidCount: number;
-  cancelledCount: number;
-  openTotal: number;
-  overdueTotal: number;
-  paidTotal: number;
-  cancelledTotal: number;
+  summary: ExpenseStatusSummary;
   onCardClick: (status: ExpenseStatus) => void;
   activeStatus?: ExpenseStatus | null;
 }
@@ -30,52 +24,14 @@ const STATUS_CARDS_CONFIG = [
 ];
 
 export function StatusCards({
-  openCount,
-  overdueCount,
-  paidCount,
-  cancelledCount,
-  openTotal,
-  overdueTotal,
-  paidTotal,
-  cancelledTotal,
+  summary,
   onCardClick,
   activeStatus = null,
 }: StatusCardsProps) {
-  const getCount = (status: ExpenseStatus): number => {
-    switch (status) {
-      case ExpenseStatus.OPEN:
-        return openCount;
-      case ExpenseStatus.OVERDUE:
-        return overdueCount;
-      case ExpenseStatus.PAID:
-        return paidCount;
-      case ExpenseStatus.CANCELLED:
-        return cancelledCount;
-      default:
-        return 0;
-    }
-  };
-
-  const getTotal = (status: ExpenseStatus): number => {
-    switch (status) {
-      case ExpenseStatus.OPEN:
-        return openTotal;
-      case ExpenseStatus.OVERDUE:
-        return overdueTotal;
-      case ExpenseStatus.PAID:
-        return paidTotal;
-      case ExpenseStatus.CANCELLED:
-        return cancelledTotal;
-      default:
-        return 0;
-    }
-  };
-
   return (
     <div className="flex flex-wrap gap-2 justify-center">
       {STATUS_CARDS_CONFIG.map(({ status }) => {
-        const count = getCount(status);
-        const total = getTotal(status);
+        const { count, total, estimatedCount, estimatedTotal } = summary[status];
         const label = STATUS_CARDS_LABELS[status];
         const isActive = activeStatus === status;
         const colorClass = EXPENSE_STATUS_COLORS[status];
@@ -104,6 +60,15 @@ export function StatusCards({
                 >
                   {count} {count === 1 ? 'despesa' : 'despesas'}
                 </div>
+                {estimatedTotal > 0 && (
+                  <div
+                    className="text-xs text-muted-foreground/70"
+                    data-testid={`status-estimated-${status.toLowerCase()}`}
+                  >
+                    inclui {formatCurrency(estimatedTotal)} estimado ({estimatedCount} de{' '}
+                    {count})
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

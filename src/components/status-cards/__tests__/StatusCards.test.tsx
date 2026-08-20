@@ -2,28 +2,56 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { StatusCards } from '../StatusCards';
 import { ExpenseStatus } from '@/constants/expenses';
+import type {
+  ExpenseStatusSummary,
+  ExpenseStatusSummaryItem,
+} from '@/types/expenses';
+
+const item = (
+  overrides: Partial<ExpenseStatusSummaryItem> = {},
+): ExpenseStatusSummaryItem => ({
+  count: 0,
+  total: 0,
+  estimatedCount: 0,
+  estimatedTotal: 0,
+  ...overrides,
+});
+
+const buildSummary = (
+  overrides: Partial<ExpenseStatusSummary> = {},
+): ExpenseStatusSummary => ({
+  [ExpenseStatus.OPEN]: item({ count: 5, total: 1500.5 }),
+  [ExpenseStatus.OVERDUE]: item({ count: 3, total: 300 }),
+  [ExpenseStatus.PAID]: item({ count: 10, total: 10000 }),
+  [ExpenseStatus.CANCELLED]: item({ count: 2, total: 0 }),
+  ...overrides,
+});
+
+const emptySummary = (): ExpenseStatusSummary => ({
+  [ExpenseStatus.OPEN]: item(),
+  [ExpenseStatus.OVERDUE]: item(),
+  [ExpenseStatus.PAID]: item(),
+  [ExpenseStatus.CANCELLED]: item(),
+});
+
+const defaultProps = () => ({
+  summary: buildSummary(),
+  onCardClick: vi.fn(),
+});
 
 describe('StatusCards', () => {
-  const defaultProps = {
-    openCount: 5,
-    overdueCount: 3,
-    paidCount: 10,
-    cancelledCount: 2,
-    openTotal: 1500.5,
-    overdueTotal: 300,
-    paidTotal: 10000,
-    cancelledTotal: 0,
-    onCardClick: vi.fn(),
-  };
-
   describe('Rendering', () => {
-    it('renders without crashing', () => {
-      render(<StatusCards {...defaultProps} />);
+    it('renders the four status cards from a complete summary object', () => {
+      render(<StatusCards {...defaultProps()} />);
+
       expect(screen.getByTestId('status-card-open')).toBeInTheDocument();
+      expect(screen.getByTestId('status-card-overdue')).toBeInTheDocument();
+      expect(screen.getByTestId('status-card-paid')).toBeInTheDocument();
+      expect(screen.getByTestId('status-card-cancelled')).toBeInTheDocument();
     });
 
     it('renders all four status cards with correct Portuguese labels', () => {
-      render(<StatusCards {...defaultProps} />);
+      render(<StatusCards {...defaultProps()} />);
 
       expect(screen.getByText('Abertas')).toBeInTheDocument();
       expect(screen.getByText('Atrasadas')).toBeInTheDocument();
@@ -31,8 +59,8 @@ describe('StatusCards', () => {
       expect(screen.getByText('Canceladas')).toBeInTheDocument();
     });
 
-    it('renders all four status cards with correct count values from props', () => {
-      render(<StatusCards {...defaultProps} />);
+    it('renders the count from each bucket of the summary', () => {
+      render(<StatusCards {...defaultProps()} />);
 
       expect(screen.getByTestId('status-count-open')).toHaveTextContent('5');
       expect(screen.getByTestId('status-count-overdue')).toHaveTextContent('3');
@@ -40,28 +68,8 @@ describe('StatusCards', () => {
       expect(screen.getByTestId('status-count-cancelled')).toHaveTextContent('2');
     });
 
-    it('renders correctly with all zero counts', () => {
-      const props = { ...defaultProps, openCount: 0, overdueCount: 0, paidCount: 0, cancelledCount: 0 };
-      render(<StatusCards {...props} />);
-
-      expect(screen.getByTestId('status-count-open')).toHaveTextContent('0');
-      expect(screen.getByTestId('status-count-overdue')).toHaveTextContent('0');
-      expect(screen.getByTestId('status-count-paid')).toHaveTextContent('0');
-      expect(screen.getByTestId('status-count-cancelled')).toHaveTextContent('0');
-    });
-
-    it('renders correctly with mixed count values', () => {
-      const props = { ...defaultProps, openCount: 15, overdueCount: 0, paidCount: 1, cancelledCount: 100 };
-      render(<StatusCards {...props} />);
-
-      expect(screen.getByTestId('status-count-open')).toHaveTextContent('15');
-      expect(screen.getByTestId('status-count-overdue')).toHaveTextContent('0');
-      expect(screen.getByTestId('status-count-paid')).toHaveTextContent('1');
-      expect(screen.getByTestId('status-count-cancelled')).toHaveTextContent('100');
-    });
-
-    it('renders the BRL formatted total per status from props', () => {
-      render(<StatusCards {...defaultProps} />);
+    it('renders the BRL formatted total per status from the summary', () => {
+      render(<StatusCards {...defaultProps()} />);
 
       expect(screen.getByTestId('status-total-open')).toHaveTextContent('R$');
       expect(screen.getByTestId('status-total-open')).toHaveTextContent('1.500,50');
@@ -69,35 +77,106 @@ describe('StatusCards', () => {
       expect(screen.getByTestId('status-total-paid')).toHaveTextContent('10.000,00');
       expect(screen.getByTestId('status-total-cancelled')).toHaveTextContent('0,00');
     });
+
+    it('renders all four cards without an estimated subline when every bucket is zeroed', () => {
+      render(<StatusCards summary={emptySummary()} onCardClick={vi.fn()} />);
+
+      expect(screen.getByTestId('status-count-open')).toHaveTextContent('0');
+      expect(screen.getByTestId('status-count-overdue')).toHaveTextContent('0');
+      expect(screen.getByTestId('status-count-paid')).toHaveTextContent('0');
+      expect(screen.getByTestId('status-count-cancelled')).toHaveTextContent('0');
+      expect(screen.queryByTestId('status-estimated-open')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Total includes the estimated portion', () => {
+    it('shows summary.OPEN.total as the main number, not total minus estimatedTotal', () => {
+      const summary = buildSummary({
+        [ExpenseStatus.OPEN]: item({
+          count: 5,
+          total: 5000,
+          estimatedCount: 2,
+          estimatedTotal: 1500,
+        }),
+      });
+
+      render(<StatusCards summary={summary} onCardClick={vi.fn()} />);
+
+      const total = screen.getByTestId('status-total-open');
+      expect(total).toHaveTextContent('5.000,00');
+      expect(total).not.toHaveTextContent('3.500,00');
+    });
+  });
+
+  describe('Estimated subline', () => {
+    it('does NOT render the estimated subline when estimatedTotal is 0', () => {
+      const summary = buildSummary({
+        [ExpenseStatus.OPEN]: item({
+          count: 5,
+          total: 1500,
+          estimatedCount: 0,
+          estimatedTotal: 0,
+        }),
+      });
+
+      render(<StatusCards summary={summary} onCardClick={vi.fn()} />);
+
+      expect(screen.queryByTestId('status-estimated-open')).not.toBeInTheDocument();
+    });
+
+    it('renders the estimated subline naming the value and the "2 de 5" proportion', () => {
+      const summary = buildSummary({
+        [ExpenseStatus.OPEN]: item({
+          count: 5,
+          total: 5000,
+          estimatedCount: 2,
+          estimatedTotal: 1500,
+        }),
+      });
+
+      render(<StatusCards summary={summary} onCardClick={vi.fn()} />);
+
+      const estimated = screen.getByTestId('status-estimated-open');
+      expect(estimated).toHaveTextContent('1.500,00');
+      expect(estimated).toHaveTextContent('2 de 5');
+    });
+
+    it('renders the estimated subline only for buckets with estimatedTotal > 0', () => {
+      const summary = buildSummary({
+        [ExpenseStatus.OPEN]: item({
+          count: 5,
+          total: 5000,
+          estimatedCount: 2,
+          estimatedTotal: 1500,
+        }),
+        [ExpenseStatus.OVERDUE]: item({ count: 3, total: 300 }),
+      });
+
+      render(<StatusCards summary={summary} onCardClick={vi.fn()} />);
+
+      expect(screen.getByTestId('status-estimated-open')).toBeInTheDocument();
+      expect(screen.queryByTestId('status-estimated-overdue')).not.toBeInTheDocument();
+    });
   });
 
   describe('Responsive Layout', () => {
     it('applies correct flex layout classes', () => {
-      const { container } = render(<StatusCards {...defaultProps} />);
+      const { container } = render(<StatusCards {...defaultProps()} />);
       const flexContainer = container.firstChild as HTMLElement;
-      
+
       expect(flexContainer).toHaveClass('flex');
       expect(flexContainer).toHaveClass('flex-wrap');
       expect(flexContainer).toHaveClass('gap-2');
       expect(flexContainer).toHaveClass('justify-center');
-    });
-
-    it('applies responsive flex-wrap behavior for all screen sizes', () => {
-      const { container } = render(<StatusCards {...defaultProps} />);
-      const flexContainer = container.firstChild as HTMLElement;
-      
-      expect(flexContainer).toHaveClass('flex');
-      expect(flexContainer).toHaveClass('flex-wrap');
     });
   });
 
   describe('Click Handling', () => {
     it('clicking OPEN card calls onCardClick with OPEN status', () => {
       const onCardClick = vi.fn();
-      render(<StatusCards {...defaultProps} onCardClick={onCardClick} />);
+      render(<StatusCards summary={buildSummary()} onCardClick={onCardClick} />);
 
-      const openCard = screen.getByTestId('status-card-open');
-      fireEvent.click(openCard);
+      fireEvent.click(screen.getByTestId('status-card-open'));
 
       expect(onCardClick).toHaveBeenCalledTimes(1);
       expect(onCardClick).toHaveBeenCalledWith('OPEN');
@@ -105,172 +184,105 @@ describe('StatusCards', () => {
 
     it('clicking OVERDUE card calls onCardClick with OVERDUE status', () => {
       const onCardClick = vi.fn();
-      render(<StatusCards {...defaultProps} onCardClick={onCardClick} />);
+      render(<StatusCards summary={buildSummary()} onCardClick={onCardClick} />);
 
-      const overdueCard = screen.getByTestId('status-card-overdue');
-      fireEvent.click(overdueCard);
+      fireEvent.click(screen.getByTestId('status-card-overdue'));
 
-      expect(onCardClick).toHaveBeenCalledTimes(1);
       expect(onCardClick).toHaveBeenCalledWith('OVERDUE');
     });
 
     it('clicking PAID card calls onCardClick with PAID status', () => {
       const onCardClick = vi.fn();
-      render(<StatusCards {...defaultProps} onCardClick={onCardClick} />);
+      render(<StatusCards summary={buildSummary()} onCardClick={onCardClick} />);
 
-      const paidCard = screen.getByTestId('status-card-paid');
-      fireEvent.click(paidCard);
+      fireEvent.click(screen.getByTestId('status-card-paid'));
 
-      expect(onCardClick).toHaveBeenCalledTimes(1);
       expect(onCardClick).toHaveBeenCalledWith('PAID');
     });
 
     it('clicking CANCELLED card calls onCardClick with CANCELLED status', () => {
       const onCardClick = vi.fn();
-      render(<StatusCards {...defaultProps} onCardClick={onCardClick} />);
+      render(<StatusCards summary={buildSummary()} onCardClick={onCardClick} />);
 
-      const cancelledCard = screen.getByTestId('status-card-cancelled');
-      fireEvent.click(cancelledCard);
+      fireEvent.click(screen.getByTestId('status-card-cancelled'));
 
-      expect(onCardClick).toHaveBeenCalledTimes(1);
       expect(onCardClick).toHaveBeenCalledWith('CANCELLED');
     });
   });
 
   describe('Active State Styling', () => {
-    it('applies active state styling when activeStatus matches card status (OPEN)', () => {
-      render(<StatusCards {...defaultProps} activeStatus={ExpenseStatus.OPEN} />);
+    it('marks the active card when activeStatus matches (OPEN)', () => {
+      render(
+        <StatusCards
+          summary={buildSummary()}
+          onCardClick={vi.fn()}
+          activeStatus={ExpenseStatus.OPEN}
+        />,
+      );
 
-      const openCard = screen.getByTestId('status-card-open');
-      expect(openCard).toHaveClass('ring-2');
+      expect(screen.getByTestId('status-card-open')).toHaveClass('ring-2');
     });
 
-    it('applies active state styling when activeStatus matches card status (OVERDUE)', () => {
-      render(<StatusCards {...defaultProps} activeStatus={ExpenseStatus.OVERDUE} />);
+    it('marks the active card when activeStatus matches (CANCELLED)', () => {
+      render(
+        <StatusCards
+          summary={buildSummary()}
+          onCardClick={vi.fn()}
+          activeStatus={ExpenseStatus.CANCELLED}
+        />,
+      );
 
-      const overdueCard = screen.getByTestId('status-card-overdue');
-      expect(overdueCard).toHaveClass('ring-2');
+      expect(screen.getByTestId('status-card-cancelled')).toHaveClass('ring-2');
     });
 
-    it('applies active state styling when activeStatus matches card status (PAID)', () => {
-      render(<StatusCards {...defaultProps} activeStatus={ExpenseStatus.PAID} />);
+    it('does NOT mark any card when activeStatus is null', () => {
+      render(
+        <StatusCards summary={buildSummary()} onCardClick={vi.fn()} activeStatus={null} />,
+      );
 
-      const paidCard = screen.getByTestId('status-card-paid');
-      expect(paidCard).toHaveClass('ring-2');
+      expect(screen.getByTestId('status-card-open')).not.toHaveClass('ring-2');
+      expect(screen.getByTestId('status-card-overdue')).not.toHaveClass('ring-2');
+      expect(screen.getByTestId('status-card-paid')).not.toHaveClass('ring-2');
+      expect(screen.getByTestId('status-card-cancelled')).not.toHaveClass('ring-2');
     });
 
-    it('applies active state styling when activeStatus matches card status (CANCELLED)', () => {
-      render(<StatusCards {...defaultProps} activeStatus={ExpenseStatus.CANCELLED} />);
+    it('does NOT mark any card when activeStatus is undefined', () => {
+      render(<StatusCards summary={buildSummary()} onCardClick={vi.fn()} />);
 
-      const cancelledCard = screen.getByTestId('status-card-cancelled');
-      expect(cancelledCard).toHaveClass('ring-2');
+      expect(screen.getByTestId('status-card-open')).not.toHaveClass('ring-2');
     });
 
-    it('does NOT apply active state styling when activeStatus is null', () => {
-      render(<StatusCards {...defaultProps} activeStatus={null} />);
+    it('marks only the matching card, not the others', () => {
+      render(
+        <StatusCards
+          summary={buildSummary()}
+          onCardClick={vi.fn()}
+          activeStatus={ExpenseStatus.OPEN}
+        />,
+      );
 
-      const openCard = screen.getByTestId('status-card-open');
-      const overdueCard = screen.getByTestId('status-card-overdue');
-      const paidCard = screen.getByTestId('status-card-paid');
-      const cancelledCard = screen.getByTestId('status-card-cancelled');
-
-      expect(openCard).not.toHaveClass('ring-2');
-      expect(overdueCard).not.toHaveClass('ring-2');
-      expect(paidCard).not.toHaveClass('ring-2');
-      expect(cancelledCard).not.toHaveClass('ring-2');
-    });
-
-    it('does NOT apply active state styling when activeStatus is undefined', () => {
-      render(<StatusCards {...defaultProps} activeStatus={undefined} />);
-
-      const openCard = screen.getByTestId('status-card-open');
-      expect(openCard).not.toHaveClass('ring-2');
-    });
-
-    it('does NOT apply active state styling when activeStatus is different', () => {
-      render(<StatusCards {...defaultProps} activeStatus={ExpenseStatus.OPEN} />);
-
-      const overdueCard = screen.getByTestId('status-card-overdue');
-      const paidCard = screen.getByTestId('status-card-paid');
-      const cancelledCard = screen.getByTestId('status-card-cancelled');
-
-      expect(overdueCard).not.toHaveClass('ring-2');
-      expect(paidCard).not.toHaveClass('ring-2');
-      expect(cancelledCard).not.toHaveClass('ring-2');
+      expect(screen.getByTestId('status-card-open')).toHaveClass('ring-2');
+      expect(screen.getByTestId('status-card-overdue')).not.toHaveClass('ring-2');
+      expect(screen.getByTestId('status-card-paid')).not.toHaveClass('ring-2');
+      expect(screen.getByTestId('status-card-cancelled')).not.toHaveClass('ring-2');
     });
   });
 
-  describe('Edge Cases', () => {
-    it('handles null counts gracefully', () => {
-      const props = { 
-        ...defaultProps, 
-        openCount: null as unknown as number, 
-        overdueCount: null as unknown as number,
-        paidCount: null as unknown as number,
-        cancelledCount: null as unknown as number,
-      };
-      
-      expect(() => render(<StatusCards {...props} />)).not.toThrow();
+  describe('Count pluralization', () => {
+    it('uses the singular "despesa" when a bucket has exactly one expense', () => {
+      const summary = buildSummary({
+        [ExpenseStatus.OPEN]: item({ count: 1, total: 100 }),
+      });
+
+      render(<StatusCards summary={summary} onCardClick={vi.fn()} />);
+
+      expect(screen.getByTestId('status-count-open')).toHaveTextContent('1 despesa');
     });
 
-    it('handles undefined counts gracefully', () => {
-      const props = { 
-        ...defaultProps, 
-        openCount: undefined as unknown as number, 
-        overdueCount: undefined as unknown as number,
-        paidCount: undefined as unknown as number,
-        cancelledCount: undefined as unknown as number,
-      };
-      
-      expect(() => render(<StatusCards {...props} />)).not.toThrow();
-    });
+    it('uses the plural "despesas" for counts other than one', () => {
+      render(<StatusCards {...defaultProps()} />);
 
-    it('handles negative counts gracefully', () => {
-      const props = { 
-        ...defaultProps, 
-        openCount: -1, 
-        overdueCount: -5,
-        paidCount: -10,
-        cancelledCount: -2,
-      };
-      
-      expect(() => render(<StatusCards {...props} />)).not.toThrow();
-      expect(screen.getByTestId('status-count-open')).toHaveTextContent('-1');
-      expect(screen.getByTestId('status-count-overdue')).toHaveTextContent('-5');
-      expect(screen.getByTestId('status-count-paid')).toHaveTextContent('-10');
-      expect(screen.getByTestId('status-count-cancelled')).toHaveTextContent('-2');
-    });
-
-    it('handles very large counts gracefully', () => {
-      const props = { 
-        ...defaultProps, 
-        openCount: 999999, 
-        overdueCount: 1000000,
-        paidCount: 500000,
-        cancelledCount: 1234567890,
-      };
-      
-      expect(() => render(<StatusCards {...props} />)).not.toThrow();
-      expect(screen.getByTestId('status-count-open')).toHaveTextContent('999999');
-      expect(screen.getByTestId('status-count-overdue')).toHaveTextContent('1000000');
-      expect(screen.getByTestId('status-count-paid')).toHaveTextContent('500000');
-      expect(screen.getByTestId('status-count-cancelled')).toHaveTextContent('1234567890');
-    });
-
-    it('handles zero counts mixed with positive counts', () => {
-      const props = { 
-        ...defaultProps, 
-        openCount: 0, 
-        overdueCount: 5,
-        paidCount: 0,
-        cancelledCount: 10,
-      };
-      
-      render(<StatusCards {...props} />);
-      expect(screen.getByTestId('status-count-open')).toHaveTextContent('0');
-      expect(screen.getByTestId('status-count-overdue')).toHaveTextContent('5');
-      expect(screen.getByTestId('status-count-paid')).toHaveTextContent('0');
-      expect(screen.getByTestId('status-count-cancelled')).toHaveTextContent('10');
+      expect(screen.getByTestId('status-count-open')).toHaveTextContent('5 despesas');
     });
   });
 });

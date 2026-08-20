@@ -21,9 +21,18 @@ describe('Sidebar', () => {
     expect(screen.getByText('Home')).toBeInTheDocument()
     expect(screen.getByText('Despesa')).toBeInTheDocument()
     expect(screen.getByText('Calendário')).toBeInTheDocument()
-    expect(screen.getByText('Categorias')).toBeInTheDocument()
-    expect(screen.getByText('Favorecidos')).toBeInTheDocument()
+    expect(screen.getByText('Cadastros')).toBeInTheDocument()
     expect(screen.getByText('Relatórios')).toBeInTheDocument()
+  })
+
+  it('deve manter no primeiro nível apenas os itens de uso diário', () => {
+    renderSidebar()
+
+    // Categorias, Favorecidos e Recorrências são configuração: ficam dentro do
+    // grupo Cadastros, recolhido por padrão fora das suas rotas.
+    expect(screen.queryByText('Categorias')).not.toBeInTheDocument()
+    expect(screen.queryByText('Favorecidos')).not.toBeInTheDocument()
+    expect(screen.queryByText('Recorrências')).not.toBeInTheDocument()
   })
 
   it('deve indicar visualmente a página ativa', () => {
@@ -76,6 +85,97 @@ describe('Sidebar', () => {
       if (calendarioLink) {
         fireEvent.mouseEnter(calendarioLink)
       }
+    })
+  })
+
+  describe('grupo Cadastros', () => {
+    const getCadastrosControl = () => screen.getByRole('button', { name: 'Cadastros' })
+
+    it('deve exibir "Cadastros" como segundo item, imediatamente após "Home"', () => {
+      renderSidebar()
+
+      const homeItem = screen
+        .getByText('Home')
+        .closest('[data-slot="sidebar-menu-item"]')
+      const cadastrosItem = screen
+        .getByText('Cadastros')
+        .closest('[data-slot="sidebar-menu-item"]')
+
+      expect(homeItem).not.toBeNull()
+      expect(cadastrosItem).not.toBeNull()
+      expect(homeItem?.nextElementSibling).toBe(cadastrosItem)
+    })
+
+    it('deve manter Calendário e Despesa depois do grupo Cadastros', () => {
+      renderSidebar()
+
+      const items = Array.from(
+        document.querySelectorAll('[data-slot="sidebar-menu-item"]')
+      )
+      const labelAt = (index: number) => items[index]?.textContent ?? ''
+
+      expect(labelAt(0)).toContain('Home')
+      expect(labelAt(1)).toContain('Cadastros')
+      expect(labelAt(2)).toContain('Calendário')
+      expect(labelAt(3)).toContain('Despesa')
+      expect(labelAt(4)).toContain('Relatórios')
+    })
+
+    it('deve renderizar Cadastros como controle de expansão, não como link', () => {
+      renderSidebar()
+
+      expect(getCadastrosControl()).toHaveAttribute('aria-expanded', 'false')
+      expect(screen.queryByRole('link', { name: 'Cadastros' })).not.toBeInTheDocument()
+    })
+
+    it('deve revelar Recorrências, Categorias e Favorecidos ao acionar Cadastros', () => {
+      renderSidebar()
+
+      fireEvent.click(getCadastrosControl())
+
+      expect(screen.getByText('Recorrências')).toBeInTheDocument()
+      expect(screen.getByText('Categorias')).toBeInTheDocument()
+      expect(screen.getByText('Favorecidos')).toBeInTheDocument()
+    })
+
+    it('deve recolher o grupo ao acionar Cadastros novamente', () => {
+      renderSidebar()
+
+      fireEvent.click(getCadastrosControl())
+      expect(screen.getByText('Recorrências')).toBeInTheDocument()
+
+      fireEvent.click(getCadastrosControl())
+      expect(screen.queryByText('Recorrências')).not.toBeInTheDocument()
+    })
+
+    it('deve vir com o grupo já expandido ao montar em /recorrencias', () => {
+      renderSidebar({ currentPath: '/recorrencias' })
+
+      expect(getCadastrosControl()).toHaveAttribute('aria-expanded', 'true')
+      expect(screen.getByText('Recorrências')).toBeInTheDocument()
+    })
+
+    it('deve marcar o subitem Recorrências como ativo na rota /recorrencias', () => {
+      renderSidebar({ currentPath: '/recorrencias' })
+
+      const recorrenciasButton = screen.getByText('Recorrências')
+      expect(recorrenciasButton.closest('[data-active="true"]')).toBeInTheDocument()
+    })
+
+    it('não deve marcar o grupo como ativo em rota fora dos cadastros', () => {
+      renderSidebar({ currentPath: '/despesa' })
+
+      expect(getCadastrosControl().closest('[data-active="true"]')).not.toBeInTheDocument()
+    })
+
+    it('deve expandir a barra e revelar os cadastros ao acionar no modo recolhido', () => {
+      renderSidebar({ defaultOpen: false })
+
+      expect(screen.queryByText('Categorias')).not.toBeInTheDocument()
+
+      fireEvent.click(getCadastrosControl())
+
+      expect(screen.getByText('Categorias')).toBeInTheDocument()
     })
   })
 
@@ -173,8 +273,7 @@ describe('Sidebar', () => {
 
       expect(screen.getByText('Home').closest('a')).toBeInTheDocument()
       expect(screen.getByText('Despesa').closest('a')).toBeInTheDocument()
-      expect(screen.getByText('Categorias').closest('a')).toBeInTheDocument()
-      expect(screen.getByText('Favorecidos').closest('a')).toBeInTheDocument()
+      expect(screen.getByText('Calendário').closest('a')).toBeInTheDocument()
     })
 
     it('deve expandir a barra e revelar Despesas ao acionar Relatórios no modo recolhido', () => {

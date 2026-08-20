@@ -1,5 +1,5 @@
 import { apiClient } from '../lib/api-client';
-import type { ExpenseDTO, ExpenseFilter, ExpenseStatusSummary, ListExpensesOutput, CreateExpenseInput, UpdateExpenseInput } from '../types/expenses';
+import type { ExpenseDTO, ExpenseFilter, ExpenseStatusSummary, ListExpensesOutput, CreateExpenseInput, UpdateExpenseInput, ConfirmExpenseAmountOutput } from '../types/expenses';
 import type { PaymentRequest, PaymentResponse } from '../schemas/payment-schema';
 import { ORGANIZATION_ID } from '../constants/expenses';
 
@@ -183,5 +183,18 @@ export class ExpensesApiService {
         'Content-Type': 'multipart/form-data',
       },
     }) as unknown as Promise<PaymentResponse>;
+  }
+
+  /**
+   * Confirma o valor de uma despesa gerada por recorrência de valor variável
+   * (backend: POST /expenses/:id/confirm-amount). Não há corpo — a confirmação
+   * apenas trava o valor herdado da ocorrência anterior. O `organizationId` é
+   * injetado pelo interceptor do api-client para o namespace `/expenses`, como
+   * em `cancel`, por isso a query string não é montada manualmente.
+   */
+  async confirmAmount(id: string): Promise<ConfirmExpenseAmountOutput> {
+    return apiClient.post(
+      `/expenses/${id}/confirm-amount`
+    ) as unknown as Promise<ConfirmExpenseAmountOutput>;
   }
 }

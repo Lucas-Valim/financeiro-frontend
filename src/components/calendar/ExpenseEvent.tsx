@@ -2,6 +2,10 @@ import { useMemo } from 'react';
 import { startOfDay } from 'date-fns';
 import { Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import { ExpenseStatus } from '@/constants/expenses';
+import {
+  ExpenseMarkers,
+  getExpenseMarkersLabel,
+} from '@/components/expenses/ExpenseMarkers';
 import type { CalendarEvent, ExpenseEventStatus } from '@/types/calendar';
 
 interface ExpenseEventProps {
@@ -65,6 +69,18 @@ export function ExpenseEvent({ event, onClick }: ExpenseEventProps) {
     [event.amount]
   );
 
+  // Na densidade compacta os marcadores viram só ícones; o texto sobrevive
+  // aqui, pois o `aria-label` do botão substitui o nome acessível de todo o
+  // conteúdo interno — `aria-label`/`sr-only` aninhados não seriam anunciados.
+  const markersLabel = useMemo(
+    () => getExpenseMarkersLabel(event.expense),
+    [event.expense]
+  );
+
+  const ariaLabel = markersLabel
+    ? `${event.title}, ${formattedAmount}, ${getStatusLabel(status)}, ${markersLabel}`
+    : `${event.title}, ${formattedAmount}, ${getStatusLabel(status)}`;
+
   return (
     <button
       type="button"
@@ -77,7 +93,7 @@ export function ExpenseEvent({ event, onClick }: ExpenseEventProps) {
         ${getStatusStyles(status)}
       `}
       style={{ transitionDuration: 'var(--motion-hover)' }}
-      aria-label={`${event.title}, ${formattedAmount}, ${getStatusLabel(status)}`}
+      aria-label={ariaLabel}
     >
       <div className="flex items-center gap-1">
         <StatusIcon status={status} />
@@ -87,6 +103,7 @@ export function ExpenseEvent({ event, onClick }: ExpenseEventProps) {
         >
           {event.title}
         </span>
+        <ExpenseMarkers expense={event.expense} density="compact" />
       </div>
       <span
         className="text-xs font-semibold mt-0.5 block"

@@ -25,6 +25,10 @@ function createMockExpense(overrides?: Partial<ExpenseDTO>): ExpenseDTO {
     serviceInvoice: null,
     serviceInvoiceUrl: null,
     bankBillUrl: null,
+    recurringExpenseId: null,
+    occurrenceMonth: null,
+    amountPendingConfirmation: false,
+    documentPending: false,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
@@ -290,6 +294,86 @@ describe('ExpenseEvent', () => {
 
       const icon = screen.getByTestId('clock-icon');
       expect(icon).toHaveAttribute('aria-hidden', 'true');
+    });
+  });
+
+  describe('expense markers', () => {
+    const AMOUNT_LABEL =
+      'Valor estimado do mês anterior — confirme antes de pagar';
+
+    it('appends the marker text to the button aria-label for an expense with amount pending', () => {
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 7);
+
+      const event = createMockCalendarEvent({
+        expense: createMockExpense({
+          status: ExpenseStatus.OPEN,
+          dueDate: futureDate,
+          recurringExpenseId: 'rec-1',
+          amountPendingConfirmation: true,
+        }),
+      });
+
+      render(<ExpenseEvent event={event} onClick={() => {}} />);
+
+      const button = screen.getByRole('button');
+      expect(button).toHaveAttribute(
+        'aria-label',
+        expect.stringContaining(AMOUNT_LABEL)
+      );
+    });
+
+    it('keeps the current aria-label without a marker suffix for a manual expense', () => {
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 7);
+
+      const event = createMockCalendarEvent({
+        title: 'Aluguel',
+        amount: 1500,
+        expense: createMockExpense({
+          status: ExpenseStatus.OPEN,
+          dueDate: futureDate,
+          recurringExpenseId: null,
+        }),
+      });
+
+      render(<ExpenseEvent event={event} onClick={() => {}} />);
+
+      const button = screen.getByRole('button');
+      const ariaLabel = button.getAttribute('aria-label') ?? '';
+      expect(ariaLabel).toContain('Aluguel');
+      expect(ariaLabel).toContain('Pendente');
+      // No marker suffix: the label ends at the status, nothing appended after.
+      expect(ariaLabel.endsWith('Pendente')).toBe(true);
+      expect(screen.queryByTestId('expense-markers')).toBeNull();
+    });
+
+    it('still applies overdue styles for an overdue expense with amount pending', () => {
+      const pastDate = new Date();
+      pastDate.setDate(pastDate.getDate() - 7);
+
+      const event = createMockCalendarEvent({
+        expense: createMockExpense({
+          status: ExpenseStatus.OPEN,
+          dueDate: pastDate,
+          recurringExpenseId: 'rec-1',
+          amountPendingConfirmation: true,
+        }),
+      });
+
+      render(<ExpenseEvent event={event} onClick={() => {}} />);
+
+      const button = screen.getByRole('button');
+      expect(button.className).toContain('bg-[var(--event-overdue-bg)]');
+      expect(button).toHaveAttribute(
+        'aria-label',
+        expect.stringContaining('Vencido')
+      );
+      expect(button).toHaveAttribute(
+        'aria-label',
+        expect.stringContaining(AMOUNT_LABEL)
+      );
+      expect(screen.getByTestId('expense-marker-amount')).toBeInTheDocument();
     });
   });
 });

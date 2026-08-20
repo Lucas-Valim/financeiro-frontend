@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { useExpenses } from '@/hooks/use-expenses';
 import { useExpensesSummary } from '@/hooks/use-expenses-summary';
 import { StatusCards } from '@/components/status-cards/StatusCards';
@@ -6,7 +7,7 @@ import { FilterModal } from '@/components/filter-modal/FilterModal';
 import { ExpensesGrid } from '@/components/expenses-grid/ExpensesGrid';
 import { ExpenseFormModal } from '@/components/expenses/ExpenseFormModal';
 import { Button } from '@/components/ui/button';
-import { Loader2, Filter, AlertCircle, X } from 'lucide-react';
+import { Loader2, Filter, AlertCircle, X, Repeat } from 'lucide-react';
 import type { ExpenseFilter, ExpenseDTO } from '@/types/expenses';
 import {
   ExpenseStatus,
@@ -21,6 +22,8 @@ export function Despesa() {
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<ExpenseDTO | null>(null);
+
+  const navigate = useNavigate();
 
   const {
     data: expenses,
@@ -80,6 +83,12 @@ export function Despesa() {
     setSelectedExpense(null);
     setIsExpenseModalOpen(true);
   }, []);
+
+  // Ponto de entrada secundário: leva à área de recorrências com o formulário
+  // aberto, para quem percebe no meio do cadastro que a despesa se repete.
+  const handleCreateRecurringExpense = useCallback(() => {
+    navigate({ to: '/recorrencias', search: { novo: true } });
+  }, [navigate]);
 
   const handleEditExpense = useCallback((expense: ExpenseDTO) => {
     setSelectedExpense(expense);
@@ -141,16 +150,19 @@ export function Despesa() {
             Filtros
           </Button>
 
+          <Button
+            onClick={handleCreateRecurringExpense}
+            variant="outline"
+            className="flex items-center gap-2"
+            data-testid="new-recurring-expense-button"
+          >
+            <Repeat className="h-4 w-4" />
+            Nova despesa recorrente
+          </Button>
+
           <div className="flex-1 flex justify-center">
             <StatusCards
-              openCount={summary.OPEN.count}
-              overdueCount={summary.OVERDUE.count}
-              paidCount={summary.PAID.count}
-              cancelledCount={summary.CANCELLED.count}
-              openTotal={summary.OPEN.total}
-              overdueTotal={summary.OVERDUE.total}
-              paidTotal={summary.PAID.total}
-              cancelledTotal={summary.CANCELLED.total}
+              summary={summary}
               onCardClick={handleFilterByStatus}
               activeStatus={filters.status || null}
             />

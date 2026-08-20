@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { ORGANIZATION_ID } from '@/constants/expenses';
 import {
   Dialog,
   DialogContent,
@@ -8,6 +9,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { DiscardChangesDialog } from '@/components/shared/DiscardChangesDialog';
 import { Form } from '@/components/ui/form';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ExpenseFormFields } from './ExpenseFormFields';
@@ -15,7 +17,6 @@ import { ExpenseUploadFields } from './ExpenseUploadFields';
 import { useExpenseForm } from '@/hooks/useExpenseForm';
 import type { ExpenseDTO } from '@/types/expenses';
 
-const DEFAULT_ORGANIZATION_ID = 'fca3c088-ba34-43a2-9b32-b2b1a1246915';
 
 export interface ExpenseFormModalProps {
   /** Controls whether the modal is open */
@@ -145,7 +146,7 @@ export function ExpenseFormModal({
                   </TabsList>
 
                   <TabsContent value="data" className={`mt-4 ${readonly ? 'opacity-80' : ''}`}>
-                    <ExpenseFormFields disabled={isSubmitting || readonly} organizationId={DEFAULT_ORGANIZATION_ID} />
+                    <ExpenseFormFields disabled={isSubmitting || readonly} organizationId={ORGANIZATION_ID} />
                   </TabsContent>
 
                   <TabsContent value="documents" className={`mt-4 ${readonly ? 'opacity-80' : ''}`}>
@@ -204,35 +205,12 @@ export function ExpenseFormModal({
       </Dialog>
 
       {/* Unsaved Changes Confirmation Dialog */}
-      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <DialogContent className="max-w-[90vw] sm:max-w-[400px]">
-          <DialogHeader>
-            <DialogTitle>Alterações não salvas</DialogTitle>
-            <DialogDescription>
-              Você tem alterações não salvas. Deseja descartar as alterações e sair?
-            </DialogDescription>
-          </DialogHeader>
-
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleCancelDiscard}
-              className="w-full sm:w-auto"
-            >
-              Continuar Editando
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={handleConfirmDiscard}
-              className="w-full sm:w-auto"
-            >
-              Descartar e Sair
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DiscardChangesDialog
+        isOpen={showConfirmDialog}
+        onOpenChange={setShowConfirmDialog}
+        onKeepEditing={handleCancelDiscard}
+        onDiscard={handleConfirmDiscard}
+      />
     </>
   );
 }

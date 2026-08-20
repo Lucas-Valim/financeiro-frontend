@@ -76,6 +76,10 @@ describe('Calendar Types', () => {
         serviceInvoice: null,
         serviceInvoiceUrl: null,
         bankBillUrl: null,
+        recurringExpenseId: null,
+        occurrenceMonth: null,
+        amountPendingConfirmation: false,
+        documentPending: false,
         createdAt: new Date(),
         updatedAt: new Date(),
       };

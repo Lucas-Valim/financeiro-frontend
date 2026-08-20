@@ -20,6 +20,20 @@ describe('injectOrganizationId', () => {
     expect(config.params?.organizationId).toBe(ORGANIZATION_ID);
   });
 
+  it('injects organizationId for a /recurring-expenses request', () => {
+    const config = injectOrganizationId(makeConfig('/recurring-expenses'));
+
+    expect(config.params?.organizationId).toBe(ORGANIZATION_ID);
+  });
+
+  it('injects organizationId for a /recurring-expenses termination-preview request', () => {
+    const config = injectOrganizationId(
+      makeConfig('/recurring-expenses/rec-1/termination-preview')
+    );
+
+    expect(config.params?.organizationId).toBe(ORGANIZATION_ID);
+  });
+
   it('does not inject organizationId for a URL of another prefix', () => {
     const config = injectOrganizationId(makeConfig('/categories'));
 

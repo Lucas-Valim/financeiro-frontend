@@ -13,7 +13,9 @@ import {
   ExpenseStatus,
   isExpenseCancellable,
   isExpenseEditable,
+  requiresAmountConfirmation,
 } from '@/constants/expenses';
+import { useConfirmExpenseAmount } from '@/hooks/useConfirmExpenseAmount';
 import type { ExpenseDTO } from '@/types/expenses';
 
 interface ExpenseActionsProps {
@@ -25,9 +27,17 @@ interface ExpenseActionsProps {
 export function ExpenseActions({ expense, onEdit }: ExpenseActionsProps) {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+  const confirmAmountMutation = useConfirmExpenseAmount();
 
+  // `isPayable` decide APENAS se o item "Pagar" é renderizado (status !==
+  // CANCELLED). NÃO trocar por `requiresAmountConfirmation`: o ADR-003 exige que
+  // "Pagar" continue visível na despesa com valor a confirmar — o bloqueio é
+  // resolvido dentro do PaymentModal, não escondendo o item.
   const isPayable = expense.status !== ExpenseStatus.CANCELLED;
   const isCancellable = isExpenseCancellable(expense.status);
+  // `requiresAmountConfirmation` decide uma pergunta diferente: se a via de
+  // confirmação fora do pagamento ("Confirmar valor") deve aparecer.
+  const canConfirmAmount = requiresAmountConfirmation(expense);
   const payMenuLabel =
     expense.status === ExpenseStatus.PAID ? 'Ver Comprovante' : 'Pagar';
   const editMenuLabel = isExpenseEditable(expense.status)
@@ -44,6 +54,10 @@ export function ExpenseActions({ expense, onEdit }: ExpenseActionsProps) {
 
   const handleClosePaymentModal = () => {
     setIsPaymentModalOpen(false);
+  };
+
+  const handleConfirmAmount = () => {
+    confirmAmountMutation.mutate(expense.id);
   };
 
   const handleCancel = () => {
@@ -70,6 +84,14 @@ export function ExpenseActions({ expense, onEdit }: ExpenseActionsProps) {
           {isPayable && (
             <DropdownMenuItem className="cursor-pointer" onSelect={handlePay}>
               {payMenuLabel}
+            </DropdownMenuItem>
+          )}
+          {canConfirmAmount && (
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onSelect={handleConfirmAmount}
+            >
+              Confirmar valor
             </DropdownMenuItem>
           )}
           {isCancellable && (

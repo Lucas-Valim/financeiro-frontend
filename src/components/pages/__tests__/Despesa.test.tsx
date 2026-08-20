@@ -45,15 +45,28 @@ vi.mock('@/hooks/use-expenses', () => ({
 
 const mockUseExpensesSummary = vi.fn();
 
+type SummaryItemOverride = {
+  count: number;
+  total: number;
+  estimatedCount?: number;
+  estimatedTotal?: number;
+};
+
+const emptyItem = () => ({
+  count: 0,
+  total: 0,
+  estimatedCount: 0,
+  estimatedTotal: 0,
+});
+
 const buildSummary = (overrides: Partial<Record<
   'OPEN' | 'OVERDUE' | 'PAID' | 'CANCELLED',
-  { count: number; total: number }
+  SummaryItemOverride
 >> = {}) => ({
-  OPEN: { count: 0, total: 0 },
-  OVERDUE: { count: 0, total: 0 },
-  PAID: { count: 0, total: 0 },
-  CANCELLED: { count: 0, total: 0 },
-  ...overrides,
+  OPEN: { ...emptyItem(), ...overrides.OPEN },
+  OVERDUE: { ...emptyItem(), ...overrides.OVERDUE },
+  PAID: { ...emptyItem(), ...overrides.PAID },
+  CANCELLED: { ...emptyItem(), ...overrides.CANCELLED },
 });
 
 vi.mock('@/hooks/use-expenses-summary', () => ({
@@ -109,6 +122,10 @@ describe('Despesa', () => {
     serviceInvoice: null,
     serviceInvoiceUrl: null,
     bankBillUrl: null,
+    recurringExpenseId: null,
+    occurrenceMonth: null,
+    amountPendingConfirmation: false,
+    documentPending: false,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
   };
@@ -225,6 +242,55 @@ describe('Despesa', () => {
       expect(screen.getByTestId('status-count-paid')).toHaveTextContent('1');
       expect(screen.getByTestId('status-total-open')).toHaveTextContent('150,50');
       expect(screen.getByTestId('status-total-paid')).toHaveTextContent('300,00');
+    });
+
+    it('should surface the estimated subline when a bucket carries an estimated portion', () => {
+      mockUseExpenses.mockReturnValue({
+        data: [],
+        isLoading: false,
+        error: null,
+        hasMore: false,
+        loadMore: vi.fn(),
+        reset: vi.fn(),
+      });
+      mockUseExpensesSummary.mockReturnValue({
+        summary: buildSummary({
+          OPEN: { count: 5, total: 5000, estimatedCount: 2, estimatedTotal: 1500 },
+        }),
+        isLoading: false,
+        error: null,
+      });
+
+      render(<Despesa />, { wrapper });
+
+      // O número principal continua sendo o total completo, não total - estimado.
+      expect(screen.getByTestId('status-total-open')).toHaveTextContent('5.000,00');
+      const estimated = screen.getByTestId('status-estimated-open');
+      expect(estimated).toHaveTextContent('1.500,00');
+      expect(estimated).toHaveTextContent('2 de 5');
+    });
+
+    it('should render the cards from EMPTY_SUMMARY while the summary is loading, without an estimated subline', () => {
+      mockUseExpenses.mockReturnValue({
+        data: [],
+        isLoading: false,
+        error: null,
+        hasMore: false,
+        loadMore: vi.fn(),
+        reset: vi.fn(),
+      });
+      // EMPTY_SUMMARY é o fallback do hook enquanto data ainda é undefined.
+      mockUseExpensesSummary.mockReturnValue({
+        summary: buildSummary(),
+        isLoading: true,
+        error: null,
+      });
+
+      render(<Despesa />, { wrapper });
+
+      expect(screen.getByTestId('status-card-open')).toBeInTheDocument();
+      expect(screen.getByTestId('status-total-open')).toHaveTextContent('0,00');
+      expect(screen.queryByTestId('status-estimated-open')).not.toBeInTheDocument();
     });
 
     it('should filter by status when clicking on status card', async () => {

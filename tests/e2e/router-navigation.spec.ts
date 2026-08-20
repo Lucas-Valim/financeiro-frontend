@@ -112,8 +112,11 @@ test.describe('E2E: Navegação com TanStack Router', () => {
   })
 
   test('deve ter links navegáveis para todas as páginas', async ({ page }) => {
+    // Primeiro nível: Home, Calendário e Despesa. Cadastros e Relatórios são
+    // controles de expansão (button), e seus subitens só entram na contagem
+    // quando o grupo está aberto.
     const links = page.getByRole('list').getByRole('link')
-    await expect(links).toHaveCount(5)
+    await expect(links).toHaveCount(3)
     const count = await links.count()
 
     for (let i = 0; i < count; i++) {

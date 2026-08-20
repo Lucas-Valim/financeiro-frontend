@@ -28,6 +28,10 @@ const baseExpense: ExpenseDTO = {
   serviceInvoice: null,
   serviceInvoiceUrl: null,
   bankBillUrl: null,
+  recurringExpenseId: null,
+  occurrenceMonth: null,
+  amountPendingConfirmation: false,
+  documentPending: false,
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date('2024-01-01'),
 };
@@ -73,7 +77,10 @@ describe('formatDate', () => {
 
 describe('EXPENSE_COLUMNS cells', () => {
   it('renders N/A when description is missing', () => {
-    expect(column('description').cell({ ...baseExpense, description: null as unknown as string })).toBe('N/A');
+    render(
+      <>{column('description').cell({ ...baseExpense, description: null as unknown as string })}</>
+    );
+    expect(screen.getByText('N/A')).toBeInTheDocument();
   });
 
   it('renders N/A when receiver is missing', () => {
@@ -82,6 +89,38 @@ describe('EXPENSE_COLUMNS cells', () => {
 
   it('renders the formatted amount', () => {
     expect(column('amount').cell(baseExpense)).toMatch(/R\$\s*1\.234,56/);
+  });
+});
+
+describe('EXPENSE_COLUMNS description column with markers', () => {
+  it('renders the description alongside markers without truncating the description', () => {
+    const expense: ExpenseDTO = {
+      ...baseExpense,
+      description: 'Aluguel do escritório central',
+      recurringExpenseId: 'rec-1',
+      documentPending: true,
+      amountPendingConfirmation: true,
+    };
+
+    render(<>{column('description').cell(expense)}</>);
+
+    const description = screen.getByText('Aluguel do escritório central');
+    expect(description).toBeInTheDocument();
+    expect(description.className).not.toContain('truncate');
+
+    expect(screen.getByTestId('expense-marker-recurring')).toBeInTheDocument();
+    expect(screen.getByTestId('expense-marker-document')).toBeInTheDocument();
+    expect(screen.getByTestId('expense-marker-amount')).toBeInTheDocument();
+  });
+
+  it('widens the description column beyond the original 200px so markers fit', () => {
+    expect(column('description').width).toBe('260px');
+  });
+
+  it('renders no markers for a manual expense', () => {
+    render(<>{column('description').cell(baseExpense)}</>);
+
+    expect(screen.queryByTestId('expense-markers')).toBeNull();
   });
 });
 

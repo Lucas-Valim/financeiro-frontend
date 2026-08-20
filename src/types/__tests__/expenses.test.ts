@@ -30,6 +30,10 @@ describe('Type Definitions', () => {
     serviceInvoice: null,
     serviceInvoiceUrl: null,
     bankBillUrl: null,
+    recurringExpenseId: null,
+    occurrenceMonth: null,
+    amountPendingConfirmation: false,
+    documentPending: false,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
   };
@@ -84,6 +88,10 @@ describe('Type Definitions', () => {
         serviceInvoice: null,
         serviceInvoiceUrl: null,
         bankBillUrl: null,
+        recurringExpenseId: null,
+        occurrenceMonth: null,
+        amountPendingConfirmation: false,
+        documentPending: false,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -211,6 +219,10 @@ describe('Type Definitions', () => {
     serviceInvoice: null,
     serviceInvoiceUrl: null,
     bankBillUrl: null,
+    recurringExpenseId: null,
+    occurrenceMonth: null,
+    amountPendingConfirmation: false,
+    documentPending: false,
     createdAt: new Date(),
     updatedAt: new Date(),
   };

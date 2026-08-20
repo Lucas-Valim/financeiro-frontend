@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 // Mock the ExpensesApiService class - define mocks inside the callback to avoid hoisting issues
 const mockCreate = vi.hoisted(() => vi.fn());
 const mockUpdate = vi.hoisted(() => vi.fn());
+const mockInvalidateQueries = vi.hoisted(() => vi.fn());
 
 vi.mock('../../api/expenses-api', () => {
   return {
@@ -17,6 +18,16 @@ vi.mock('../../api/expenses-api', () => {
       fetchExpenses = vi.fn();
       fetchExpenseById = vi.fn();
     },
+  };
+});
+
+// Stub only `useQueryClient` so the hook can invalidate without a real provider;
+// the returned client exposes the spied `invalidateQueries`.
+vi.mock('@tanstack/react-query', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tanstack/react-query')>();
+  return {
+    ...actual,
+    useQueryClient: () => ({ invalidateQueries: mockInvalidateQueries }),
   };
 });
 
@@ -47,6 +58,10 @@ describe('useExpenseForm', () => {
     serviceInvoice: null,
     serviceInvoiceUrl: null,
     bankBillUrl: null,
+    recurringExpenseId: null,
+    occurrenceMonth: null,
+    amountPendingConfirmation: false,
+    documentPending: false,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
   };
@@ -342,6 +357,38 @@ describe('useExpenseForm', () => {
       await result.current.onSubmit();
 
       expect(onSuccess).toHaveBeenCalledWith(mockExpense);
+    });
+  });
+
+  describe('cache invalidation', () => {
+    it('invalidates expenses, expenses-summary and expense-report-summary after a successful save', async () => {
+      const { result } = renderHook(() => useExpenseForm());
+
+      result.current.form.reset(validFormData);
+
+      await result.current.onSubmit();
+
+      // Editar o valor é uma das duas vias de confirmação (PRD §4): sem estas
+      // três invalidações a sublinha de estimado e os totais do relatório
+      // ficariam velhos após a confirmação implícita.
+      expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['expenses'] });
+      expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['expenses-summary'] });
+      expect(mockInvalidateQueries).toHaveBeenCalledWith({
+        queryKey: ['expense-report-summary'],
+      });
+      expect(mockInvalidateQueries).toHaveBeenCalledTimes(3);
+    });
+
+    it('does not invalidate any query when the API call fails', async () => {
+      mockCreate.mockRejectedValue(new Error('Network error'));
+
+      const { result } = renderHook(() => useExpenseForm());
+
+      result.current.form.reset(validFormData);
+
+      await result.current.onSubmit();
+
+      expect(mockInvalidateQueries).not.toHaveBeenCalled();
     });
   });
 

@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useForm, type UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
   expenseFormSchema,
@@ -8,6 +9,7 @@ import {
   defaultExpenseFormValues,
 } from '../schemas/expense-form-schema';
 import { ExpensesApiService } from '../api/expenses-api';
+import { ORGANIZATION_ID } from '../constants/expenses';
 import type { ExpenseDTO, CreateExpenseInput } from '../types/expenses';
 
 interface UseExpenseFormParams {
@@ -34,6 +36,7 @@ export function useExpenseForm({
   initialExpense = null,
   onSuccess,
 }: UseExpenseFormParams = {}): UseExpenseFormReturn {
+  const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [expense, setExpense] = useState<ExpenseDTO | null>(initialExpense);
 
@@ -91,7 +94,7 @@ export function useExpenseForm({
       let result: ExpenseDTO;
 
       const submitData: CreateExpenseInput = {
-        organizationId: 'fca3c088-ba34-43a2-9b32-b2b1a1246915',
+        organizationId: ORGANIZATION_ID,
         description: formData.description,
         amount: formData.amount,
         currency: formData.currency,
@@ -114,6 +117,18 @@ export function useExpenseForm({
         toast.success('Despesa criada com sucesso');
       }
 
+      // As três invalidações são necessárias: `['expenses']` casa por prefixo
+      // com a lista (`['expenses', filters]`) e com o calendário
+      // (`['expenses', 'calendar', ...]`), mas os cards de status leem
+      // `['expenses-summary', ...]` e os totais do relatório leem
+      // `['expense-report-summary', ...]` — outras raízes. Editar o valor é uma
+      // das duas vias de confirmação (PRD §4/ADR-006): sem elas a sublinha de
+      // estimado dos cards e os totais do relatório ficariam velhos logo após a
+      // confirmação implícita.
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['expenses-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['expense-report-summary'] });
+
       setExpense(result);
       reset(formData);
       onSuccess?.(result);
@@ -125,7 +140,7 @@ export function useExpenseForm({
     } finally {
       setIsSubmitting(false);
     }
-  }, [form, expense?.id, reset, onSuccess]);
+  }, [form, expense?.id, reset, onSuccess, queryClient]);
 
   const resetForm = useCallback(() => {
     reset(getInitialValues() as ExpenseFormData);

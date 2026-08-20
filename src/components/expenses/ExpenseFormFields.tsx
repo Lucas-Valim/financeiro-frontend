@@ -1,4 +1,3 @@
-import { useState, useCallback } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -21,52 +20,18 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { formatDocument } from '@/lib/format-document';
+import {
+  formatCurrencyInput,
+  parseCurrencyToNumber,
+  applyCurrencyMask,
+} from '@/lib/currency-mask';
 import { useCategories } from '@/hooks/use-categories';
-import { useFavorecidos } from '@/hooks/use-favorecidos';
-import { Combobox } from '@/components/ui/combobox';
-import { PAYMENT_METHODS } from '@/constants/expenses';
-import { FavorecidoFormModal } from '@/components/favorecidos/FavorecidoFormModal';
-import type { FavorecidoDTO } from '@/types/favorecidos';
+import { PAYMENT_METHODS, MUNICIPALITY_OPTIONS } from '@/constants/expenses';
+import { FavorecidoField } from '@/components/favorecidos/FavorecidoField';
 import type { ExpenseFormData } from '@/schemas/expense-form-schema';
 import 'react-datepicker/dist/react-datepicker.css';
 
 registerLocale('pt-BR', ptBR);
-
-function formatCurrency(value: number | undefined): string {
-  if (value === undefined || value === null || isNaN(value)) {
-    return '';
-  }
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(value);
-}
-
-function parseCurrencyToNumber(value: string): number | undefined {
-  if (!value) return undefined;
-  const cleanValue = value
-    .replace(/[R$\s.]/g, '')
-    .replace(',', '.');
-  const parsed = parseFloat(cleanValue);
-  return isNaN(parsed) ? undefined : parsed;
-}
-
-function applyCurrencyMask(value: string): string {
-  const numbers = value.replace(/[^\d]/g, '');
-  if (!numbers) return '';
-  const intValue = parseInt(numbers, 10);
-  const floatValue = intValue / 100;
-  return formatCurrency(floatValue);
-}
-
-const MUNICIPALITY_OPTIONS = [
-  { value: 'Bento Gonçalves', label: 'Bento Gonçalves' },
-  { value: 'Caxias do Sul', label: 'Caxias do Sul' },
-  { value: 'Passo Fundo', label: 'Passo Fundo' },
-  { value: 'Porto Alegre', label: 'Porto Alegre' },
-] as const;
-
 
 interface ExpenseFormFieldsProps {
   disabled?: boolean;
@@ -76,22 +41,6 @@ interface ExpenseFormFieldsProps {
 export function ExpenseFormFields({ disabled = false, organizationId }: ExpenseFormFieldsProps) {
   const form = useFormContext<ExpenseFormData>();
   const { categories, isLoading: isLoadingCategories } = useCategories(organizationId);
-  const { favorecidos, isLoading: isLoadingFavorecidos } = useFavorecidos(organizationId);
-  const [isCreateFavorecidoOpen, setIsCreateFavorecidoOpen] = useState(false);
-
-  const favorecidoOptions = favorecidos.map((f: FavorecidoDTO) => ({
-    value: f.id,
-    label: f.name,
-    description: f.document ? formatDocument(f.document) : undefined,
-  }));
-
-  const handleFavorecidoCreated = useCallback(
-    (created: FavorecidoDTO) => {
-      form.setValue('favorecidoId', created.id, { shouldDirty: true });
-      setIsCreateFavorecidoOpen(false);
-    },
-    [form],
-  );
 
   return (
     <div className="space-y-4">
@@ -128,7 +77,7 @@ export function ExpenseFormFields({ disabled = false, organizationId }: ExpenseF
                 placeholder="R$ 0,00"
                 disabled={disabled}
                 aria-describedby="amount-error"
-                value={field.value !== undefined ? formatCurrency(field.value) : ''}
+                value={field.value !== undefined ? formatCurrencyInput(field.value) : ''}
                 onChange={(e) => {
                   const maskedValue = applyCurrencyMask(e.target.value);
                   const numericValue = parseCurrencyToNumber(maskedValue);
@@ -226,37 +175,7 @@ export function ExpenseFormFields({ disabled = false, organizationId }: ExpenseF
         )}
       />
 
-      <FormField
-        control={form.control}
-        name="favorecidoId"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel required>Favorecido</FormLabel>
-            <FormControl>
-              <Combobox
-                options={favorecidoOptions}
-                value={field.value ?? ''}
-                onValueChange={field.onChange}
-                placeholder="Selecione um favorecido"
-                searchPlaceholder="Buscar por nome ou documento..."
-                emptyMessage="Nenhum favorecido encontrado."
-                disabled={disabled}
-                isLoading={isLoadingFavorecidos}
-                onCreateNew={() => setIsCreateFavorecidoOpen(true)}
-                createNewLabel="Cadastrar novo favorecido"
-                aria-describedby="favorecidoId-error"
-              />
-            </FormControl>
-            <FormMessage id="favorecidoId-error" />
-          </FormItem>
-        )}
-      />
-
-      <FavorecidoFormModal
-        isOpen={isCreateFavorecidoOpen}
-        onClose={() => setIsCreateFavorecidoOpen(false)}
-        onSuccess={handleFavorecidoCreated}
-      />
+      <FavorecidoField organizationId={organizationId} disabled={disabled} />
 
       <FormField
         control={form.control}

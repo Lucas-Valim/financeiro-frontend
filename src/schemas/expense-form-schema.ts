@@ -1,5 +1,13 @@
 import { z } from 'zod';
 import { ExpenseStatus } from '../constants/expenses';
+import {
+  descriptionSchema,
+  amountSchema,
+  categoryIdSchema,
+  favorecidoIdSchema,
+  paymentMethodSchema,
+  municipalitySchema,
+} from './shared-expense-fields';
 
 export const EXPENSE_FILE_ALLOWED_TYPES = [
   'application/pdf',
@@ -12,8 +20,6 @@ export const EXPENSE_FILE_MAX_SIZE = 5 * 1024 * 1024;
 
 export const EXPENSE_FILE_ALLOWED_TYPES_DISPLAY = 'PDF, PNG, JPG, JPEG';
 const MAX_SIZE_MB = EXPENSE_FILE_MAX_SIZE / (1024 * 1024);
-
-const municipalityRegex = /^[a-zA-ZÀ-ÿ\s\-']+$/;
 
 const expenseFileSchema = z.custom<File | null | undefined>(
   (value) => value == null || value instanceof File
@@ -30,15 +36,9 @@ const expenseFileSchema = z.custom<File | null | undefined>(
   .nullable();
 
 export const expenseFormSchema = z.object({
-  description: z
-    .string({ error: 'A descrição é obrigatória' })
-    .min(1, { error: 'A descrição é obrigatória' })
-    .max(255, { error: 'A descrição deve ter no máximo 255 caracteres' }),
+  description: descriptionSchema,
 
-  amount: z
-    .number({ error: 'O valor deve ser um número válido' })
-    .positive({ error: 'O valor deve ser maior que zero' })
-    .max(99999999.99, { error: 'O valor excede o limite máximo' }),
+  amount: amountSchema,
 
   currency: z
     .string({ error: 'A moeda é obrigatória' })
@@ -54,30 +54,13 @@ export const expenseFormSchema = z.object({
     })
     .default(ExpenseStatus.OPEN),
 
-  categoryId: z
-    .string()
-    .nullable()
-    .optional(),
+  categoryId: categoryIdSchema,
 
-  favorecidoId: z
-    .string({ error: 'O favorecido é obrigatório' })
-    .min(1, { error: 'O favorecido é obrigatório' })
-    .uuid({ error: 'O favorecido deve ser um identificador válido' }),
+  favorecidoId: favorecidoIdSchema,
 
-  paymentMethod: z
-    .string()
-    .max(100, { error: 'A forma de pagamento deve ter no máximo 100 caracteres' })
-    .nullable()
-    .optional(),
+  paymentMethod: paymentMethodSchema,
 
-  municipality: z
-    .string({ error: 'O município é obrigatório' })
-    .min(1, { error: 'O município é obrigatório' })
-    .max(100, { error: 'O município deve ter no máximo 100 caracteres' })
-    .refine(
-      (value) => municipalityRegex.test(value),
-      { error: 'O município deve conter apenas letras e espaços' }
-    ),
+  municipality: municipalitySchema,
 
   serviceInvoice: expenseFileSchema,
   

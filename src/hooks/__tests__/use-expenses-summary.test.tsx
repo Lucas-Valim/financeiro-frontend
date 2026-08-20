@@ -32,10 +32,10 @@ function createWrapper() {
 
 describe('useExpensesSummary', () => {
   const summary: ExpenseStatusSummary = {
-    [ExpenseStatus.OPEN]: { count: 2, total: 500 },
-    [ExpenseStatus.OVERDUE]: { count: 1, total: 150 },
-    [ExpenseStatus.PAID]: { count: 3, total: 900 },
-    [ExpenseStatus.CANCELLED]: { count: 0, total: 0 },
+    [ExpenseStatus.OPEN]: { count: 2, total: 500, estimatedCount: 0, estimatedTotal: 0 },
+    [ExpenseStatus.OVERDUE]: { count: 1, total: 150, estimatedCount: 0, estimatedTotal: 0 },
+    [ExpenseStatus.PAID]: { count: 3, total: 900, estimatedCount: 0, estimatedTotal: 0 },
+    [ExpenseStatus.CANCELLED]: { count: 0, total: 0, estimatedCount: 0, estimatedTotal: 0 },
   };
 
   beforeEach(() => {
@@ -48,7 +48,12 @@ describe('useExpensesSummary', () => {
       wrapper: createWrapper(),
     });
 
-    expect(result.current.summary.OPEN).toEqual({ count: 0, total: 0 });
+    expect(result.current.summary.OPEN).toEqual({
+      count: 0,
+      total: 0,
+      estimatedCount: 0,
+      estimatedTotal: 0,
+    });
   });
 
   it('should return the fetched summary', async () => {

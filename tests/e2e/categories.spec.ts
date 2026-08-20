@@ -208,6 +208,8 @@ test.describe('E2E: Category Management', () => {
 
   test('Scenario 1: Clicking "Categorias" in sidebar navigates to /categorias', async ({ page }) => {
     await page.goto('/');
+    // Categorias vive no grupo "Cadastros", recolhido fora das suas rotas.
+    await page.getByRole('button', { name: 'Cadastros', exact: true }).click();
     await page.getByRole('link', { name: 'Categorias' }).click();
 
     await expect(page).toHaveURL('/categorias');

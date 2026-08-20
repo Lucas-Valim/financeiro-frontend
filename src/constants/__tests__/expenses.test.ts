@@ -12,7 +12,41 @@ import {
   isExpenseCancellable,
   CANCEL_EXPENSE_ERROR_MESSAGES,
   translateCancelExpenseError,
+  requiresAmountConfirmation,
+  translateConfirmAmountError,
+  CONFIRM_AMOUNT_ERROR_MESSAGES,
 } from '../expenses';
+import type { ExpenseDTO } from '@/types/expenses';
+
+function makeExpense(overrides: Partial<ExpenseDTO>): ExpenseDTO {
+  return {
+    id: 'exp-1',
+    organizationId: ORGANIZATION_ID,
+    categoryId: null,
+    favorecidoId: null,
+    description: 'Test',
+    amount: 100,
+    currency: 'BRL',
+    dueDate: new Date('2026-08-19T00:00:00'),
+    status: ExpenseStatus.OPEN,
+    paymentMethod: null,
+    paymentProof: null,
+    paymentProofUrl: null,
+    paymentDate: null,
+    receiver: 'ACME',
+    municipality: 'São Paulo',
+    serviceInvoice: null,
+    serviceInvoiceUrl: null,
+    bankBillUrl: null,
+    recurringExpenseId: null,
+    occurrenceMonth: null,
+    amountPendingConfirmation: false,
+    documentPending: false,
+    createdAt: new Date('2026-08-19T00:00:00'),
+    updatedAt: new Date('2026-08-19T00:00:00'),
+    ...overrides,
+  };
+}
 
 describe('Constants', () => {
   describe('EXPENSE_STATUS_COLORS', () => {
@@ -210,6 +244,68 @@ describe('Constants', () => {
 
     it('should fall back to the generic text for an empty message', () => {
       expect(translateCancelExpenseError('')).toBe(CANCEL_EXPENSE_ERROR_MESSAGES.DEFAULT);
+    });
+  });
+
+  describe('requiresAmountConfirmation', () => {
+    it('returns true when amount is pending and status is OPEN', () => {
+      const expense = makeExpense({
+        status: ExpenseStatus.OPEN,
+        amountPendingConfirmation: true,
+      });
+
+      expect(requiresAmountConfirmation(expense)).toBe(true);
+    });
+
+    it('returns true when amount is pending and status is OVERDUE — vencer não libera o pagamento', () => {
+      const expense = makeExpense({
+        status: ExpenseStatus.OVERDUE,
+        amountPendingConfirmation: true,
+      });
+
+      expect(requiresAmountConfirmation(expense)).toBe(true);
+    });
+
+    it('returns false for a CANCELLED expense — não acumula o motivo de cancelamento', () => {
+      const expense = makeExpense({
+        status: ExpenseStatus.CANCELLED,
+        amountPendingConfirmation: false,
+      });
+
+      expect(requiresAmountConfirmation(expense)).toBe(false);
+    });
+
+    it('returns false for a PAID expense with confirmed amount', () => {
+      const expense = makeExpense({
+        status: ExpenseStatus.PAID,
+        amountPendingConfirmation: false,
+      });
+
+      expect(requiresAmountConfirmation(expense)).toBe(false);
+    });
+  });
+
+  describe('translateConfirmAmountError', () => {
+    it('maps the confirmation-required backend message to the Portuguese text', () => {
+      expect(
+        translateConfirmAmountError('Expense amount must be confirmed before payment')
+      ).toBe(CONFIRM_AMOUNT_ERROR_MESSAGES.CONFIRMATION_REQUIRED);
+    });
+
+    it('maps the already-confirmed backend message to the Portuguese text', () => {
+      expect(translateConfirmAmountError('Expense amount is already confirmed')).toBe(
+        CONFIRM_AMOUNT_ERROR_MESSAGES.ALREADY_CONFIRMED
+      );
+    });
+
+    it('falls back to the generic text for an unknown message', () => {
+      expect(translateConfirmAmountError('Internal server error')).toBe(
+        CONFIRM_AMOUNT_ERROR_MESSAGES.DEFAULT
+      );
+    });
+
+    it('falls back to the generic text for an empty message, never an empty string', () => {
+      expect(translateConfirmAmountError('')).toBe(CONFIRM_AMOUNT_ERROR_MESSAGES.DEFAULT);
     });
   });
 

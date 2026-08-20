@@ -140,6 +140,11 @@ vi.mock('lucide-react', () => ({
   Receipt: createIconMock('Receipt'),
   Paperclip: createIconMock('Paperclip'),
   AlertTriangle: createIconMock('AlertTriangle'),
+  Repeat: createIconMock('Repeat'),
+  FileClock: createIconMock('FileClock'),
+  CircleAlert: createIconMock('CircleAlert'),
+  CheckCircle2: createIconMock('CheckCircle2'),
+  FolderCog: createIconMock('FolderCog'),
 }))
 
 vi.mock('@tanstack/react-router', () => ({

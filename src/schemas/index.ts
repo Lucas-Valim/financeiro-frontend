@@ -33,3 +33,11 @@ export {
   defaultFavorecidoFormValues,
   type FavorecidoFormData,
 } from './favorecido-form-schema';
+
+export {
+  recurringExpenseFormSchema,
+  defaultRecurringExpenseFormValues,
+  toCreateInput,
+  toUpdateInput,
+  type RecurringExpenseFormData,
+} from './recurring-expense-form-schema';

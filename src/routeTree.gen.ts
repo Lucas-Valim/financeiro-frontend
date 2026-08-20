@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as RecorrenciasRouteImport } from './routes/recorrencias'
 import { Route as FavorecidosRouteImport } from './routes/favorecidos'
 import { Route as DespesaRouteImport } from './routes/despesa'
 import { Route as CategoriasRouteImport } from './routes/categorias'
@@ -17,6 +18,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as RelatoriosIndexRouteImport } from './routes/relatorios.index'
 import { Route as RelatoriosDespesasRouteImport } from './routes/relatorios.despesas'
 
+const RecorrenciasRoute = RecorrenciasRouteImport.update({
+  id: '/recorrencias',
+  path: '/recorrencias',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FavorecidosRoute = FavorecidosRouteImport.update({
   id: '/favorecidos',
   path: '/favorecidos',
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/categorias': typeof CategoriasRoute
   '/despesa': typeof DespesaRoute
   '/favorecidos': typeof FavorecidosRoute
+  '/recorrencias': typeof RecorrenciasRoute
   '/relatorios/despesas': typeof RelatoriosDespesasRoute
   '/relatorios/': typeof RelatoriosIndexRoute
 }
@@ -68,6 +75,7 @@ export interface FileRoutesByTo {
   '/categorias': typeof CategoriasRoute
   '/despesa': typeof DespesaRoute
   '/favorecidos': typeof FavorecidosRoute
+  '/recorrencias': typeof RecorrenciasRoute
   '/relatorios/despesas': typeof RelatoriosDespesasRoute
   '/relatorios': typeof RelatoriosIndexRoute
 }
@@ -78,6 +86,7 @@ export interface FileRoutesById {
   '/categorias': typeof CategoriasRoute
   '/despesa': typeof DespesaRoute
   '/favorecidos': typeof FavorecidosRoute
+  '/recorrencias': typeof RecorrenciasRoute
   '/relatorios/despesas': typeof RelatoriosDespesasRoute
   '/relatorios/': typeof RelatoriosIndexRoute
 }
@@ -89,6 +98,7 @@ export interface FileRouteTypes {
     | '/categorias'
     | '/despesa'
     | '/favorecidos'
+    | '/recorrencias'
     | '/relatorios/despesas'
     | '/relatorios/'
   fileRoutesByTo: FileRoutesByTo
@@ -98,6 +108,7 @@ export interface FileRouteTypes {
     | '/categorias'
     | '/despesa'
     | '/favorecidos'
+    | '/recorrencias'
     | '/relatorios/despesas'
     | '/relatorios'
   id:
@@ -107,6 +118,7 @@ export interface FileRouteTypes {
     | '/categorias'
     | '/despesa'
     | '/favorecidos'
+    | '/recorrencias'
     | '/relatorios/despesas'
     | '/relatorios/'
   fileRoutesById: FileRoutesById
@@ -117,12 +129,20 @@ export interface RootRouteChildren {
   CategoriasRoute: typeof CategoriasRoute
   DespesaRoute: typeof DespesaRoute
   FavorecidosRoute: typeof FavorecidosRoute
+  RecorrenciasRoute: typeof RecorrenciasRoute
   RelatoriosDespesasRoute: typeof RelatoriosDespesasRoute
   RelatoriosIndexRoute: typeof RelatoriosIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/recorrencias': {
+      id: '/recorrencias'
+      path: '/recorrencias'
+      fullPath: '/recorrencias'
+      preLoaderRoute: typeof RecorrenciasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/favorecidos': {
       id: '/favorecidos'
       path: '/favorecidos'
@@ -181,6 +201,7 @@ const rootRouteChildren: RootRouteChildren = {
   CategoriasRoute: CategoriasRoute,
   DespesaRoute: DespesaRoute,
   FavorecidosRoute: FavorecidosRoute,
+  RecorrenciasRoute: RecorrenciasRoute,
   RelatoriosDespesasRoute: RelatoriosDespesasRoute,
   RelatoriosIndexRoute: RelatoriosIndexRoute,
 }

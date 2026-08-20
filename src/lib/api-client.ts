@@ -9,7 +9,7 @@ const API_TIMEOUT = 10000;
  * export uses its own axios instance (to read `content-disposition`), so this
  * is exported and reused there rather than duplicated (ADR-007).
  */
-const ORGANIZATION_SCOPED_PREFIXES = ['/expenses', '/reports'] as const;
+const ORGANIZATION_SCOPED_PREFIXES = ['/expenses', '/reports', '/recurring-expenses'] as const;
 
 /**
  * Request interceptor that injects `organizationId` into the query for the

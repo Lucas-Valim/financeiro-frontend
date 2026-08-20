@@ -31,6 +31,15 @@ vi.mock('@/components/expenses/ExpenseCancelDialog', () => ({
   }),
 }));
 
+const mockConfirmAmountMutate = vi.fn();
+
+vi.mock('@/hooks/useConfirmExpenseAmount', () => ({
+  useConfirmExpenseAmount: () => ({
+    mutate: mockConfirmAmountMutate,
+    isPending: false,
+  }),
+}));
+
 const mockExpense: ExpenseDTO = {
   id: 'expense-1',
   organizationId: 'org-1',
@@ -50,6 +59,10 @@ const mockExpense: ExpenseDTO = {
   serviceInvoice: null,
   serviceInvoiceUrl: null,
   bankBillUrl: null,
+  recurringExpenseId: null,
+  occurrenceMonth: null,
+  amountPendingConfirmation: false,
+  documentPending: false,
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date('2024-01-01'),
 };
@@ -299,6 +312,69 @@ describe('ExpenseActions', () => {
       await user.click(screen.getByTestId('close-cancel-dialog-button'));
 
       expect(screen.queryByTestId('cancel-dialog')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Confirm Amount Action', () => {
+    beforeEach(() => {
+      mockConfirmAmountMutate.mockClear();
+    });
+
+    const pendingExpense: ExpenseDTO = {
+      ...mockExpense,
+      amountPendingConfirmation: true,
+    };
+
+    it('shows "Confirmar valor" when amountPendingConfirmation is true', async () => {
+      const user = userEvent.setup();
+      render(<ExpenseActions expense={pendingExpense} />);
+
+      await user.click(screen.getByRole('button'));
+
+      expect(screen.getByText('Confirmar valor')).toBeInTheDocument();
+    });
+
+    it('does NOT show "Confirmar valor" when amountPendingConfirmation is false', async () => {
+      const user = userEvent.setup();
+      render(<ExpenseActions expense={mockExpense} />);
+
+      await user.click(screen.getByRole('button'));
+
+      expect(screen.queryByText('Confirmar valor')).not.toBeInTheDocument();
+    });
+
+    it('still shows "Pagar" for an expense pending confirmation (isPayable not swapped)', async () => {
+      const user = userEvent.setup();
+      render(<ExpenseActions expense={pendingExpense} />);
+
+      await user.click(screen.getByRole('button'));
+
+      expect(screen.getByText('Pagar')).toBeInTheDocument();
+    });
+
+    it('does NOT show "Pagar" for a CANCELLED expense, as today', async () => {
+      const user = userEvent.setup();
+      const cancelledPending: ExpenseDTO = {
+        ...mockExpense,
+        status: ExpenseStatus.CANCELLED,
+        amountPendingConfirmation: true,
+      };
+      render(<ExpenseActions expense={cancelledPending} />);
+
+      await user.click(screen.getByRole('button'));
+
+      expect(screen.queryByText('Pagar')).not.toBeInTheDocument();
+    });
+
+    it('fires the confirm mutation with the expense id without opening the PaymentModal', async () => {
+      const user = userEvent.setup();
+      render(<ExpenseActions expense={pendingExpense} />);
+
+      await user.click(screen.getByRole('button'));
+      await user.click(screen.getByText('Confirmar valor'));
+
+      expect(mockConfirmAmountMutate).toHaveBeenCalledWith(pendingExpense.id);
+      expect(screen.queryByTestId('payment-modal')).not.toBeInTheDocument();
     });
   });
 
