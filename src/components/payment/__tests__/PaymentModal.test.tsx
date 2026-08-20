@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { PaymentModal } from '../PaymentModal';
 import type { ExpenseDTO } from '@/types/expenses';
-import { ExpenseStatus } from '@/constants/expenses';
+import { ExpenseStatus, CONFIRM_AMOUNT_ERROR_MESSAGES } from '@/constants/expenses';
 
 vi.mock('lucide-react', async (importOriginal) => {
   const actual = await importOriginal<typeof import('lucide-react')>();
@@ -18,6 +19,22 @@ vi.mock('lucide-react', async (importOriginal) => {
 
 vi.mock('@/hooks/usePayExpense', () => ({
   usePayExpense: vi.fn(),
+}));
+
+// The real `useConfirmExpenseAmount` runs (so its toast + transition are tested);
+// only the underlying service is mocked, mirroring the hook unit tests.
+const mockConfirmAmount = vi.hoisted(() => vi.fn());
+
+vi.mock('@/api/expenses-api', () => ({
+  ExpensesApiService: class MockExpensesApiService {
+    confirmAmount = mockConfirmAmount;
+    pay = vi.fn();
+    cancel = vi.fn();
+    fetchExpenses = vi.fn();
+    fetchExpenseById = vi.fn();
+    create = vi.fn();
+    update = vi.fn();
+  },
 }));
 
 vi.mock('sonner', () => ({
@@ -81,6 +98,10 @@ const mockExpense: ExpenseDTO = {
   serviceInvoice: null,
   serviceInvoiceUrl: null,
   bankBillUrl: null,
+  recurringExpenseId: null,
+  occurrenceMonth: null,
+  amountPendingConfirmation: false,
+  documentPending: false,
   createdAt: new Date(),
   updatedAt: new Date(),
 };
@@ -93,6 +114,14 @@ const mockPaidExpense: ExpenseDTO = {
   paymentProofUrl: 'https://example.com/proof.png',
 };
 
+const mockPendingExpense: ExpenseDTO = {
+  ...mockExpense,
+  id: 'expense-pending-123',
+  status: ExpenseStatus.OPEN,
+  recurringExpenseId: 'rec-1',
+  amountPendingConfirmation: true,
+};
+
 describe('PaymentModal', () => {
   const mockOnClose = vi.fn();
   const mockOnSuccess = vi.fn();
@@ -100,6 +129,10 @@ describe('PaymentModal', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockConfirmAmount.mockResolvedValue({
+      id: mockPendingExpense.id,
+      amountPendingConfirmation: false,
+    });
     mockUsePayExpense.mockReturnValue({
       mutateAsync: mockMutateAsync,
       mutate: vi.fn(),
@@ -624,6 +657,261 @@ describe('PaymentModal', () => {
 
       expect(screen.getByTestId('date-picker')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /Registrar Pagamento/i })).toBeInTheDocument();
+    });
+  });
+
+  describe('Amount confirmation blocked state', () => {
+    it('renders the blocked state with reason and formatted suggested amount', () => {
+      render(
+        <PaymentModal
+          isOpen={true}
+          onClose={mockOnClose}
+          onSuccess={mockOnSuccess}
+          expense={mockPendingExpense}
+        />,
+        { wrapper: createWrapper() }
+      );
+
+      expect(screen.getByTestId('amount-confirmation-state')).toBeInTheDocument();
+      expect(screen.getByTestId('amount-confirmation-reason')).toHaveTextContent(
+        'recorrência de valor variável'
+      );
+      expect(screen.getByTestId('amount-confirmation-suggested')).toHaveTextContent('R$ 100,50');
+      // The payment form must NOT be visible while blocked.
+      expect(screen.queryByTestId('date-picker')).not.toBeInTheDocument();
+    });
+
+    it('shows the suggested amount with its origin, never as a bare number', () => {
+      render(
+        <PaymentModal
+          isOpen={true}
+          onClose={mockOnClose}
+          onSuccess={mockOnSuccess}
+          expense={mockPendingExpense}
+        />,
+        { wrapper: createWrapper() }
+      );
+
+      expect(screen.getByText('Valor da ocorrência anterior')).toBeInTheDocument();
+      expect(screen.getByTestId('amount-confirmation-origin')).toBeInTheDocument();
+    });
+
+    it('does NOT render the blocked state for a payable, confirmed expense', () => {
+      render(
+        <PaymentModal
+          isOpen={true}
+          onClose={mockOnClose}
+          onSuccess={mockOnSuccess}
+          expense={mockExpense}
+        />,
+        { wrapper: createWrapper() }
+      );
+
+      expect(screen.queryByTestId('amount-confirmation-state')).not.toBeInTheDocument();
+      expect(screen.getByTestId('date-picker')).toBeInTheDocument();
+    });
+
+    it('does NOT render the blocked state for a PAID expense', () => {
+      render(
+        <PaymentModal
+          isOpen={true}
+          onClose={mockOnClose}
+          onSuccess={mockOnSuccess}
+          expense={mockPaidExpense}
+        />,
+        { wrapper: createWrapper() }
+      );
+
+      expect(screen.queryByTestId('amount-confirmation-state')).not.toBeInTheDocument();
+      expect(screen.getByTestId('view-mode-content')).toBeInTheDocument();
+    });
+
+    it('does NOT render the blocked state for a CANCELLED, confirmed expense', () => {
+      const cancelledExpense: ExpenseDTO = {
+        ...mockExpense,
+        status: ExpenseStatus.CANCELLED,
+        amountPendingConfirmation: false,
+      };
+
+      render(
+        <PaymentModal
+          isOpen={true}
+          onClose={mockOnClose}
+          onSuccess={mockOnSuccess}
+          expense={cancelledExpense}
+        />,
+        { wrapper: createWrapper() }
+      );
+
+      expect(screen.queryByTestId('amount-confirmation-state')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Amount confirmation flow (integration)', () => {
+    it('transitions to the payment form on confirm without closing the modal', async () => {
+      const user = userEvent.setup();
+
+      render(
+        <PaymentModal
+          isOpen={true}
+          onClose={mockOnClose}
+          onSuccess={mockOnSuccess}
+          expense={mockPendingExpense}
+        />,
+        { wrapper: createWrapper() }
+      );
+
+      expect(screen.getByTestId('amount-confirmation-state')).toBeInTheDocument();
+
+      await user.click(screen.getByTestId('confirm-amount-button'));
+
+      // Same modal, now the payment form — no close, no reopen.
+      await waitFor(() => {
+        expect(screen.getByTestId('date-picker')).toBeInTheDocument();
+      });
+      expect(screen.queryByTestId('amount-confirmation-state')).not.toBeInTheDocument();
+      expect(mockOnClose).not.toHaveBeenCalled();
+      expect(mockConfirmAmount).toHaveBeenCalledWith(mockPendingExpense.id);
+    });
+
+    it('shows the translated toast and does not get stuck when confirm returns 409', async () => {
+      const user = userEvent.setup();
+      mockConfirmAmount.mockRejectedValue(
+        new Error('Expense amount is already confirmed')
+      );
+
+      render(
+        <PaymentModal
+          isOpen={true}
+          onClose={mockOnClose}
+          onSuccess={mockOnSuccess}
+          expense={mockPendingExpense}
+        />,
+        { wrapper: createWrapper() }
+      );
+
+      await user.click(screen.getByTestId('confirm-amount-button'));
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith(
+          CONFIRM_AMOUNT_ERROR_MESSAGES.ALREADY_CONFIRMED
+        );
+      });
+
+      // Already confirmed elsewhere: the correct state is the payment form.
+      await waitFor(() => {
+        expect(screen.getByTestId('date-picker')).toBeInTheDocument();
+      });
+      expect(screen.queryByTestId('amount-confirmation-state')).not.toBeInTheDocument();
+      expect(mockOnClose).not.toHaveBeenCalled();
+    });
+  });
+
+  // O modal é renderizado por linha do grid, e a prop `expense` vem de
+  // `useInfiniteQuery(['expenses'])`. Toda invalidação devolve uma referência
+  // nova para a mesma despesa, então o reset não pode reagir à referência — sob
+  // pena de apagar um pagamento em preenchimento.
+  describe('Form persistence across expense refetches', () => {
+    const TYPED_DATE = '2024-06-15';
+    const defaultDate = () => new Date().toISOString().split('T')[0];
+
+    it('keeps the filled form when the expenses list refetches while open', () => {
+      const { rerender } = render(
+        <PaymentModal
+          isOpen={true}
+          onClose={mockOnClose}
+          onSuccess={mockOnSuccess}
+          expense={mockExpense}
+        />,
+        { wrapper: createWrapper() }
+      );
+
+      fireEvent.change(screen.getByTestId('date-input'), {
+        target: { value: TYPED_DATE },
+      });
+      expect(screen.getByTestId('date-input')).toHaveValue(TYPED_DATE);
+
+      // Um refetch de `['expenses']` entrega a MESMA despesa numa referência nova.
+      rerender(
+        <PaymentModal
+          isOpen={true}
+          onClose={mockOnClose}
+          onSuccess={mockOnSuccess}
+          expense={{ ...mockExpense }}
+        />
+      );
+
+      expect(screen.getByTestId('date-input')).toHaveValue(TYPED_DATE);
+    });
+
+    it('keeps the filled form when the refetch lands after confirming the amount', async () => {
+      const user = userEvent.setup();
+
+      const { rerender } = render(
+        <PaymentModal
+          isOpen={true}
+          onClose={mockOnClose}
+          onSuccess={mockOnSuccess}
+          expense={mockPendingExpense}
+        />,
+        { wrapper: createWrapper() }
+      );
+
+      await user.click(screen.getByTestId('confirm-amount-button'));
+      await waitFor(() => {
+        expect(screen.getByTestId('date-picker')).toBeInTheDocument();
+      });
+
+      fireEvent.change(screen.getByTestId('date-input'), {
+        target: { value: TYPED_DATE },
+      });
+      expect(screen.getByTestId('date-input')).toHaveValue(TYPED_DATE);
+
+      // A invalidação disparada pela confirmação chega agora, com a despesa já
+      // confirmada — e o usuário está no meio do preenchimento.
+      rerender(
+        <PaymentModal
+          isOpen={true}
+          onClose={mockOnClose}
+          onSuccess={mockOnSuccess}
+          expense={{ ...mockPendingExpense, amountPendingConfirmation: false }}
+        />
+      );
+
+      expect(screen.getByTestId('date-input')).toHaveValue(TYPED_DATE);
+      expect(screen.queryByTestId('amount-confirmation-state')).not.toBeInTheDocument();
+    });
+
+    it('still resets the form when the modal is closed and reopened', () => {
+      const { rerender } = render(
+        <PaymentModal
+          isOpen={true}
+          onClose={mockOnClose}
+          onSuccess={mockOnSuccess}
+          expense={mockExpense}
+        />,
+        { wrapper: createWrapper() }
+      );
+
+      fireEvent.change(screen.getByTestId('date-input'), {
+        target: { value: TYPED_DATE },
+      });
+      expect(screen.getByTestId('date-input')).toHaveValue(TYPED_DATE);
+
+      const renderWith = (isOpen: boolean) =>
+        rerender(
+          <PaymentModal
+            isOpen={isOpen}
+            onClose={mockOnClose}
+            onSuccess={mockOnSuccess}
+            expense={mockExpense}
+          />
+        );
+
+      renderWith(false);
+      renderWith(true);
+
+      expect(screen.getByTestId('date-input')).toHaveValue(defaultDate());
     });
   });
 });

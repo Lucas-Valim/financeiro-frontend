@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { formatCurrencyInput } from '@/lib/currency-mask';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
@@ -20,11 +21,18 @@ import { PaymentFormFields } from './PaymentFormFields';
 import { PaymentProofDisplay } from './PaymentProofDisplay';
 import { PaymentProofViewer } from './PaymentProofViewer';
 import { ExpenseDocumentsView } from './ExpenseDocumentsView';
+import { PaymentAmountConfirmation } from './PaymentAmountConfirmation';
 import { usePayExpense } from '@/hooks/usePayExpense';
+import { useConfirmExpenseAmount } from '@/hooks/useConfirmExpenseAmount';
 import { toast } from 'sonner';
 import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import type { ExpenseDTO } from '@/types/expenses';
-import { ExpenseStatus } from '@/constants/expenses';
+import {
+  ExpenseStatus,
+  requiresAmountConfirmation,
+  translateConfirmAmountError,
+  CONFIRM_AMOUNT_ERROR_MESSAGES,
+} from '@/constants/expenses';
 import {
   paymentFormSchema,
   defaultPaymentFormValues,
@@ -63,8 +71,15 @@ export function PaymentModal({
   const [submissionState, setSubmissionState] = useState<SubmissionState>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [viewerImageUrl, setViewerImageUrl] = useState<string | null>(null);
+  // Rastreia a confirmação feita nesta sessão do modal. A invalidação de
+  // `['expenses']` até traz a despesa atualizada, mas só quando o refetch chega:
+  // até lá `requiresAmountConfirmation(expense)` ainda lê o estado antigo. Este
+  // flag é o que transiciona o mesmo modal do estado bloqueado para o
+  // formulário na hora, sem esperar a rede.
+  const [amountConfirmed, setAmountConfirmed] = useState(false);
 
   const payExpenseMutation = usePayExpense();
+  const confirmAmountMutation = useConfirmExpenseAmount();
 
   const form = useForm<PaymentFormData>({
     resolver: zodResolver(paymentFormSchema),
@@ -91,15 +106,29 @@ export function PaymentModal({
       setSubmissionState('idle');
       setErrorMessage(null);
       setViewerImageUrl(null);
+      setAmountConfirmed(false);
     }
   }, [expense, reset]);
 
+  // O reset pertence à abertura do modal, e não a toda mudança de `expense`: a
+  // prop vem de uma linha do grid alimentada por `['expenses']`, e cada
+  // invalidação devolve uma referência nova para a mesma despesa. Reagir à
+  // referência apagaria um pagamento em preenchimento — inclusive o que acabou
+  // de ser desbloqueado pela confirmação de valor, que invalida essa query.
+  const wasOpenRef = useRef(false);
+
   useEffect(() => {
-    if (isOpen && expense) {
+    const justOpened = isOpen && !wasOpenRef.current;
+    wasOpenRef.current = isOpen;
+
+    if (justOpened) {
       resetModal();
     }
+    // `resetModal` fica fora das deps de propósito: ele muda junto com
+    // `expense`, e reagir a isso é exatamente o que este efeito evita. Rodando
+    // só na transição de abertura, o closure já é o da despesa daquele momento.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, expense]);
+  }, [isOpen]);
 
   const handleSubmit = useCallback(
     async (data: PaymentFormData) => {
@@ -134,6 +163,28 @@ export function PaymentModal({
     [expense, payExpenseMutation, onSuccess, onClose]
   );
 
+  const handleConfirmAmount = useCallback(async () => {
+    if (!expense) return;
+
+    try {
+      await confirmAmountMutation.mutateAsync(expense.id);
+      // Sucesso: o mesmo modal transiciona para o formulário de pagamento, sem
+      // fechar nem reabrir.
+      setAmountConfirmed(true);
+    } catch (error) {
+      // O toast traduzido já é exibido pelo `onError` do hook. Um `409` de
+      // "valor já confirmado" (outra aba) significa que o estado correto passa a
+      // ser o formulário de pagamento, então também transicionamos.
+      const message = error instanceof Error ? error.message : '';
+      if (
+        translateConfirmAmountError(message) ===
+        CONFIRM_AMOUNT_ERROR_MESSAGES.ALREADY_CONFIRMED
+      ) {
+        setAmountConfirmed(true);
+      }
+    }
+  }, [expense, confirmAmountMutation]);
+
   const handleClose = useCallback(() => {
     if (submissionState === 'submitting') return;
     onClose();
@@ -152,15 +203,17 @@ export function PaymentModal({
   const isSuccess = submissionState === 'success';
   const isError = submissionState === 'error';
 
-  const formatCurrency = (value: number | undefined): string => {
-    if (!value) return '';
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value);
-  };
+  // Mantém o comportamento original de exibir vazio para valor ausente ou zero,
+  // delegando a formatação ao utilitário compartilhado.
+  const formatCurrency = (value: number | undefined): string =>
+    value ? formatCurrencyInput(value) : '';
 
   if (!expense) return null;
+
+  // Terceiro caminho, antes da alternância formulário/comprovante: a despesa de
+  // recorrência variável abre bloqueada até o valor herdado ser confirmado.
+  const showAmountConfirmation =
+    requiresAmountConfirmation(expense) && !amountConfirmed;
 
   return (
     <>
@@ -195,7 +248,14 @@ export function PaymentModal({
             </DialogDescription>
           </DialogHeader>
 
-          {isViewMode ? (
+          {showAmountConfirmation ? (
+            <PaymentAmountConfirmation
+              expense={expense}
+              onConfirm={handleConfirmAmount}
+              onCancel={handleClose}
+              isConfirming={confirmAmountMutation.isPending}
+            />
+          ) : isViewMode ? (
             <Tabs defaultValue="comprovante" className="w-full" data-testid="view-mode-content">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="comprovante">Comprovante</TabsTrigger>
@@ -307,7 +367,7 @@ export function PaymentModal({
             </>
           )}
 
-          {isViewMode && (
+          {!showAmountConfirmation && isViewMode && (
             <DialogFooter>
               <Button variant="outline" onClick={handleClose} data-testid="close-view-button">
                 Fechar
