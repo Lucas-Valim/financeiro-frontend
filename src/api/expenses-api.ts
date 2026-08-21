@@ -1,5 +1,5 @@
 import { apiClient } from '../lib/api-client';
-import type { ExpenseDTO, ExpenseFilter, ExpenseStatusSummary, ListExpensesOutput, CreateExpenseInput, UpdateExpenseInput, ConfirmExpenseAmountOutput } from '../types/expenses';
+import type { ExpenseDTO, ExpenseFilter, ExpenseStatusSummary, ListExpensesOutput, CreateExpenseInput, UpdateExpenseInput, ConfirmExpenseAmountOutput, ResyncCalendarOutput } from '../types/expenses';
 import type { PaymentRequest, PaymentResponse } from '../schemas/payment-schema';
 import { ORGANIZATION_ID } from '../constants/expenses';
 
@@ -196,5 +196,23 @@ export class ExpensesApiService {
     return apiClient.post(
       `/expenses/${id}/confirm-amount`
     ) as unknown as Promise<ConfirmExpenseAmountOutput>;
+  }
+
+  /**
+   * Reenvia manualmente uma despesa para o Google Agenda
+   * (backend: POST /expenses/:id/calendar-sync). Não há corpo — o backend relê o
+   * estado da sincronização e o devolve no `ResyncCalendarOutput`. O
+   * `organizationId` é injetado pelo interceptor do api-client para o namespace
+   * `/expenses`, como em `confirmAmount`, por isso a query string não é montada
+   * manualmente (montá-la com `URLSearchParams` faria o interceptor descartar o
+   * `organizationId` em silêncio — ver ADR-002).
+   *
+   * A resposta é `200` mesmo quando a tentativa falha: o `calendarSyncStatus` do
+   * corpo carrega o resultado, não o código HTTP.
+   */
+  async resyncCalendar(id: string): Promise<ResyncCalendarOutput> {
+    return apiClient.post(
+      `/expenses/${id}/calendar-sync`
+    ) as unknown as Promise<ResyncCalendarOutput>;
   }
 }

@@ -51,6 +51,8 @@ describe('Expense File Upload Integration', () => {
     occurrenceMonth: null,
     amountPendingConfirmation: false,
     documentPending: false,
+    calendarSyncStatus: null,
+    calendarEventUrl: null,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -148,6 +150,8 @@ describe('Expense File Upload Integration', () => {
         occurrenceMonth: null,
         amountPendingConfirmation: false,
         documentPending: false,
+        calendarSyncStatus: null,
+        calendarEventUrl: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -203,6 +207,8 @@ describe('Expense File Upload Integration', () => {
         occurrenceMonth: null,
         amountPendingConfirmation: false,
         documentPending: false,
+        calendarSyncStatus: null,
+        calendarEventUrl: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -255,6 +261,8 @@ describe('Expense File Upload Integration', () => {
         occurrenceMonth: null,
         amountPendingConfirmation: false,
         documentPending: false,
+        calendarSyncStatus: null,
+        calendarEventUrl: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -319,6 +327,8 @@ describe('Expense File Upload Integration', () => {
         occurrenceMonth: null,
         amountPendingConfirmation: false,
         documentPending: false,
+        calendarSyncStatus: null,
+        calendarEventUrl: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       };

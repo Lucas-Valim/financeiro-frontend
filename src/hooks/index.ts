@@ -3,6 +3,7 @@ export { useExpenseForm } from './useExpenseForm';
 export { usePayExpense } from './usePayExpense';
 export { useCancelExpense } from './useCancelExpense';
 export { useConfirmExpenseAmount } from './useConfirmExpenseAmount';
+export { useResyncExpenseCalendar } from './useResyncExpenseCalendar';
 export { useCategories } from './use-categories';
 export { useExpenseCalendar } from './use-expense-calendar';
 export { useCategoryForm } from './useCategoryForm';

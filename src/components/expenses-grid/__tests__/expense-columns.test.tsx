@@ -32,6 +32,8 @@ const baseExpense: ExpenseDTO = {
   occurrenceMonth: null,
   amountPendingConfirmation: false,
   documentPending: false,
+  calendarSyncStatus: null,
+  calendarEventUrl: null,
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date('2024-01-01'),
 };
@@ -121,6 +123,17 @@ describe('EXPENSE_COLUMNS description column with markers', () => {
     render(<>{column('description').cell(baseExpense)}</>);
 
     expect(screen.queryByTestId('expense-markers')).toBeNull();
+  });
+
+  it('renders the calendar sync marker for an expense with a FAILED status', () => {
+    const expense: ExpenseDTO = {
+      ...baseExpense,
+      calendarSyncStatus: 'FAILED',
+    };
+
+    render(<>{column('description').cell(expense)}</>);
+
+    expect(screen.getByTestId('expense-marker-calendar')).toBeInTheDocument();
   });
 });
 

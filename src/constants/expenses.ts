@@ -22,11 +22,22 @@ export const EXPENSE_STATUS_COLORS = {
  * `calendar-tokens.css`: aqueles já são o fundo de todo evento pendente do
  * calendário, e um marcador âmbar sobre um card âmbar sumiria justamente na
  * superfície mais apertada.
+ *
+ * `calendarSyncFailed` é a quarta família e repete DELIBERADAMENTE o vermelho de
+ * `EXPENSE_STATUS_COLORS.OVERDUE` (ADR-001): as duas coisas significam "isto
+ * precisa de ação" e nunca renderizam na mesma coluna — o badge de status vive
+ * na coluna de situação, os marcadores vivem sob a descrição. Âmbar está ocupado
+ * por "valor a confirmar" (dinheiro) e cinza é a família do que apenas informa;
+ * este é o único marcador que diz "o que você vê pode não estar na agenda" e
+ * precisa vencer a varredura da lista. Uma entrada só de cor cobre os dois
+ * status de falha (`FAILED` e `UNAUTHORIZED`): eles compartilham cor e ícone, e o
+ * que os distingue é o `aria-label`, nunca a cor.
  */
 export const EXPENSE_MARKER_COLORS = {
   recurringOrigin: 'text-gray-400',
   documentPending: 'bg-gray-100 text-gray-800',
   amountPending: 'bg-amber-100 text-amber-800',
+  calendarSyncFailed: 'bg-red-100 text-red-800',
 } as const;
 
 export const EXPENSE_PAGE_LIMIT = 10;
@@ -129,6 +140,25 @@ export function requiresAmountConfirmation(expense: ExpenseDTO): boolean {
   return expense.amountPendingConfirmation;
 }
 
+/**
+ * Regra única que governa o marcador de falha da agenda e o item "Reenviar para
+ * a agenda" (ADR-001): verdadeiro apenas em `FAILED` e `UNAUTHORIZED`, os dois
+ * estados que pedem ação. `SYNCED` é a expectativa (não conquista) e `null` é a
+ * despesa que ainda não entrou na integração — nenhum dos dois exibe marcador.
+ *
+ * A comparação é EXPLÍCITA contra os dois status de falha, e NÃO negação de
+ * `SYNCED` nem teste de não-nulo: um quarto status futuro do backend cairia em
+ * falha por acidente se a regra fosse por exclusão (risco registrado na
+ * TechSpec). Esta é a única condição de falha do repositório — nenhum outro
+ * arquivo compara `calendarSyncStatus` diretamente.
+ */
+export function hasCalendarSyncFailure(expense: ExpenseDTO): boolean {
+  return (
+    expense.calendarSyncStatus === 'FAILED' ||
+    expense.calendarSyncStatus === 'UNAUTHORIZED'
+  );
+}
+
 /** Trechos das mensagens (em inglês) devolvidas pelo backend na confirmação de valor. */
 const AMOUNT_CONFIRMATION_REQUIRED_BACKEND = 'Expense amount must be confirmed before payment';
 const AMOUNT_ALREADY_CONFIRMED_BACKEND = 'Expense amount is already confirmed';
@@ -155,6 +185,30 @@ export function translateConfirmAmountError(message: string): string {
   }
   return CONFIRM_AMOUNT_ERROR_MESSAGES.DEFAULT;
 }
+
+/**
+ * Mensagens dos toasts do reenvio manual para o Google Agenda, uma por desfecho
+ * lido de `calendarSyncStatus` (ADR-002), mais um texto genérico. Vive aqui como
+ * constante nomeada — e não como literal no hook — no molde de
+ * `CONFIRM_AMOUNT_ERROR_MESSAGES`: o teste do hook precisa asseverar o texto
+ * exato, e casar string literal duplicada entre hook e teste é a forma de a
+ * mensagem divergir em silêncio numa reescrita.
+ *
+ * `SUCCESS`/`FAILED`/`UNAUTHORIZED` cobrem os três status; `DEFAULT` serve tanto
+ * ao `default` do `switch` (um quarto status futuro do backend) quanto ao
+ * `onError` (404, queda de rede). Nenhum desses textos entra em
+ * `getErrorMessageByStatus`: aquele mapa é compartilhado por todo o sistema, e
+ * uma mensagem sobre o Google Agenda apareceria em qualquer requisição que
+ * devolvesse o mesmo código (ADR-002).
+ */
+export const RESYNC_CALENDAR_MESSAGES = {
+  SUCCESS: 'Despesa enviada para o Google Agenda',
+  FAILED:
+    'Não foi possível enviar para o Google Agenda agora — a rotina diária tentará de novo automaticamente',
+  UNAUTHORIZED:
+    'Autorização do Google Agenda perdida — acione o suporte técnico',
+  DEFAULT: 'Ocorreu um erro ao reenviar a despesa para o Google Agenda',
+} as const;
 
 /**
  * Builds the default expense filters applied when the page first loads:

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Despesa } from '@/components/pages/Despesa';
 import { ExpenseStatus } from '@/constants/expenses';
@@ -71,6 +72,8 @@ describe('ExpensesPage Integration', () => {
     occurrenceMonth: null,
     amountPendingConfirmation: false,
     documentPending: false,
+    calendarSyncStatus: null,
+    calendarEventUrl: null,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
   });
@@ -338,6 +341,41 @@ describe('ExpensesPage Integration', () => {
       fireEvent.click(filterButton);
 
       expect(screen.getByText('Filtrar Despesas')).toBeInTheDocument();
+    });
+  });
+
+  describe('calendar sync marker and menu coherence', () => {
+    it('shows the calendar failure marker AND the resync menu item together on a FAILED row', async () => {
+      const user = userEvent.setup();
+      const failedExpense: ExpenseDTO = {
+        ...createMockExpense('1', ExpenseStatus.OPEN),
+        calendarSyncStatus: 'FAILED',
+      };
+
+      mockUseExpenses.mockReturnValue({
+        data: [failedExpense],
+        isLoading: false,
+        error: null,
+        hasMore: false,
+        loadMore: vi.fn(),
+        reset: vi.fn(),
+      });
+
+      render(<Despesa />, { wrapper });
+
+      // A mesma condição (`hasCalendarSyncFailure`) governa marcador e item de
+      // menu: os dois têm de aparecer juntos, nunca um sem o outro.
+      const row = screen.getByTestId('expenses-table').querySelector('tbody tr');
+      expect(row).not.toBeNull();
+      expect(
+        within(row as HTMLElement).getByTestId('expense-marker-calendar')
+      ).toBeInTheDocument();
+
+      await user.click(within(row as HTMLElement).getByTestId('morevertical-icon'));
+
+      expect(
+        await screen.findByText('Reenviar para a agenda')
+      ).toBeInTheDocument();
     });
   });
 

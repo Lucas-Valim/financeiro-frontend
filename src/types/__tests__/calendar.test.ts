@@ -80,6 +80,8 @@ describe('Calendar Types', () => {
         occurrenceMonth: null,
         amountPendingConfirmation: false,
         documentPending: false,
+        calendarSyncStatus: null,
+        calendarEventUrl: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       };

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ExpensesApiService } from '../expenses-api';
 import { apiClient } from '../../lib/api-client';
 import { ExpenseStatus } from '../../constants/expenses';
-import type { ExpenseDTO, ListExpensesOutput, CreateExpenseInput, UpdateExpenseInput } from '../../types/expenses';
+import type { ExpenseDTO, ListExpensesOutput, CreateExpenseInput, UpdateExpenseInput, ResyncCalendarOutput } from '../../types/expenses';
 
 vi.mock('../../lib/api-client');
 
@@ -44,6 +44,8 @@ describe('ExpensesApiService', () => {
     occurrenceMonth: null,
     amountPendingConfirmation: false,
     documentPending: false,
+    calendarSyncStatus: null,
+    calendarEventUrl: null,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
   };
@@ -262,6 +264,8 @@ describe('ExpensesApiService', () => {
     occurrenceMonth: null,
     amountPendingConfirmation: false,
     documentPending: false,
+    calendarSyncStatus: null,
+    calendarEventUrl: null,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
   };
@@ -340,6 +344,8 @@ describe('ExpensesApiService', () => {
     occurrenceMonth: null,
     amountPendingConfirmation: false,
     documentPending: false,
+    calendarSyncStatus: null,
+    calendarEventUrl: null,
     createdAt: new Date('2024-01-15'),
     updatedAt: new Date('2024-01-15'),
   };
@@ -462,6 +468,8 @@ describe('ExpensesApiService', () => {
     occurrenceMonth: null,
     amountPendingConfirmation: false,
     documentPending: false,
+    calendarSyncStatus: null,
+    calendarEventUrl: null,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-20'),
   };
@@ -579,6 +587,8 @@ describe('ExpensesApiService', () => {
       occurrenceMonth: null,
       amountPendingConfirmation: false,
       documentPending: false,
+      calendarSyncStatus: null,
+      calendarEventUrl: null,
       createdAt: new Date('2024-01-15'),
       updatedAt: new Date('2024-01-15'),
     };
@@ -763,6 +773,8 @@ describe('ExpensesApiService', () => {
       occurrenceMonth: null,
       amountPendingConfirmation: false,
       documentPending: false,
+      calendarSyncStatus: null,
+      calendarEventUrl: null,
       createdAt: new Date('2024-01-01'),
       updatedAt: new Date('2024-01-20'),
     };
@@ -942,6 +954,47 @@ describe('ExpensesApiService', () => {
 
       await expect(service.cancel('1')).rejects.toThrow(
         'Cannot cancel expense with status PAID'
+      );
+    });
+  });
+
+  describe('resyncCalendar', () => {
+    const syncedResponse: ResyncCalendarOutput = {
+      calendarSyncStatus: 'SYNCED',
+      calendarEventUrl: 'https://calendar.google.com/event/abc',
+      calendarSyncedAt: '2026-08-21T10:00:00.000Z',
+    };
+
+    it('should call apiClient.post with the calendar-sync route', async () => {
+      mockedApiClient.post.mockResolvedValue(syncedResponse);
+
+      await service.resyncCalendar('abc');
+
+      expect(mockedApiClient.post).toHaveBeenCalledWith('/expenses/abc/calendar-sync');
+      expect(mockedApiClient.post).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not pass a second params argument (injected by the interceptor)', async () => {
+      mockedApiClient.post.mockResolvedValue(syncedResponse);
+
+      await service.resyncCalendar('abc');
+
+      expect(mockedApiClient.post.mock.calls[0]).toHaveLength(1);
+    });
+
+    it('should return the response body without transformation', async () => {
+      mockedApiClient.post.mockResolvedValue(syncedResponse);
+
+      const result = await service.resyncCalendar('abc');
+
+      expect(result).toEqual(syncedResponse);
+    });
+
+    it('should propagate the backend error when the expense is not found', async () => {
+      mockedApiClient.post.mockRejectedValue(new Error('Despesa não encontrada'));
+
+      await expect(service.resyncCalendar('missing')).rejects.toThrow(
+        'Despesa não encontrada'
       );
     });
   });

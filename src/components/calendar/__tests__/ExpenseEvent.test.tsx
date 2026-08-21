@@ -29,6 +29,8 @@ function createMockExpense(overrides?: Partial<ExpenseDTO>): ExpenseDTO {
     occurrenceMonth: null,
     amountPendingConfirmation: false,
     documentPending: false,
+    calendarSyncStatus: null,
+    calendarEventUrl: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
@@ -300,6 +302,29 @@ describe('ExpenseEvent', () => {
   describe('expense markers', () => {
     const AMOUNT_LABEL =
       'Valor estimado do mês anterior — confirme antes de pagar';
+    const CALENDAR_UNAUTHORIZED_LABEL =
+      'Autorização do Google Agenda perdida — acione o suporte técnico';
+
+    it('exposes the UNAUTHORIZED sync failure text inside the button aria-label', () => {
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 7);
+
+      const event = createMockCalendarEvent({
+        expense: createMockExpense({
+          status: ExpenseStatus.OPEN,
+          dueDate: futureDate,
+          calendarSyncStatus: 'UNAUTHORIZED',
+        }),
+      });
+
+      render(<ExpenseEvent event={event} onClick={() => {}} />);
+
+      const button = screen.getByRole('button');
+      expect(button).toHaveAttribute(
+        'aria-label',
+        expect.stringContaining(CALENDAR_UNAUTHORIZED_LABEL)
+      );
+    });
 
     it('appends the marker text to the button aria-label for an expense with amount pending', () => {
       const futureDate = new Date();

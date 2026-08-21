@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { startOfMonth, endOfMonth } from 'date-fns';
 import {
   EXPENSE_STATUS_COLORS,
+  EXPENSE_MARKER_COLORS,
   EXPENSE_PAGE_LIMIT,
   ORGANIZATION_ID,
   ExpenseStatus,
@@ -13,8 +14,10 @@ import {
   CANCEL_EXPENSE_ERROR_MESSAGES,
   translateCancelExpenseError,
   requiresAmountConfirmation,
+  hasCalendarSyncFailure,
   translateConfirmAmountError,
   CONFIRM_AMOUNT_ERROR_MESSAGES,
+  RESYNC_CALENDAR_MESSAGES,
 } from '../expenses';
 import type { ExpenseDTO } from '@/types/expenses';
 
@@ -42,6 +45,8 @@ function makeExpense(overrides: Partial<ExpenseDTO>): ExpenseDTO {
     occurrenceMonth: null,
     amountPendingConfirmation: false,
     documentPending: false,
+    calendarSyncStatus: null,
+    calendarEventUrl: null,
     createdAt: new Date('2026-08-19T00:00:00'),
     updatedAt: new Date('2026-08-19T00:00:00'),
     ...overrides,
@@ -282,6 +287,73 @@ describe('Constants', () => {
       });
 
       expect(requiresAmountConfirmation(expense)).toBe(false);
+    });
+  });
+
+  describe('hasCalendarSyncFailure', () => {
+    it('returns true for calendarSyncStatus FAILED', () => {
+      const expense = makeExpense({ calendarSyncStatus: 'FAILED' });
+
+      expect(hasCalendarSyncFailure(expense)).toBe(true);
+    });
+
+    it('returns true for calendarSyncStatus UNAUTHORIZED', () => {
+      const expense = makeExpense({ calendarSyncStatus: 'UNAUTHORIZED' });
+
+      expect(hasCalendarSyncFailure(expense)).toBe(true);
+    });
+
+    it('returns false for calendarSyncStatus SYNCED — sucesso não exibe marcador', () => {
+      const expense = makeExpense({ calendarSyncStatus: 'SYNCED' });
+
+      expect(hasCalendarSyncFailure(expense)).toBe(false);
+    });
+
+    it('returns false for a null calendarSyncStatus — despesa recém-criada, sem marcador', () => {
+      const expense = makeExpense({ calendarSyncStatus: null });
+
+      expect(hasCalendarSyncFailure(expense)).toBe(false);
+    });
+  });
+
+  describe('EXPENSE_MARKER_COLORS.calendarSyncFailed', () => {
+    it('is exactly the red family of EXPENSE_STATUS_COLORS.OVERDUE', () => {
+      expect(EXPENSE_MARKER_COLORS.calendarSyncFailed).toBe('bg-red-100 text-red-800');
+      expect(EXPENSE_MARKER_COLORS.calendarSyncFailed).toBe(EXPENSE_STATUS_COLORS.OVERDUE);
+    });
+
+    it('is distinct from the three other marker colors', () => {
+      expect(EXPENSE_MARKER_COLORS.calendarSyncFailed).not.toBe(
+        EXPENSE_MARKER_COLORS.recurringOrigin
+      );
+      expect(EXPENSE_MARKER_COLORS.calendarSyncFailed).not.toBe(
+        EXPENSE_MARKER_COLORS.documentPending
+      );
+      expect(EXPENSE_MARKER_COLORS.calendarSyncFailed).not.toBe(
+        EXPENSE_MARKER_COLORS.amountPending
+      );
+    });
+  });
+
+  describe('RESYNC_CALENDAR_MESSAGES', () => {
+    it('exposes the three resync outcomes plus a generic fallback', () => {
+      expect(Object.keys(RESYNC_CALENDAR_MESSAGES).sort()).toEqual([
+        'DEFAULT',
+        'FAILED',
+        'SUCCESS',
+        'UNAUTHORIZED',
+      ]);
+    });
+
+    it('has non-empty pt-BR text for every outcome', () => {
+      for (const message of Object.values(RESYNC_CALENDAR_MESSAGES)) {
+        expect(message.trim().length).toBeGreaterThan(0);
+      }
+    });
+
+    it('promises the daily retry for a momentary failure and support for lost authorization', () => {
+      expect(RESYNC_CALENDAR_MESSAGES.FAILED).toContain('rotina diária');
+      expect(RESYNC_CALENDAR_MESSAGES.UNAUTHORIZED).toContain('suporte técnico');
     });
   });
 

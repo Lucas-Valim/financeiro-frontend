@@ -1,6 +1,14 @@
 import type { ExpenseStatus } from '../constants/expenses';
 
 /**
+ * Resultado da sincronização de uma despesa com o Google Agenda, como campo
+ * primitivo do DTO — não é `enum` (o projeto reserva `enum` para `ExpenseStatus`;
+ * os demais marcadores também chegam como primitivos). Os três marcadores chegam
+ * do backend; `null` no DTO significa "ainda não entrou na integração".
+ */
+export type CalendarSyncStatus = 'SYNCED' | 'FAILED' | 'UNAUTHORIZED';
+
+/**
  * Data Transfer Object representing an expense entity from the API
  */
 export interface ExpenseDTO {
@@ -26,6 +34,16 @@ export interface ExpenseDTO {
   occurrenceMonth: Date | null; // competência da ocorrência
   amountPendingConfirmation: boolean; // bloqueia o pagamento
   documentPending: boolean; // derivado pela API, nunca recalculado
+  /**
+   * Resultado da sincronização com o Google Agenda. `null` significa que a
+   * despesa AINDA NÃO entrou na integração — não é falha. É esse contrato que
+   * impede o marcador de piscar na despesa recém-criada, antes de a
+   * sincronização acontecer. A falha se lê por `hasCalendarSyncFailure`, nunca
+   * por não-nulo.
+   */
+  calendarSyncStatus: CalendarSyncStatus | null;
+  /** Link do evento no Google; `null` enquanto não houver evento. */
+  calendarEventUrl: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -154,4 +172,22 @@ export interface ConfirmExpenseAmountOutput {
   amountPendingConfirmation: boolean;
   createdAt: Date;
   updatedAt: Date;
+}
+
+/**
+ * Resposta de `POST /expenses/:id/calendar-sync` (reenvio manual). O
+ * `calendarSyncStatus` é o RESULTADO da tentativa lido do corpo, e NÃO o código
+ * HTTP: uma falha também responde `200`, porque o recurso lido é o estado da
+ * sincronização, e ele foi lido (ADR-002). O interceptor do `apiClient`
+ * colapsaria um código de erro em texto genérico, apagando a diferença entre
+ * "tente de novo" e "acione o suporte" — por isso o resultado vem como dado.
+ *
+ * NÃO é um `ExpenseDTO`: é uma projeção reduzida, sem os campos que os outros
+ * marcadores leem, então nunca deve ser escrita no cache com `setQueryData`. A
+ * atualização das telas vem sempre da invalidação de `['expenses']`.
+ */
+export interface ResyncCalendarOutput {
+  calendarSyncStatus: CalendarSyncStatus;
+  calendarEventUrl: string | null;
+  calendarSyncedAt: string;
 }

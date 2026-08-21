@@ -143,6 +143,7 @@ vi.mock('lucide-react', () => ({
   Repeat: createIconMock('Repeat'),
   FileClock: createIconMock('FileClock'),
   CircleAlert: createIconMock('CircleAlert'),
+  CalendarX: createIconMock('CalendarX'),
   CheckCircle2: createIconMock('CheckCircle2'),
   FolderCog: createIconMock('FolderCog'),
 }))
