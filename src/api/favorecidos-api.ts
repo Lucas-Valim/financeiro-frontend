@@ -1,13 +1,36 @@
 import { apiClient } from '../lib/api-client';
-import type { FavorecidoDTO, FavorecidosListResponse, CreateFavorecidoInput, UpdateFavorecidoInput } from '../types/favorecidos';
+import type {
+  FavorecidoDTO,
+  FavorecidosListResponse,
+  CreateFavorecidoInput,
+  ListFavorecidosParams,
+  UpdateFavorecidoInput,
+} from '../types/favorecidos';
+
+/**
+ * `organizationId` goes inline in the URL on purpose: the api-client
+ * interceptor only injects it for `/expenses`, `/reports` and
+ * `/recurring-expenses`. Optional params are appended only when present so the
+ * backend defaults (`page=1`, `limit=20`) apply untouched.
+ */
+function buildListQuery(organizationId: string, params: ListFavorecidosParams): URLSearchParams {
+  const query = new URLSearchParams({ organizationId });
+  if (params.page !== undefined) query.set('page', String(params.page));
+  if (params.limit !== undefined) query.set('limit', String(params.limit));
+  if (params.name) query.set('name', params.name);
+  if (params.document) query.set('document', params.document);
+  return query;
+}
 
 export class FavorecidosApiService {
-  async fetchFavorecidos(organizationId: string): Promise<FavorecidoDTO[]> {
-    const params = new URLSearchParams({ organizationId });
-    const response = await apiClient.get<FavorecidosListResponse>(
-      `/favorecidos?${params}`
-    ) as unknown as FavorecidosListResponse;
-    return response.data;
+  async fetchFavorecidos(
+    organizationId: string,
+    params: ListFavorecidosParams = {}
+  ): Promise<FavorecidosListResponse> {
+    const query = buildListQuery(organizationId, params);
+    return apiClient.get<FavorecidosListResponse>(
+      `/favorecidos?${query}`
+    ) as unknown as Promise<FavorecidosListResponse>;
   }
 
   async create(input: CreateFavorecidoInput): Promise<FavorecidoDTO> {

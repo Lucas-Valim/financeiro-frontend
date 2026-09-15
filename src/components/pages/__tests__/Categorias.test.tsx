@@ -9,9 +9,9 @@ import { ORGANIZATION_ID } from '@/constants/expenses';
 
 // ── Mocks ───────────────────────────────────────────────────────────────────
 
-const mockUseCategories = vi.fn();
-vi.mock('@/hooks/use-categories', () => ({
-  useCategories: (...args: unknown[]) => mockUseCategories(...args),
+const mockUsePaginatedCategories = vi.fn();
+vi.mock('@/hooks/use-paginated-categories', () => ({
+  usePaginatedCategories: (...args: unknown[]) => mockUsePaginatedCategories(...args),
 }));
 
 const mockFormModal = vi.fn();
@@ -111,7 +111,7 @@ describe('Categorias', () => {
 
   describe('rendering', () => {
     it('renders the page title and description', () => {
-      mockUseCategories.mockReturnValue({
+      mockUsePaginatedCategories.mockReturnValue({
         categories: [],
         isLoading: false,
         error: null,
@@ -125,8 +125,8 @@ describe('Categorias', () => {
       ).toBeInTheDocument();
     });
 
-    it('renders one row per category returned by useCategories', () => {
-      mockUseCategories.mockReturnValue({
+    it('renders one row per category returned by usePaginatedCategories', () => {
+      mockUsePaginatedCategories.mockReturnValue({
         categories: [
           buildCategory({ id: 'a', name: 'Alimentação' }),
           buildCategory({ id: 'b', name: 'Transporte' }),
@@ -144,8 +144,8 @@ describe('Categorias', () => {
       expect(screen.getAllByText('Lazer').length).toBeGreaterThanOrEqual(1);
     });
 
-    it('invokes useCategories with the ORGANIZATION_ID constant', () => {
-      mockUseCategories.mockReturnValue({
+    it('invokes usePaginatedCategories with the ORGANIZATION_ID constant and an empty filter', () => {
+      mockUsePaginatedCategories.mockReturnValue({
         categories: [],
         isLoading: false,
         error: null,
@@ -153,13 +153,16 @@ describe('Categorias', () => {
 
       renderCategorias();
 
-      expect(mockUseCategories).toHaveBeenCalledWith(ORGANIZATION_ID);
+      expect(mockUsePaginatedCategories).toHaveBeenCalledWith({
+        organizationId: ORGANIZATION_ID,
+        filter: { name: '' },
+      });
     });
   });
 
   describe('loading state', () => {
     it('shows the loading spinner when isLoading is true and no categories are cached yet', () => {
-      mockUseCategories.mockReturnValue({
+      mockUsePaginatedCategories.mockReturnValue({
         categories: [],
         isLoading: true,
         error: null,
@@ -172,7 +175,7 @@ describe('Categorias', () => {
     });
 
     it('does not render the empty state while loading', () => {
-      mockUseCategories.mockReturnValue({
+      mockUsePaginatedCategories.mockReturnValue({
         categories: [],
         isLoading: true,
         error: null,
@@ -186,7 +189,7 @@ describe('Categorias', () => {
 
   describe('empty states', () => {
     it('shows "Nenhuma categoria cadastrada" when the list is empty and no filter is active', () => {
-      mockUseCategories.mockReturnValue({
+      mockUsePaginatedCategories.mockReturnValue({
         categories: [],
         isLoading: false,
         error: null,
@@ -201,14 +204,68 @@ describe('Categorias', () => {
     });
   });
 
-  describe('filtering', () => {
-    it('narrows the displayed rows to substring matches (case-insensitive)', async () => {
+  describe('error state', () => {
+    it('renders the grid error state instead of the empty state when the request fails', () => {
+      mockUsePaginatedCategories.mockReturnValue({
+        categories: [],
+        isLoading: false,
+        error: new Error('Erro de rede'),
+        refetch: vi.fn(),
+      });
+
+      renderCategorias();
+
+      expect(screen.getByTestId('error-state')).toBeInTheDocument();
+      expect(screen.getByText('Erro ao carregar categorias')).toBeInTheDocument();
+      expect(screen.getByText('Erro de rede')).toBeInTheDocument();
+      expect(screen.queryByTestId('empty-state')).not.toBeInTheDocument();
+    });
+
+    it('retries through the hook refetch when "Tente novamente" is clicked', async () => {
       const user = userEvent.setup();
-      mockUseCategories.mockReturnValue({
+      const refetch = vi.fn();
+      mockUsePaginatedCategories.mockReturnValue({
+        categories: [],
+        isLoading: false,
+        error: new Error('Erro de rede'),
+        refetch,
+      });
+
+      renderCategorias();
+
+      await user.click(screen.getByRole('button', { name: /tente novamente/i }));
+
+      expect(refetch).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('pagination', () => {
+    it('renders the footer counter with the server total', () => {
+      mockUsePaginatedCategories.mockReturnValue({
         categories: [
           buildCategory({ id: 'a', name: 'Alimentação' }),
           buildCategory({ id: 'b', name: 'Transporte' }),
         ],
+        total: 25,
+        isLoading: false,
+        error: null,
+        hasMore: true,
+        loadMore: vi.fn(),
+      });
+
+      renderCategorias();
+
+      expect(
+        screen.getAllByText('Mostrando 1-2 de 25 categorias').length
+      ).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  describe('filtering', () => {
+    it('sends the typed name to usePaginatedCategories so the server filters the list', async () => {
+      const user = userEvent.setup();
+      mockUsePaginatedCategories.mockReturnValue({
+        categories: [buildCategory({ id: 'a', name: 'Alimentação' })],
         isLoading: false,
         error: null,
       });
@@ -219,14 +276,16 @@ describe('Categorias', () => {
       const input = screen.getByPlaceholderText('Buscar por nome');
       await user.type(input, 'Alim');
 
-      expect(screen.getAllByText('Alimentação').length).toBeGreaterThanOrEqual(1);
-      expect(screen.queryByText('Transporte')).not.toBeInTheDocument();
+      expect(mockUsePaginatedCategories).toHaveBeenLastCalledWith({
+        organizationId: ORGANIZATION_ID,
+        filter: { name: 'Alim' },
+      });
     });
 
-    it('shows "Nenhuma categoria encontrada" when the filter excludes every category', async () => {
+    it('shows "Nenhuma categoria encontrada" when the server returns nothing for an active filter', async () => {
       const user = userEvent.setup();
-      mockUseCategories.mockReturnValue({
-        categories: [buildCategory({ id: 'a', name: 'Alimentação' })],
+      mockUsePaginatedCategories.mockReturnValue({
+        categories: [],
         isLoading: false,
         error: null,
       });
@@ -239,13 +298,14 @@ describe('Categorias', () => {
 
       expect(screen.getByTestId('categories-no-results')).toBeInTheDocument();
       expect(screen.getByText('Nenhuma categoria encontrada')).toBeInTheDocument();
+      expect(screen.queryByTestId('empty-state')).not.toBeInTheDocument();
     });
 
-    it('keeps the original empty-state message when categories are empty AND filter is active', async () => {
+    it('shows the loading spinner instead of "no results" while the filtered request is in flight', async () => {
       const user = userEvent.setup();
-      mockUseCategories.mockReturnValue({
+      mockUsePaginatedCategories.mockReturnValue({
         categories: [],
-        isLoading: false,
+        isLoading: true,
         error: null,
       });
 
@@ -255,13 +315,13 @@ describe('Categorias', () => {
       const input = screen.getByPlaceholderText('Buscar por nome');
       await user.type(input, 'Anything');
 
-      expect(screen.getByTestId('empty-state')).toBeInTheDocument();
+      expect(screen.getByTestId('loading-state')).toBeInTheDocument();
       expect(screen.queryByTestId('categories-no-results')).not.toBeInTheDocument();
     });
 
     it('shows the filter badge on the filter button when a filter is active', async () => {
       const user = userEvent.setup();
-      mockUseCategories.mockReturnValue({
+      mockUsePaginatedCategories.mockReturnValue({
         categories: [buildCategory({ id: 'a', name: 'Alimentação' })],
         isLoading: false,
         error: null,
@@ -280,7 +340,7 @@ describe('Categorias', () => {
 
     it('hides the filter badge after clicking "Limpar filtros"', async () => {
       const user = userEvent.setup();
-      mockUseCategories.mockReturnValue({
+      mockUsePaginatedCategories.mockReturnValue({
         categories: [buildCategory({ id: 'a', name: 'Alimentação' })],
         isLoading: false,
         error: null,
@@ -302,7 +362,7 @@ describe('Categorias', () => {
   describe('CategoryFormModal integration', () => {
     it('opens the form modal in create mode when "Nova Categoria" is clicked', async () => {
       const user = userEvent.setup();
-      mockUseCategories.mockReturnValue({
+      mockUsePaginatedCategories.mockReturnValue({
         categories: [],
         isLoading: false,
         error: null,
@@ -322,7 +382,7 @@ describe('Categorias', () => {
     it('opens the form modal pre-filled with the selected category when the edit icon is clicked', async () => {
       const user = userEvent.setup();
       const target = buildCategory({ id: 'cat-2', name: 'Transporte' });
-      mockUseCategories.mockReturnValue({
+      mockUsePaginatedCategories.mockReturnValue({
         categories: [
           buildCategory({ id: 'cat-1', name: 'Alimentação' }),
           target,
@@ -342,7 +402,7 @@ describe('Categorias', () => {
 
     it('closes the form modal when onClose is invoked', async () => {
       const user = userEvent.setup();
-      mockUseCategories.mockReturnValue({
+      mockUsePaginatedCategories.mockReturnValue({
         categories: [],
         isLoading: false,
         error: null,
@@ -360,7 +420,7 @@ describe('Categorias', () => {
     it('resets selectedCategory to null after closing the edit modal, so the next create opens empty', async () => {
       const user = userEvent.setup();
       const target = buildCategory({ id: 'cat-1', name: 'Alimentação' });
-      mockUseCategories.mockReturnValue({
+      mockUsePaginatedCategories.mockReturnValue({
         categories: [target],
         isLoading: false,
         error: null,
@@ -384,7 +444,7 @@ describe('Categorias', () => {
     it('opens the delete dialog with the selected category when the delete icon is clicked', async () => {
       const user = userEvent.setup();
       const target = buildCategory({ id: 'cat-2', name: 'Transporte' });
-      mockUseCategories.mockReturnValue({
+      mockUsePaginatedCategories.mockReturnValue({
         categories: [
           buildCategory({ id: 'cat-1', name: 'Alimentação' }),
           target,
@@ -404,7 +464,7 @@ describe('Categorias', () => {
     it('closes the delete dialog when onClose is invoked', async () => {
       const user = userEvent.setup();
       const target = buildCategory({ id: 'cat-1', name: 'Alimentação' });
-      mockUseCategories.mockReturnValue({
+      mockUsePaginatedCategories.mockReturnValue({
         categories: [target],
         isLoading: false,
         error: null,

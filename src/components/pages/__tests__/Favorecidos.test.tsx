@@ -7,9 +7,9 @@ import { Favorecidos } from '../Favorecidos';
 import type { FavorecidoDTO } from '@/types/favorecidos';
 import { ORGANIZATION_ID } from '@/constants/expenses';
 
-const mockUseFavorecidos = vi.fn();
-vi.mock('@/hooks/use-favorecidos', () => ({
-  useFavorecidos: (...args: unknown[]) => mockUseFavorecidos(...args),
+const mockUsePaginatedFavorecidos = vi.fn();
+vi.mock('@/hooks/use-paginated-favorecidos', () => ({
+  usePaginatedFavorecidos: (...args: unknown[]) => mockUsePaginatedFavorecidos(...args),
 }));
 
 const mockFormModal = vi.fn();
@@ -113,7 +113,7 @@ describe('Favorecidos', () => {
 
   describe('rendering', () => {
     it('renders the page title and description', () => {
-      mockUseFavorecidos.mockReturnValue({
+      mockUsePaginatedFavorecidos.mockReturnValue({
         favorecidos: [],
         isLoading: false,
         error: null,
@@ -127,8 +127,8 @@ describe('Favorecidos', () => {
       ).toBeInTheDocument();
     });
 
-    it('renders one row per favorecido returned by useFavorecidos', () => {
-      mockUseFavorecidos.mockReturnValue({
+    it('renders one row per favorecido returned by usePaginatedFavorecidos', () => {
+      mockUsePaginatedFavorecidos.mockReturnValue({
         favorecidos: [
           buildFavorecido({ id: 'a', name: 'João Silva' }),
           buildFavorecido({ id: 'b', name: 'Maria Santos' }),
@@ -146,8 +146,8 @@ describe('Favorecidos', () => {
       expect(screen.getAllByText('Empresa XYZ').length).toBeGreaterThanOrEqual(1);
     });
 
-    it('invokes useFavorecidos with the ORGANIZATION_ID constant', () => {
-      mockUseFavorecidos.mockReturnValue({
+    it('invokes usePaginatedFavorecidos with the ORGANIZATION_ID constant and an empty filter', () => {
+      mockUsePaginatedFavorecidos.mockReturnValue({
         favorecidos: [],
         isLoading: false,
         error: null,
@@ -155,13 +155,16 @@ describe('Favorecidos', () => {
 
       renderFavorecidos();
 
-      expect(mockUseFavorecidos).toHaveBeenCalledWith(ORGANIZATION_ID);
+      expect(mockUsePaginatedFavorecidos).toHaveBeenCalledWith({
+        organizationId: ORGANIZATION_ID,
+        filter: { name: '', document: '' },
+      });
     });
   });
 
   describe('loading state', () => {
     it('shows the loading spinner when isLoading is true and no favorecidos are cached yet', () => {
-      mockUseFavorecidos.mockReturnValue({
+      mockUsePaginatedFavorecidos.mockReturnValue({
         favorecidos: [],
         isLoading: true,
         error: null,
@@ -174,7 +177,7 @@ describe('Favorecidos', () => {
     });
 
     it('does not render the empty state while loading', () => {
-      mockUseFavorecidos.mockReturnValue({
+      mockUsePaginatedFavorecidos.mockReturnValue({
         favorecidos: [],
         isLoading: true,
         error: null,
@@ -188,7 +191,7 @@ describe('Favorecidos', () => {
 
   describe('empty states', () => {
     it('shows "Nenhum favorecido encontrado" when the list is empty and no filter is active', () => {
-      mockUseFavorecidos.mockReturnValue({
+      mockUsePaginatedFavorecidos.mockReturnValue({
         favorecidos: [],
         isLoading: false,
         error: null,
@@ -201,14 +204,68 @@ describe('Favorecidos', () => {
     });
   });
 
-  describe('filtering by name', () => {
-    it('narrows the displayed rows to substring matches (case-insensitive)', async () => {
+  describe('error state', () => {
+    it('renders the grid error state instead of the empty state when the request fails', () => {
+      mockUsePaginatedFavorecidos.mockReturnValue({
+        favorecidos: [],
+        isLoading: false,
+        error: new Error('Erro de rede'),
+        refetch: vi.fn(),
+      });
+
+      renderFavorecidos();
+
+      expect(screen.getByTestId('error-state')).toBeInTheDocument();
+      expect(screen.getByText('Erro ao carregar favorecidos')).toBeInTheDocument();
+      expect(screen.getByText('Erro de rede')).toBeInTheDocument();
+      expect(screen.queryByTestId('empty-state')).not.toBeInTheDocument();
+    });
+
+    it('retries through the hook refetch when "Tente novamente" is clicked', async () => {
       const user = userEvent.setup();
-      mockUseFavorecidos.mockReturnValue({
+      const refetch = vi.fn();
+      mockUsePaginatedFavorecidos.mockReturnValue({
+        favorecidos: [],
+        isLoading: false,
+        error: new Error('Erro de rede'),
+        refetch,
+      });
+
+      renderFavorecidos();
+
+      await user.click(screen.getByRole('button', { name: /tente novamente/i }));
+
+      expect(refetch).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('pagination', () => {
+    it('renders the footer counter with the server total', () => {
+      mockUsePaginatedFavorecidos.mockReturnValue({
         favorecidos: [
           buildFavorecido({ id: 'a', name: 'João Silva' }),
           buildFavorecido({ id: 'b', name: 'Maria Santos' }),
         ],
+        total: 27,
+        isLoading: false,
+        error: null,
+        hasMore: true,
+        loadMore: vi.fn(),
+      });
+
+      renderFavorecidos();
+
+      expect(
+        screen.getAllByText('Mostrando 1-2 de 27 favorecidos').length
+      ).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  describe('filtering by name', () => {
+    it('sends the typed name to usePaginatedFavorecidos so the server filters the list', async () => {
+      const user = userEvent.setup();
+      mockUsePaginatedFavorecidos.mockReturnValue({
+        favorecidos: [buildFavorecido({ id: 'a', name: 'João Silva' })],
         isLoading: false,
         error: null,
       });
@@ -219,14 +276,16 @@ describe('Favorecidos', () => {
       const input = screen.getByPlaceholderText('Buscar por nome');
       await user.type(input, 'João');
 
-      expect(screen.getAllByText('João Silva').length).toBeGreaterThanOrEqual(1);
-      expect(screen.queryByText('Maria Santos')).not.toBeInTheDocument();
+      expect(mockUsePaginatedFavorecidos).toHaveBeenLastCalledWith({
+        organizationId: ORGANIZATION_ID,
+        filter: { name: 'João', document: '' },
+      });
     });
 
-    it('shows "Nenhum favorecido encontrado" when the filter excludes every favorecido', async () => {
+    it('shows "Nenhum favorecido encontrado" when the server returns nothing for an active filter', async () => {
       const user = userEvent.setup();
-      mockUseFavorecidos.mockReturnValue({
-        favorecidos: [buildFavorecido({ id: 'a', name: 'João Silva' })],
+      mockUsePaginatedFavorecidos.mockReturnValue({
+        favorecidos: [],
         isLoading: false,
         error: null,
       });
@@ -239,16 +298,31 @@ describe('Favorecidos', () => {
 
       expect(screen.getByTestId('favorecidos-no-results')).toBeInTheDocument();
     });
+
+    it('shows the loading spinner instead of "no results" while the filtered request is in flight', async () => {
+      const user = userEvent.setup();
+      mockUsePaginatedFavorecidos.mockReturnValue({
+        favorecidos: [],
+        isLoading: true,
+        error: null,
+      });
+
+      renderFavorecidos();
+
+      await user.click(screen.getByTestId('filter-button'));
+      const input = screen.getByPlaceholderText('Buscar por nome');
+      await user.type(input, 'Anything');
+
+      expect(screen.getByTestId('loading-state')).toBeInTheDocument();
+      expect(screen.queryByTestId('favorecidos-no-results')).not.toBeInTheDocument();
+    });
   });
 
   describe('filtering by document', () => {
-    it('narrows the displayed rows to document matches', async () => {
+    it('sends the typed document to usePaginatedFavorecidos', async () => {
       const user = userEvent.setup();
-      mockUseFavorecidos.mockReturnValue({
-        favorecidos: [
-          buildFavorecido({ id: 'a', name: 'João', document: '12345678901' }),
-          buildFavorecido({ id: 'b', name: 'Maria', document: '98765432100' }),
-        ],
+      mockUsePaginatedFavorecidos.mockReturnValue({
+        favorecidos: [buildFavorecido({ id: 'a', name: 'João', document: '12345678901' })],
         isLoading: false,
         error: null,
       });
@@ -259,15 +333,17 @@ describe('Favorecidos', () => {
       const input = screen.getByPlaceholderText('Buscar por CPF/CNPJ');
       await user.type(input, '123');
 
-      expect(screen.getAllByText('João').length).toBeGreaterThanOrEqual(1);
-      expect(screen.queryByText('Maria')).not.toBeInTheDocument();
+      expect(mockUsePaginatedFavorecidos).toHaveBeenLastCalledWith({
+        organizationId: ORGANIZATION_ID,
+        filter: { name: '', document: '123' },
+      });
     });
   });
 
   describe('filter badge', () => {
     it('shows the filter badge when a filter is active', async () => {
       const user = userEvent.setup();
-      mockUseFavorecidos.mockReturnValue({
+      mockUsePaginatedFavorecidos.mockReturnValue({
         favorecidos: [buildFavorecido({ id: 'a', name: 'João' })],
         isLoading: false,
         error: null,
@@ -286,7 +362,7 @@ describe('Favorecidos', () => {
 
     it('hides the filter badge after clicking "Limpar filtros"', async () => {
       const user = userEvent.setup();
-      mockUseFavorecidos.mockReturnValue({
+      mockUsePaginatedFavorecidos.mockReturnValue({
         favorecidos: [buildFavorecido({ id: 'a', name: 'João' })],
         isLoading: false,
         error: null,
@@ -308,7 +384,7 @@ describe('Favorecidos', () => {
   describe('FavorecidoFormModal integration', () => {
     it('opens the form modal in create mode when "Novo Favorecido" is clicked', async () => {
       const user = userEvent.setup();
-      mockUseFavorecidos.mockReturnValue({
+      mockUsePaginatedFavorecidos.mockReturnValue({
         favorecidos: [],
         isLoading: false,
         error: null,
@@ -328,7 +404,7 @@ describe('Favorecidos', () => {
     it('opens the form modal pre-filled with the selected favorecido when the edit icon is clicked', async () => {
       const user = userEvent.setup();
       const target = buildFavorecido({ id: 'fav-2', name: 'Maria Santos' });
-      mockUseFavorecidos.mockReturnValue({
+      mockUsePaginatedFavorecidos.mockReturnValue({
         favorecidos: [
           buildFavorecido({ id: 'fav-1', name: 'João Silva' }),
           target,
@@ -348,7 +424,7 @@ describe('Favorecidos', () => {
 
     it('closes the form modal when onClose is invoked', async () => {
       const user = userEvent.setup();
-      mockUseFavorecidos.mockReturnValue({
+      mockUsePaginatedFavorecidos.mockReturnValue({
         favorecidos: [],
         isLoading: false,
         error: null,
@@ -366,7 +442,7 @@ describe('Favorecidos', () => {
     it('resets selectedFavorecido to null after closing the edit modal', async () => {
       const user = userEvent.setup();
       const target = buildFavorecido({ id: 'fav-1', name: 'João Silva' });
-      mockUseFavorecidos.mockReturnValue({
+      mockUsePaginatedFavorecidos.mockReturnValue({
         favorecidos: [target],
         isLoading: false,
         error: null,
@@ -390,7 +466,7 @@ describe('Favorecidos', () => {
     it('opens the delete dialog with the selected favorecido when the delete icon is clicked', async () => {
       const user = userEvent.setup();
       const target = buildFavorecido({ id: 'fav-2', name: 'Maria Santos' });
-      mockUseFavorecidos.mockReturnValue({
+      mockUsePaginatedFavorecidos.mockReturnValue({
         favorecidos: [
           buildFavorecido({ id: 'fav-1', name: 'João Silva' }),
           target,
@@ -410,7 +486,7 @@ describe('Favorecidos', () => {
     it('closes the delete dialog when onClose is invoked', async () => {
       const user = userEvent.setup();
       const target = buildFavorecido({ id: 'fav-1', name: 'João Silva' });
-      mockUseFavorecidos.mockReturnValue({
+      mockUsePaginatedFavorecidos.mockReturnValue({
         favorecidos: [target],
         isLoading: false,
         error: null,

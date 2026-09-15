@@ -9,6 +9,14 @@ export interface FavorecidosListProps {
   isLoading: boolean;
   onEdit: (favorecido: FavorecidoDTO) => void;
   onDelete: (favorecido: FavorecidoDTO) => void;
+  /** Renders the DataGrid error state with a retry button calling {@link onRefresh}. */
+  error?: Error | null;
+  onRefresh?: () => void;
+  /** Total on the server; renders the "Mostrando X-Y de Z" footer when provided. */
+  total?: number;
+  /** Infinite scroll is enabled only when {@link onLoadMore} is provided. */
+  hasNextPage?: boolean;
+  onLoadMore?: () => void;
 }
 
 const FAVORECIDO_COLUMNS: Column<FavorecidoDTO>[] = [
@@ -33,6 +41,11 @@ export function FavorecidosList({
   isLoading,
   onEdit,
   onDelete,
+  error,
+  onRefresh,
+  total,
+  hasNextPage,
+  onLoadMore,
 }: FavorecidosListProps) {
   return (
     <DataGrid<FavorecidoDTO>
@@ -43,7 +56,14 @@ export function FavorecidosList({
         <FavorecidoActions favorecido={favorecido} onEdit={onEdit} onDelete={onDelete} />
       )}
       isLoading={isLoading}
+      error={error}
+      errorTitle="Erro ao carregar favorecidos"
+      onRefresh={onRefresh}
       emptyMessage="Nenhum favorecido encontrado"
+      total={total}
+      footerNoun="favorecidos"
+      hasNextPage={hasNextPage}
+      onLoadMore={onLoadMore}
       testIdPrefix="favorecidos"
     />
   );

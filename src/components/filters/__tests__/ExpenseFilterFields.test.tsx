@@ -56,11 +56,15 @@ describe('ExpenseFilterFields', () => {
     vi.clearAllMocks();
     mockUseCategories.mockReturnValue({
       categories: CATEGORIES,
+      total: 0,
+      isTruncated: false,
       isLoading: false,
       error: null,
     });
     mockUseFavorecidos.mockReturnValue({
       favorecidos: FAVORECIDOS,
+      total: 0,
+      isTruncated: false,
       isLoading: false,
       error: null,
     });
@@ -246,6 +250,8 @@ describe('ExpenseFilterFields', () => {
   it('desabilita o select de categoria enquanto as categorias carregam', () => {
     mockUseCategories.mockReturnValue({
       categories: [],
+      total: 0,
+      isTruncated: false,
       isLoading: true,
       error: null,
     });

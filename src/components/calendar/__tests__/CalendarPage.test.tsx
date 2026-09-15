@@ -151,6 +151,8 @@ describe('CalendarPage', () => {
 
   const defaultCategoriesReturn = {
     categories: [] as CategoryDTO[],
+    total: 0,
+    isTruncated: false,
     isLoading: false,
     error: null as Error | null,
   };

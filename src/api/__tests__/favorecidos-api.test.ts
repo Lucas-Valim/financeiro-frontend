@@ -69,13 +69,54 @@ describe('FavorecidosApiService', () => {
       expect(mockedApiClient.get).toHaveBeenCalledWith('/favorecidos?organizationId=org-123');
     });
 
-    it('should extract data from paginated response', async () => {
+    it('should return the paginated response with data and pagination', async () => {
       mockedApiClient.get.mockResolvedValue(mockPaginatedResponse);
 
       const result = await service.fetchFavorecidos(organizationId);
 
-      expect(result).toEqual(mockFavorecidos);
-      expect(result).toHaveLength(2);
+      expect(result).toEqual(mockPaginatedResponse);
+      expect(result.data).toHaveLength(2);
+      expect(result.pagination.total).toBe(2);
+    });
+
+    it('should append page and limit query params when provided', async () => {
+      mockedApiClient.get.mockResolvedValue(mockPaginatedResponse);
+
+      await service.fetchFavorecidos(organizationId, { page: 2, limit: 20 });
+
+      expect(mockedApiClient.get).toHaveBeenCalledWith(
+        '/favorecidos?organizationId=org-123&page=2&limit=20'
+      );
+    });
+
+    it('should append the name filter when provided', async () => {
+      mockedApiClient.get.mockResolvedValue(mockPaginatedResponse);
+
+      await service.fetchFavorecidos(organizationId, { name: 'Silva' });
+
+      expect(mockedApiClient.get).toHaveBeenCalledWith(
+        '/favorecidos?organizationId=org-123&name=Silva'
+      );
+    });
+
+    it('should omit the name filter when it is empty', async () => {
+      mockedApiClient.get.mockResolvedValue(mockPaginatedResponse);
+
+      await service.fetchFavorecidos(organizationId, { name: '', limit: 100 });
+
+      expect(mockedApiClient.get).toHaveBeenCalledWith(
+        '/favorecidos?organizationId=org-123&limit=100'
+      );
+    });
+
+    it('should append the document filter when provided', async () => {
+      mockedApiClient.get.mockResolvedValue(mockPaginatedResponse);
+
+      await service.fetchFavorecidos(organizationId, { document: '12345' });
+
+      expect(mockedApiClient.get).toHaveBeenCalledWith(
+        '/favorecidos?organizationId=org-123&document=12345'
+      );
     });
 
     it('should handle empty favorecidos array', async () => {
@@ -87,8 +128,8 @@ describe('FavorecidosApiService', () => {
 
       const result = await service.fetchFavorecidos(organizationId);
 
-      expect(result).toEqual([]);
-      expect(result).toHaveLength(0);
+      expect(result.data).toEqual([]);
+      expect(result.pagination.total).toBe(0);
     });
 
     it('should handle API errors appropriately', async () => {
@@ -97,29 +138,10 @@ describe('FavorecidosApiService', () => {
       await expect(service.fetchFavorecidos(organizationId)).rejects.toThrow('Internal server error');
     });
 
-    it('should use apiClient internally', async () => {
-      mockedApiClient.get.mockResolvedValue(mockPaginatedResponse);
+    it('should handle network errors', async () => {
+      mockedApiClient.get.mockRejectedValue(new Error('Network error'));
 
-      await service.fetchFavorecidos(organizationId);
-
-      expect(mockedApiClient.get).toHaveBeenCalled();
-    });
-
-    it('should enforce TypeScript types correctly', async () => {
-      mockedApiClient.get.mockResolvedValue(mockPaginatedResponse);
-
-      const result = await service.fetchFavorecidos(organizationId);
-
-      expect(Array.isArray(result)).toBe(true);
-      result.forEach((favorecido) => {
-        expect(typeof favorecido.id).toBe('string');
-        expect(typeof favorecido.name).toBe('string');
-        expect(typeof favorecido.document).toBe('string');
-        expect(typeof favorecido.documentType).toBe('string');
-        expect(typeof favorecido.organizationId).toBe('string');
-        expect(typeof favorecido.createdAt).toBe('string');
-        expect(typeof favorecido.updatedAt).toBe('string');
-      });
+      await expect(service.fetchFavorecidos(organizationId)).rejects.toThrow('Network error');
     });
 
     it('should include different organizationId in URL', async () => {

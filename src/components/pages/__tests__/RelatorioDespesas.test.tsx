@@ -71,11 +71,15 @@ describe('RelatorioDespesas', () => {
     vi.clearAllMocks();
     mockUseCategories.mockReturnValue({
       categories: [],
+      total: 0,
+      isTruncated: false,
       isLoading: false,
       error: null,
     });
     mockUseFavorecidos.mockReturnValue({
       favorecidos: [],
+      total: 0,
+      isTruncated: false,
       isLoading: false,
       error: null,
     });

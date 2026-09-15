@@ -80,11 +80,15 @@ describe('ReportFilterPanel', () => {
     vi.clearAllMocks();
     mockUseCategories.mockReturnValue({
       categories: CATEGORIES,
+      total: 0,
+      isTruncated: false,
       isLoading: false,
       error: null,
     });
     mockUseFavorecidos.mockReturnValue({
       favorecidos: FAVORECIDOS,
+      total: 0,
+      isTruncated: false,
       isLoading: false,
       error: null,
     });
