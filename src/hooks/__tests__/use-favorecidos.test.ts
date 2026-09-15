@@ -4,7 +4,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 import { useFavorecidos } from '../use-favorecidos';
 import { favorecidosApiService } from '../../api/favorecidos-api';
-import type { FavorecidoDTO } from '../../types/favorecidos';
+import { SELECT_OPTIONS_LIMIT } from '../../constants/pagination';
+import type { FavorecidoDTO, FavorecidosListResponse } from '../../types/favorecidos';
 
 vi.mock('../../api/favorecidos-api', () => ({
   favorecidosApiService: {
@@ -47,6 +48,13 @@ const mockFavorecidos: FavorecidoDTO[] = [
   },
 ];
 
+function buildResponse(total: number): FavorecidosListResponse {
+  return {
+    data: mockFavorecidos,
+    pagination: { page: 1, limit: SELECT_OPTIONS_LIMIT, total },
+  };
+}
+
 function createWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -79,11 +87,13 @@ describe('useFavorecidos', () => {
       });
 
       expect(result.current.favorecidos).toEqual([]);
+      expect(result.current.total).toBe(0);
+      expect(result.current.isTruncated).toBe(false);
       expect(result.current.isLoading).toBe(true);
     });
 
-    it('should fetch favorecidos when organizationId provided', async () => {
-      mockedFetchFavorecidos.mockResolvedValue(mockFavorecidos);
+    it('should request the whole list with the select options limit', async () => {
+      mockedFetchFavorecidos.mockResolvedValue(buildResponse(2));
 
       const { result } = renderHook(() => useFavorecidos('org-123'), {
         wrapper: createWrapper(),
@@ -93,12 +103,14 @@ describe('useFavorecidos', () => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      expect(mockedFetchFavorecidos).toHaveBeenCalledWith('org-123');
+      expect(mockedFetchFavorecidos).toHaveBeenCalledWith('org-123', {
+        limit: SELECT_OPTIONS_LIMIT,
+      });
       expect(result.current.favorecidos).toEqual(mockFavorecidos);
     });
 
-    it('should return favorecidos data from query', async () => {
-      mockedFetchFavorecidos.mockResolvedValue(mockFavorecidos);
+    it('should expose the server total and no truncation when everything came', async () => {
+      mockedFetchFavorecidos.mockResolvedValue(buildResponse(2));
 
       const { result } = renderHook(() => useFavorecidos('org-123'), {
         wrapper: createWrapper(),
@@ -108,8 +120,23 @@ describe('useFavorecidos', () => {
         expect(result.current.favorecidos).toHaveLength(2);
       });
 
-      expect(result.current.favorecidos[0].name).toBe('João Silva');
-      expect(result.current.favorecidos[1].name).toBe('Empresa LTDA');
+      expect(result.current.total).toBe(2);
+      expect(result.current.isTruncated).toBe(false);
+    });
+
+    it('should flag truncation when the server total exceeds the received items', async () => {
+      mockedFetchFavorecidos.mockResolvedValue(buildResponse(120));
+
+      const { result } = renderHook(() => useFavorecidos('org-123'), {
+        wrapper: createWrapper(),
+      });
+
+      await waitFor(() => {
+        expect(result.current.favorecidos).toHaveLength(2);
+      });
+
+      expect(result.current.total).toBe(120);
+      expect(result.current.isTruncated).toBe(true);
     });
 
     it('should return error on fetch failure', async () => {
@@ -128,7 +155,9 @@ describe('useFavorecidos', () => {
     });
 
     it('should return isLoading true during fetch', async () => {
-      mockedFetchFavorecidos.mockImplementation(() => new Promise((resolve) => setTimeout(() => resolve(mockFavorecidos), 100)));
+      mockedFetchFavorecidos.mockImplementation(
+        () => new Promise((resolve) => setTimeout(() => resolve(buildResponse(2)), 100))
+      );
 
       const { result } = renderHook(() => useFavorecidos('org-123'), {
         wrapper: createWrapper(),
@@ -142,7 +171,7 @@ describe('useFavorecidos', () => {
     });
 
     it('should use query key ["favorecidos", organizationId]', async () => {
-      mockedFetchFavorecidos.mockResolvedValue(mockFavorecidos);
+      mockedFetchFavorecidos.mockResolvedValue(buildResponse(2));
 
       const queryClient = new QueryClient({
         defaultOptions: { queries: { retry: false } },

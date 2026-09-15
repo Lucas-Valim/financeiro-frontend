@@ -61,13 +61,44 @@ describe('CategoriesApiService', () => {
       expect(mockedApiClient.get).toHaveBeenCalledWith('/categories?organizationId=org-123');
     });
 
-    it('should extract data from paginated response', async () => {
+    it('should return the paginated response with data and pagination', async () => {
       mockedApiClient.get.mockResolvedValue(mockPaginatedResponse);
 
       const result = await service.fetchCategories(organizationId);
 
-      expect(result).toEqual(mockCategories);
-      expect(result).toHaveLength(3);
+      expect(result).toEqual(mockPaginatedResponse);
+      expect(result.data).toHaveLength(3);
+      expect(result.pagination.total).toBe(3);
+    });
+
+    it('should append page and limit query params when provided', async () => {
+      mockedApiClient.get.mockResolvedValue(mockPaginatedResponse);
+
+      await service.fetchCategories(organizationId, { page: 2, limit: 20 });
+
+      expect(mockedApiClient.get).toHaveBeenCalledWith(
+        '/categories?organizationId=org-123&page=2&limit=20'
+      );
+    });
+
+    it('should append the name filter when provided', async () => {
+      mockedApiClient.get.mockResolvedValue(mockPaginatedResponse);
+
+      await service.fetchCategories(organizationId, { name: 'Alimenta' });
+
+      expect(mockedApiClient.get).toHaveBeenCalledWith(
+        '/categories?organizationId=org-123&name=Alimenta'
+      );
+    });
+
+    it('should omit the name filter when it is empty', async () => {
+      mockedApiClient.get.mockResolvedValue(mockPaginatedResponse);
+
+      await service.fetchCategories(organizationId, { name: '', limit: 100 });
+
+      expect(mockedApiClient.get).toHaveBeenCalledWith(
+        '/categories?organizationId=org-123&limit=100'
+      );
     });
 
     it('should handle empty categories array', async () => {
@@ -79,8 +110,8 @@ describe('CategoriesApiService', () => {
 
       const result = await service.fetchCategories(organizationId);
 
-      expect(result).toEqual([]);
-      expect(result).toHaveLength(0);
+      expect(result.data).toEqual([]);
+      expect(result.pagination.total).toBe(0);
     });
 
     it('should handle API errors appropriately', async () => {
@@ -93,43 +124,6 @@ describe('CategoriesApiService', () => {
       mockedApiClient.get.mockRejectedValue(new Error('Network error'));
 
       await expect(service.fetchCategories(organizationId)).rejects.toThrow('Network error');
-    });
-
-    it('should use apiClient internally', async () => {
-      mockedApiClient.get.mockResolvedValue(mockPaginatedResponse);
-
-      await service.fetchCategories(organizationId);
-
-      expect(mockedApiClient.get).toHaveBeenCalled();
-    });
-
-    it('should enforce TypeScript types correctly', async () => {
-      mockedApiClient.get.mockResolvedValue(mockPaginatedResponse);
-
-      const result = await service.fetchCategories(organizationId);
-
-      expect(Array.isArray(result)).toBe(true);
-      result.forEach((category) => {
-        expect(typeof category.id).toBe('string');
-        expect(typeof category.name).toBe('string');
-        expect(typeof category.description).toBe('string');
-        expect(typeof category.organizationId).toBe('string');
-        expect(typeof category.createdAt).toBe('string');
-        expect(typeof category.updatedAt).toBe('string');
-      });
-    });
-
-    it('should return categories with correct structure', async () => {
-      mockedApiClient.get.mockResolvedValue(mockPaginatedResponse);
-
-      const result = await service.fetchCategories(organizationId);
-
-      expect(result[0]).toHaveProperty('id');
-      expect(result[0]).toHaveProperty('name');
-      expect(result[0]).toHaveProperty('description');
-      expect(result[0]).toHaveProperty('organizationId');
-      expect(result[0]).toHaveProperty('createdAt');
-      expect(result[0]).toHaveProperty('updatedAt');
     });
 
     it('should include different organizationId in URL', async () => {
@@ -359,31 +353,6 @@ describe('CategoriesApiService', () => {
       expect(mockedApiClient.delete).toHaveBeenCalledWith(
         '/categories/specific-cat-id?organizationId=org-456'
       );
-    });
-  });
-
-  describe('fetchCategories behavior after extension', () => {
-    const mockPaginatedResponse: CategoriesListResponse = {
-      data: [
-        {
-          id: 'cat-1',
-          organizationId: 'org-123',
-          name: 'Alimentação',
-          description: 'Despesas com alimentação',
-          createdAt: '2024-01-01T00:00:00.000Z',
-          updatedAt: '2024-01-01T00:00:00.000Z',
-        },
-      ],
-      pagination: { page: 1, limit: 20, total: 1 },
-    };
-
-    it('should remain unchanged and still return CategoryDTO[]', async () => {
-      mockedApiClient.get.mockResolvedValue(mockPaginatedResponse);
-
-      const result = await service.fetchCategories('org-123');
-
-      expect(mockedApiClient.get).toHaveBeenCalledWith('/categories?organizationId=org-123');
-      expect(result).toEqual(mockPaginatedResponse.data);
     });
   });
 

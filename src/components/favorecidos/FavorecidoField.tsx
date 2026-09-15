@@ -40,7 +40,12 @@ export interface FavorecidoFieldProps {
  */
 export function FavorecidoField({ organizationId, disabled = false }: FavorecidoFieldProps) {
   const form = useFormContext<FavorecidoFormShape>();
-  const { favorecidos, isLoading: isLoadingFavorecidos } = useFavorecidos(organizationId);
+  const {
+    favorecidos,
+    total,
+    isTruncated,
+    isLoading: isLoadingFavorecidos,
+  } = useFavorecidos(organizationId);
   const [isCreateFavorecidoOpen, setIsCreateFavorecidoOpen] = useState(false);
 
   const favorecidoOptions = favorecidos.map((f: FavorecidoDTO) => ({
@@ -80,6 +85,14 @@ export function FavorecidoField({ organizationId, disabled = false }: Favorecido
                 aria-describedby="favorecidoId-error"
               />
             </FormControl>
+            {isTruncated && (
+              <p
+                data-testid="favorecido-options-truncated"
+                className="text-xs text-muted-foreground"
+              >
+                Exibindo os {favorecidos.length} favorecidos mais recentes de {total}.
+              </p>
+            )}
             <FormMessage id="favorecidoId-error" />
           </FormItem>
         )}

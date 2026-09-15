@@ -1,6 +1,6 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 import { Filter, Loader2, Plus } from 'lucide-react';
-import { useCategories } from '@/hooks/use-categories';
+import { usePaginatedCategories } from '@/hooks/use-paginated-categories';
 import { ORGANIZATION_ID } from '@/constants/expenses';
 import { PageCard } from '@/components/shared/PageCard';
 import { Button } from '@/components/ui/button';
@@ -21,19 +21,11 @@ export function Categorias() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<CategoryDTO | null>(null);
 
-  const { categories, isLoading } = useCategories(ORGANIZATION_ID);
-
-  const filteredCategories = useMemo(() => {
-    const term = filter.name.trim().toLowerCase();
-    if (term === '') return categories;
-    return categories.filter((category) =>
-      category.name.toLowerCase().includes(term)
-    );
-  }, [categories, filter.name]);
+  const { categories, total, isLoading, error, hasMore, loadMore, refetch } =
+    usePaginatedCategories({ organizationId: ORGANIZATION_ID, filter });
 
   const hasActiveFilter = filter.name !== '';
-  const showNoResultsForFilter =
-    hasActiveFilter && filteredCategories.length === 0 && categories.length > 0;
+  const showNoResultsForFilter = hasActiveFilter && !isLoading && categories.length === 0;
 
   const handleOpenFilterModal = useCallback(() => {
     setIsFilterModalOpen(true);
@@ -124,10 +116,15 @@ export function Categorias() {
             </div>
           ) : (
             <CategoriesList
-              categories={filteredCategories}
+              categories={categories}
               isLoading={isLoading}
               onEdit={handleEditCategory}
               onDelete={handleDeleteCategory}
+              error={error}
+              onRefresh={refetch}
+              total={total}
+              hasNextPage={hasMore}
+              onLoadMore={loadMore}
             />
           )}
         </div>

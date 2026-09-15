@@ -1,13 +1,35 @@
 import { apiClient } from '../lib/api-client';
-import type { CategoryDTO, CategoriesListResponse, CreateCategoryInput, UpdateCategoryInput } from '../types/categories';
+import type {
+  CategoryDTO,
+  CategoriesListResponse,
+  CreateCategoryInput,
+  ListCategoriesParams,
+  UpdateCategoryInput,
+} from '../types/categories';
+
+/**
+ * `organizationId` goes inline in the URL on purpose: the api-client
+ * interceptor only injects it for `/expenses`, `/reports` and
+ * `/recurring-expenses`. Optional params are appended only when present so the
+ * backend defaults (`page=1`, `limit=20`) apply untouched.
+ */
+function buildListQuery(organizationId: string, params: ListCategoriesParams): URLSearchParams {
+  const query = new URLSearchParams({ organizationId });
+  if (params.page !== undefined) query.set('page', String(params.page));
+  if (params.limit !== undefined) query.set('limit', String(params.limit));
+  if (params.name) query.set('name', params.name);
+  return query;
+}
 
 export class CategoriesApiService {
-  async fetchCategories(organizationId: string): Promise<CategoryDTO[]> {
-    const params = new URLSearchParams({ organizationId });
-    const response = await apiClient.get<CategoriesListResponse>(
-      `/categories?${params}`
-    ) as unknown as CategoriesListResponse;
-    return response.data;
+  async fetchCategories(
+    organizationId: string,
+    params: ListCategoriesParams = {}
+  ): Promise<CategoriesListResponse> {
+    const query = buildListQuery(organizationId, params);
+    return apiClient.get<CategoriesListResponse>(
+      `/categories?${query}`
+    ) as unknown as Promise<CategoriesListResponse>;
   }
 
   async create(input: CreateCategoryInput): Promise<CategoryDTO> {

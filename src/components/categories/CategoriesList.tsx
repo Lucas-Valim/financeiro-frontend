@@ -8,6 +8,14 @@ export interface CategoriesListProps {
   isLoading: boolean;
   onEdit: (category: CategoryDTO) => void;
   onDelete: (category: CategoryDTO) => void;
+  /** Renders the DataGrid error state with a retry button calling {@link onRefresh}. */
+  error?: Error | null;
+  onRefresh?: () => void;
+  /** Total on the server; renders the "Mostrando X-Y de Z" footer when provided. */
+  total?: number;
+  /** Infinite scroll is enabled only when {@link onLoadMore} is provided. */
+  hasNextPage?: boolean;
+  onLoadMore?: () => void;
 }
 
 const CATEGORY_COLUMNS: Column<CategoryDTO>[] = [
@@ -32,6 +40,11 @@ export function CategoriesList({
   isLoading,
   onEdit,
   onDelete,
+  error,
+  onRefresh,
+  total,
+  hasNextPage,
+  onLoadMore,
 }: CategoriesListProps) {
   return (
     <DataGrid<CategoryDTO>
@@ -42,7 +55,14 @@ export function CategoriesList({
         <CategoryActions category={category} onEdit={onEdit} onDelete={onDelete} />
       )}
       isLoading={isLoading}
+      error={error}
+      errorTitle="Erro ao carregar categorias"
+      onRefresh={onRefresh}
       emptyMessage="Nenhuma categoria cadastrada. Crie uma agora."
+      total={total}
+      footerNoun="categorias"
+      hasNextPage={hasNextPage}
+      onLoadMore={onLoadMore}
       testIdPrefix="categories"
     />
   );

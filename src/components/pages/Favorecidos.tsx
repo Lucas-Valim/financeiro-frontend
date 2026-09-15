@@ -1,6 +1,6 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 import { Filter, Loader2, Plus } from 'lucide-react';
-import { useFavorecidos } from '@/hooks/use-favorecidos';
+import { usePaginatedFavorecidos } from '@/hooks/use-paginated-favorecidos';
 import { ORGANIZATION_ID } from '@/constants/expenses';
 import { PageCard } from '@/components/shared/PageCard';
 import { Button } from '@/components/ui/button';
@@ -21,23 +21,11 @@ export function Favorecidos() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedFavorecido, setSelectedFavorecido] = useState<FavorecidoDTO | null>(null);
 
-  const { favorecidos, isLoading } = useFavorecidos(ORGANIZATION_ID);
-
-  const filteredFavorecidos = useMemo(() => {
-    const nameTerm = filter.name.trim().toLowerCase();
-    const documentTerm = filter.document.replace(/\D/g, '');
-    if (nameTerm === '' && documentTerm === '') return favorecidos;
-    return favorecidos.filter((fav) => {
-      const matchesName = nameTerm === '' || fav.name.toLowerCase().includes(nameTerm);
-      const matchesDocument =
-        documentTerm === '' || (fav.document ?? '').includes(documentTerm);
-      return matchesName && matchesDocument;
-    });
-  }, [favorecidos, filter.name, filter.document]);
+  const { favorecidos, total, isLoading, error, hasMore, loadMore, refetch } =
+    usePaginatedFavorecidos({ organizationId: ORGANIZATION_ID, filter });
 
   const hasActiveFilter = filter.name !== '' || filter.document !== '';
-  const showNoResultsForFilter =
-    hasActiveFilter && filteredFavorecidos.length === 0 && favorecidos.length > 0;
+  const showNoResultsForFilter = hasActiveFilter && !isLoading && favorecidos.length === 0;
 
   const handleOpenFilterModal = useCallback(() => {
     setIsFilterModalOpen(true);
@@ -128,10 +116,15 @@ export function Favorecidos() {
             </div>
           ) : (
             <FavorecidosList
-              favorecidos={filteredFavorecidos}
+              favorecidos={favorecidos}
               isLoading={isLoading}
               onEdit={handleEditFavorecido}
               onDelete={handleDeleteFavorecido}
+              error={error}
+              onRefresh={refetch}
+              total={total}
+              hasNextPage={hasMore}
+              onLoadMore={loadMore}
             />
           )}
         </div>

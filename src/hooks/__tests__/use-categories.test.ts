@@ -4,7 +4,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 import { useCategories } from '../use-categories';
 import { categoriesApiService } from '../../api/categories-api';
-import type { CategoryDTO } from '../../types/categories';
+import { SELECT_OPTIONS_LIMIT } from '../../constants/pagination';
+import type { CategoriesListResponse, CategoryDTO } from '../../types/categories';
 
 vi.mock('../../api/categories-api', () => ({
   categoriesApiService: {
@@ -30,6 +31,13 @@ const mockCategories: CategoryDTO[] = [
     updatedAt: '2024-01-01T00:00:00.000Z',
   },
 ];
+
+function buildResponse(total: number): CategoriesListResponse {
+  return {
+    data: mockCategories,
+    pagination: { page: 1, limit: SELECT_OPTIONS_LIMIT, total },
+  };
+}
 
 function createWrapper() {
   const queryClient = new QueryClient({
@@ -63,11 +71,13 @@ describe('useCategories', () => {
       });
 
       expect(result.current.categories).toEqual([]);
+      expect(result.current.total).toBe(0);
+      expect(result.current.isTruncated).toBe(false);
       expect(result.current.isLoading).toBe(true);
     });
 
-    it('should fetch categories when organizationId provided', async () => {
-      mockedFetchCategories.mockResolvedValue(mockCategories);
+    it('should request the whole list with the select options limit', async () => {
+      mockedFetchCategories.mockResolvedValue(buildResponse(2));
 
       const { result } = renderHook(() => useCategories('org-123'), {
         wrapper: createWrapper(),
@@ -77,12 +87,14 @@ describe('useCategories', () => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      expect(mockedFetchCategories).toHaveBeenCalledWith('org-123');
+      expect(mockedFetchCategories).toHaveBeenCalledWith('org-123', {
+        limit: SELECT_OPTIONS_LIMIT,
+      });
       expect(result.current.categories).toEqual(mockCategories);
     });
 
-    it('should return categories from successful fetch', async () => {
-      mockedFetchCategories.mockResolvedValue(mockCategories);
+    it('should expose the server total and no truncation when everything came', async () => {
+      mockedFetchCategories.mockResolvedValue(buildResponse(2));
 
       const { result } = renderHook(() => useCategories('org-123'), {
         wrapper: createWrapper(),
@@ -92,8 +104,23 @@ describe('useCategories', () => {
         expect(result.current.categories).toHaveLength(2);
       });
 
-      expect(result.current.categories[0].name).toBe('Combustível');
-      expect(result.current.categories[1].name).toBe('Alimentação');
+      expect(result.current.total).toBe(2);
+      expect(result.current.isTruncated).toBe(false);
+    });
+
+    it('should flag truncation when the server total exceeds the received items', async () => {
+      mockedFetchCategories.mockResolvedValue(buildResponse(150));
+
+      const { result } = renderHook(() => useCategories('org-123'), {
+        wrapper: createWrapper(),
+      });
+
+      await waitFor(() => {
+        expect(result.current.categories).toHaveLength(2);
+      });
+
+      expect(result.current.total).toBe(150);
+      expect(result.current.isTruncated).toBe(true);
     });
 
     it('should return error on fetch failure', async () => {
@@ -112,7 +139,9 @@ describe('useCategories', () => {
     });
 
     it('should return isLoading true during fetch', async () => {
-      mockedFetchCategories.mockImplementation(() => new Promise((resolve) => setTimeout(() => resolve(mockCategories), 100)));
+      mockedFetchCategories.mockImplementation(
+        () => new Promise((resolve) => setTimeout(() => resolve(buildResponse(2)), 100))
+      );
 
       const { result } = renderHook(() => useCategories('org-123'), {
         wrapper: createWrapper(),
@@ -125,8 +154,11 @@ describe('useCategories', () => {
       });
     });
 
-    it('should return empty array when data is undefined', async () => {
-      mockedFetchCategories.mockResolvedValue([]);
+    it('should return empty array when the response has no data', async () => {
+      mockedFetchCategories.mockResolvedValue({
+        data: [],
+        pagination: { page: 1, limit: SELECT_OPTIONS_LIMIT, total: 0 },
+      });
 
       const { result } = renderHook(() => useCategories('org-123'), {
         wrapper: createWrapper(),
@@ -137,6 +169,7 @@ describe('useCategories', () => {
       });
 
       expect(result.current.categories).toEqual([]);
+      expect(result.current.isTruncated).toBe(false);
     });
   });
 

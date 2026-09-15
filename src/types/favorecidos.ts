@@ -28,6 +28,16 @@ export interface FavorecidosListResponse {
   pagination: Pagination;
 }
 
+/** Query params accepted by `GET /favorecidos` besides `organizationId`. */
+export interface ListFavorecidosParams {
+  page?: number;
+  limit?: number;
+  /** Case-insensitive substring match on the name (backend `iLike`). */
+  name?: string;
+  /** Substring match on the digits-only document (backend `iLike`). */
+  document?: string;
+}
+
 export interface CreateFavorecidoInput {
   organizationId: string;
   name: string;

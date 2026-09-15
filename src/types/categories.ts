@@ -18,6 +18,14 @@ export interface CategoriesListResponse {
   pagination: Pagination;
 }
 
+/** Query params accepted by `GET /categories` besides `organizationId`. */
+export interface ListCategoriesParams {
+  page?: number;
+  limit?: number;
+  /** Case-insensitive substring match on the name (backend `iLike`). */
+  name?: string;
+}
+
 export interface CreateCategoryInput {
   organizationId: string;
   name: string;
