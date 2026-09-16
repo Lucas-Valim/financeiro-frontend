@@ -58,7 +58,7 @@ describe('ApiClient', () => {
 
   it('should have defaults configured', () => {
     expect(apiClient.defaults).toBeDefined();
-    expect(apiClient.defaults.timeout).toBe(10000);
+    expect(apiClient.defaults.timeout).toBe(90000);
     expect(apiClient.defaults.headers['Content-Type']).toBe('application/json');
   });
 });
