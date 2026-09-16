@@ -1,8 +1,8 @@
 import axios from 'axios';
 import type { AxiosInstance, AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 import { ORGANIZATION_ID } from '../constants/expenses';
-
-const API_TIMEOUT = 10000;
+import { COLD_START_TIMEOUT_MS } from '../constants/api';
+import { RequestTimeoutError } from './api-errors';
 
 /**
  * URL prefixes whose requests get the organization scope injected. The report
@@ -30,7 +30,7 @@ export function injectOrganizationId(
 function createApiClient(): AxiosInstance {
   const instance = axios.create({
     baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
-    timeout: API_TIMEOUT,
+    timeout: COLD_START_TIMEOUT_MS,
     headers: {
       'Content-Type': 'application/json',
     },
@@ -43,24 +43,42 @@ function createApiClient(): AxiosInstance {
 
   instance.interceptors.response.use(
     (response: AxiosResponse) => response.data,
-    (error: unknown) => {
-      if (axios.isAxiosError(error)) {
-        const axiosError = error as AxiosError;
-        if (axiosError.response) {
-          const status = axiosError.response.status;
-          const message = axiosError.response.data as { message?: string } | undefined;
-          const errorMessage = message?.message || getErrorMessageByStatus(status);
-          throw new Error(errorMessage);
-        }
-        if (axiosError.request) {
-          throw new Error('Erro de rede: Não foi possível conectar ao servidor');
-        }
-      }
-      throw error;
-    }
+    translateResponseError
   );
 
   return instance;
+}
+
+/**
+ * Translates an axios failure into the error the UI reacts to. Exported for the
+ * same reason `injectOrganizationId` is: it carries branching worth testing on
+ * its own, without standing up a server.
+ */
+export function translateResponseError(error: unknown): never {
+  if (axios.isAxiosError(error)) {
+    const axiosError = error as AxiosError;
+    if (axiosError.response) {
+      const status = axiosError.response.status;
+      const message = axiosError.response.data as { message?: string } | undefined;
+      const errorMessage = message?.message || getErrorMessageByStatus(status);
+      throw new Error(errorMessage);
+    }
+    if (isTimeout(axiosError)) {
+      throw new RequestTimeoutError();
+    }
+    if (axiosError.request) {
+      throw new Error('Erro de rede: Não foi possível conectar ao servidor');
+    }
+  }
+  throw error;
+}
+
+/**
+ * Axios reports an exhausted timeout as `ECONNABORTED`, and some environments
+ * surface the underlying `ETIMEDOUT` instead. Both mean the same thing here.
+ */
+function isTimeout(error: AxiosError): boolean {
+  return error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT';
 }
 
 function getErrorMessageByStatus(status: number): string {

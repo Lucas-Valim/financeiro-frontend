@@ -209,7 +209,7 @@ describe('ExpensesGrid', () => {
       render(<ExpensesGrid {...defaultProps} error={error} />);
 
       expect(screen.getByTestId('error-state')).toBeInTheDocument();
-      expect(screen.getByText('Error loading expenses')).toBeInTheDocument();
+      expect(screen.getByText('Erro ao carregar despesas')).toBeInTheDocument();
       expect(screen.getByText('Failed to fetch expenses')).toBeInTheDocument();
     });
 

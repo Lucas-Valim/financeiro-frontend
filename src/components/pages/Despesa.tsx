@@ -2,6 +2,8 @@ import { useState, useCallback } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useExpenses } from '@/hooks/use-expenses';
 import { useExpensesSummary } from '@/hooks/use-expenses-summary';
+import { useSlowRequestNotice } from '@/hooks/use-slow-request-notice';
+import { RequestTimeoutError } from '@/lib/api-errors';
 import { StatusCards } from '@/components/status-cards/StatusCards';
 import { FilterModal } from '@/components/filter-modal/FilterModal';
 import { ExpensesGrid } from '@/components/expenses-grid/ExpensesGrid';
@@ -35,7 +37,10 @@ export function Despesa() {
     reset,
   } = useExpenses({ filters });
 
-  const { summary } = useExpensesSummary({ filters });
+  const { summary, error: summaryError } = useExpensesSummary({ filters });
+
+  const isTakingLong = useSlowRequestNotice(isLoading);
+  const isTimeout = error instanceof RequestTimeoutError;
 
   const handleOpenFilterModal = useCallback(() => {
     setIsFilterModalOpen(true);
@@ -119,11 +124,15 @@ export function Despesa() {
         >
           <AlertCircle className="h-12 w-12 text-destructive mb-4" />
           <h3 className="text-lg font-semibold mb-2">
-            Erro ao carregar despesas
+            {isTimeout
+              ? 'O servidor não respondeu a tempo'
+              : 'Erro ao carregar despesas'}
           </h3>
           <p className="text-muted-foreground mb-4">
-            {(error as Error)?.message ||
-              'Ocorreu um erro inesperado ao carregar as despesas'}
+            {isTimeout
+              ? 'O servidor pode estar iniciando após um período de inatividade. Tente novamente em alguns instantes.'
+              : (error as Error)?.message ||
+                'Ocorreu um erro inesperado ao carregar as despesas'}
           </p>
           <Button onClick={handleRefresh} variant="outline">
             Tentar Novamente
@@ -161,11 +170,21 @@ export function Despesa() {
           </Button>
 
           <div className="flex-1 flex justify-center">
-            <StatusCards
-              summary={summary}
-              onCardClick={handleFilterByStatus}
-              activeStatus={filters.status || null}
-            />
+            {summaryError ? (
+              <div
+                className="flex items-center gap-2 text-sm text-muted-foreground"
+                data-testid="summary-error"
+              >
+                <AlertCircle className="h-4 w-4 text-destructive" />
+                Não foi possível carregar os totais por status.
+              </div>
+            ) : (
+              <StatusCards
+                summary={summary}
+                onCardClick={handleFilterByStatus}
+                activeStatus={filters.status || null}
+              />
+            )}
           </div>
 
           {!isDefaultExpenseFilters(filters) && (
@@ -189,7 +208,9 @@ export function Despesa() {
             >
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
               <span className="ml-2 text-muted-foreground">
-                Carregando despesas...
+                {isTakingLong
+                  ? 'O servidor está iniciando. Isso pode levar até 1 minuto...'
+                  : 'Carregando despesas...'}
               </span>
             </div>
           ) : (

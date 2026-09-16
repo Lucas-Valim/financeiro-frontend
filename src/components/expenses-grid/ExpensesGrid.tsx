@@ -28,7 +28,7 @@ export function ExpensesGrid({
       actionsLabel="Actions"
       isLoading={isLoading}
       error={error}
-      errorTitle="Error loading expenses"
+      errorTitle="Erro ao carregar despesas"
       onRefresh={onRefresh}
       emptyMessage="Nenhuma despesa encontrada"
       hasNextPage={hasNextPage}
