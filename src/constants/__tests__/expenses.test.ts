@@ -11,6 +11,9 @@ import {
   isDefaultExpenseFilters,
   isExpenseEditable,
   isExpenseCancellable,
+  isServiceInvoiceAttachable,
+  ATTACH_SERVICE_INVOICE_ERROR_MESSAGES,
+  translateAttachServiceInvoiceError,
   CANCEL_EXPENSE_ERROR_MESSAGES,
   translateCancelExpenseError,
   requiresAmountConfirmation,
@@ -204,6 +207,66 @@ describe('Constants', () => {
 
     it('should return false for CANCELLED status', () => {
       expect(isExpenseCancellable(ExpenseStatus.CANCELLED)).toBe(false);
+    });
+  });
+
+  describe('isServiceInvoiceAttachable', () => {
+    it('should return true for OPEN status', () => {
+      expect(isServiceInvoiceAttachable(ExpenseStatus.OPEN)).toBe(true);
+    });
+
+    it('should return true for OVERDUE status', () => {
+      expect(isServiceInvoiceAttachable(ExpenseStatus.OVERDUE)).toBe(true);
+    });
+
+    // O ponto da regra: a nota costuma chegar depois do pagamento.
+    it('should return true for PAID status, unlike isExpenseEditable', () => {
+      expect(isServiceInvoiceAttachable(ExpenseStatus.PAID)).toBe(true);
+      expect(isExpenseEditable(ExpenseStatus.PAID)).toBe(false);
+    });
+
+    it('should return false for CANCELLED status', () => {
+      expect(isServiceInvoiceAttachable(ExpenseStatus.CANCELLED)).toBe(false);
+    });
+  });
+
+  describe('translateAttachServiceInvoiceError', () => {
+    it('should map the status-guard message to the not-attachable text', () => {
+      expect(
+        translateAttachServiceInvoiceError(
+          'Cannot attach service invoice to expense with status CANCELLED'
+        )
+      ).toBe(ATTACH_SERVICE_INVOICE_ERROR_MESSAGES.NOT_ATTACHABLE);
+    });
+
+    it('should map the missing-file message to the file-required text', () => {
+      expect(
+        translateAttachServiceInvoiceError('Service invoice file is required')
+      ).toBe(ATTACH_SERVICE_INVOICE_ERROR_MESSAGES.FILE_REQUIRED);
+    });
+
+    it('should map the domain not-found message to the not-found text', () => {
+      expect(
+        translateAttachServiceInvoiceError('Expense with ID abc not found')
+      ).toBe(ATTACH_SERVICE_INVOICE_ERROR_MESSAGES.NOT_FOUND);
+    });
+
+    it('should map the api-client 404 fallback to the not-found text', () => {
+      expect(translateAttachServiceInvoiceError('Resource not found')).toBe(
+        ATTACH_SERVICE_INVOICE_ERROR_MESSAGES.NOT_FOUND
+      );
+    });
+
+    it('should fall back to the generic text for an unknown message', () => {
+      expect(translateAttachServiceInvoiceError('Internal server error')).toBe(
+        ATTACH_SERVICE_INVOICE_ERROR_MESSAGES.DEFAULT
+      );
+    });
+
+    it('should fall back to the generic text for an empty message', () => {
+      expect(translateAttachServiceInvoiceError('')).toBe(
+        ATTACH_SERVICE_INVOICE_ERROR_MESSAGES.DEFAULT
+      );
     });
   });
 

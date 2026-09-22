@@ -958,6 +958,74 @@ describe('ExpensesApiService', () => {
     });
   });
 
+  describe('attachServiceInvoice', () => {
+    const paidExpense = {
+      id: '1',
+      status: ExpenseStatus.PAID,
+      serviceInvoiceUrl: 'https://storage.test/bank-bill/nota.pdf',
+    } as ExpenseDTO;
+
+    const invoiceFile = new File(['nota'], 'nota.pdf', {
+      type: 'application/pdf',
+    });
+
+    it('should PUT to the dedicated service-invoice route as multipart', async () => {
+      mockedApiClient.put.mockResolvedValue(paidExpense);
+
+      await service.attachServiceInvoice({ id: '1', serviceInvoice: invoiceFile });
+
+      expect(mockedApiClient.put).toHaveBeenCalledTimes(1);
+      const [url, body, config] = mockedApiClient.put.mock.calls[0];
+      expect(url).toBe('/expenses/1/service-invoice');
+      expect(body).toBeInstanceOf(FormData);
+      expect(config).toEqual({
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+    });
+
+    // A rota é separada de propósito: `PUT /expenses/:id` é o fluxo de edição,
+    // que a despesa paga recusa por inteiro com 403.
+    it('should not reuse the edit route', async () => {
+      mockedApiClient.put.mockResolvedValue(paidExpense);
+
+      await service.attachServiceInvoice({ id: '1', serviceInvoice: invoiceFile });
+
+      expect(mockedApiClient.put.mock.calls[0][0]).not.toBe('/expenses/1');
+    });
+
+    it('should send the file under the serviceInvoice field', async () => {
+      mockedApiClient.put.mockResolvedValue(paidExpense);
+
+      await service.attachServiceInvoice({ id: '1', serviceInvoice: invoiceFile });
+
+      const formData = mockedApiClient.put.mock.calls[0][1] as FormData;
+      expect(formData.get('serviceInvoice')).toBe(invoiceFile);
+    });
+
+    it('should return the updated expense returned by the backend', async () => {
+      mockedApiClient.put.mockResolvedValue(paidExpense);
+
+      const result = await service.attachServiceInvoice({
+        id: '1',
+        serviceInvoice: invoiceFile,
+      });
+
+      expect(result.serviceInvoiceUrl).toBe(
+        'https://storage.test/bank-bill/nota.pdf'
+      );
+    });
+
+    it('should propagate the backend error when the expense is cancelled', async () => {
+      mockedApiClient.put.mockRejectedValue(
+        new Error('Cannot attach service invoice to expense with status CANCELLED')
+      );
+
+      await expect(
+        service.attachServiceInvoice({ id: '1', serviceInvoice: invoiceFile })
+      ).rejects.toThrow('Cannot attach service invoice to expense with status CANCELLED');
+    });
+  });
+
   describe('resyncCalendar', () => {
     const syncedResponse: ResyncCalendarOutput = {
       calendarSyncStatus: 'SYNCED',

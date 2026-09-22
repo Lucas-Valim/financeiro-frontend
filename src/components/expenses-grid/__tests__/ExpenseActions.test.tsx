@@ -18,6 +18,19 @@ vi.mock('@/components/payment/PaymentModal', () => ({
   }),
 }));
 
+vi.mock('@/components/expenses/AttachServiceInvoiceModal', () => ({
+  AttachServiceInvoiceModal: vi.fn(({ isOpen, onClose, expense }) => {
+    if (!isOpen || !expense) return null;
+    return (
+      <div data-testid="attach-invoice-modal" data-expense-id={expense.id}>
+        <button onClick={onClose} data-testid="close-attach-invoice-modal-button">
+          Fechar
+        </button>
+      </div>
+    );
+  }),
+}));
+
 vi.mock('@/components/expenses/ExpenseCancelDialog', () => ({
   ExpenseCancelDialog: vi.fn(({ isOpen, onClose, expense }) => {
     if (!isOpen || !expense) return null;
@@ -213,6 +226,78 @@ describe('ExpenseActions', () => {
       await user.click(screen.getByText('Ver Detalhes'));
 
       expect(onEdit).toHaveBeenCalledWith(paidExpense);
+    });
+  });
+
+  describe('Attach Service Invoice Action', () => {
+    // A nota costuma chegar depois do pagamento, e na despesa paga o formulário
+    // abre somente-leitura — sem este item não haveria por onde enviá-la.
+    it('shows "Anexar nota de serviço" for PAID status', async () => {
+      const user = userEvent.setup();
+      render(<ExpenseActions expense={{ ...mockExpense, status: ExpenseStatus.PAID }} />);
+
+      await user.click(screen.getByRole('button'));
+
+      expect(screen.getByText('Anexar nota de serviço')).toBeInTheDocument();
+    });
+
+    // Em OPEN/OVERDUE o anexo continua sendo pelo "Editar": um segundo caminho
+    // para a mesma coisa só dividiria a atenção.
+    it('does NOT show it for OPEN status, where Editar already attaches', async () => {
+      const user = userEvent.setup();
+      render(<ExpenseActions expense={{ ...mockExpense, status: ExpenseStatus.OPEN }} />);
+
+      await user.click(screen.getByRole('button'));
+
+      expect(screen.queryByText('Anexar nota de serviço')).not.toBeInTheDocument();
+    });
+
+    it('does NOT show it for OVERDUE status', async () => {
+      const user = userEvent.setup();
+      render(<ExpenseActions expense={{ ...mockExpense, status: ExpenseStatus.OVERDUE }} />);
+
+      await user.click(screen.getByRole('button'));
+
+      expect(screen.queryByText('Anexar nota de serviço')).not.toBeInTheDocument();
+    });
+
+    it('does NOT show it for CANCELLED status', async () => {
+      const user = userEvent.setup();
+      render(<ExpenseActions expense={{ ...mockExpense, status: ExpenseStatus.CANCELLED }} />);
+
+      await user.click(screen.getByRole('button'));
+
+      expect(screen.queryByText('Anexar nota de serviço')).not.toBeInTheDocument();
+    });
+
+    it('does not render the modal initially', () => {
+      render(<ExpenseActions expense={{ ...mockExpense, status: ExpenseStatus.PAID }} />);
+
+      expect(screen.queryByTestId('attach-invoice-modal')).not.toBeInTheDocument();
+    });
+
+    it('opens the modal with the expense when the item is selected', async () => {
+      const user = userEvent.setup();
+      const paidExpense = { ...mockExpense, status: ExpenseStatus.PAID };
+      render(<ExpenseActions expense={paidExpense} />);
+
+      await user.click(screen.getByRole('button'));
+      await user.click(screen.getByText('Anexar nota de serviço'));
+
+      const modal = screen.getByTestId('attach-invoice-modal');
+      expect(modal).toBeInTheDocument();
+      expect(modal).toHaveAttribute('data-expense-id', paidExpense.id);
+    });
+
+    it('closes the modal when it asks to be closed', async () => {
+      const user = userEvent.setup();
+      render(<ExpenseActions expense={{ ...mockExpense, status: ExpenseStatus.PAID }} />);
+
+      await user.click(screen.getByRole('button'));
+      await user.click(screen.getByText('Anexar nota de serviço'));
+      await user.click(screen.getByTestId('close-attach-invoice-modal-button'));
+
+      expect(screen.queryByTestId('attach-invoice-modal')).not.toBeInTheDocument();
     });
   });
 

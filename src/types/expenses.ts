@@ -82,6 +82,16 @@ export interface UpdateExpenseInput {
   bankBill?: File | null;
 }
 
+/**
+ * Corpo do anexo da nota de serviço (`PUT /expenses/:id/service-invoice`). O
+ * arquivo é obrigatório: esta rota existe só para enviá-lo, e o backend responde
+ * `422` sem ele.
+ */
+export interface AttachServiceInvoiceInput {
+  id: string;
+  serviceInvoice: File;
+}
+
 export interface ExpenseFilter {
   status?: ExpenseStatus;
   receiver?: string;
