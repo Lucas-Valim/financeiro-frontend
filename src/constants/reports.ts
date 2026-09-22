@@ -1,5 +1,16 @@
 import { startOfMonth, endOfMonth } from 'date-fns';
-import type { ReportFilter } from '@/types/reports';
+import type { MissingDocument, ReportFilter } from '@/types/reports';
+
+/**
+ * Labels of the documents the report can flag as missing, in the words the
+ * client and the accounting use. The key set is the backend's
+ * `ExpenseReportMissingDocument`; a new kind on the server must land here too,
+ * or the chip would render nothing.
+ */
+export const MISSING_DOCUMENT_LABELS: Record<MissingDocument, string> = {
+  serviceInvoice: 'Nota fiscal',
+  paymentProof: 'Comprovante de pagamento',
+};
 
 /**
  * Timeout for the export call. Overrides the global `API_TIMEOUT` (10s), which

@@ -2,6 +2,7 @@ import type { LucideIcon } from 'lucide-react';
 import { AlertCircle, AlertTriangle, Paperclip, Receipt, Wallet } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { MissingDocumentsAlert } from '@/components/reports/MissingDocumentsAlert';
 import { formatCurrency } from '@/lib/formatCurrency';
 import type { ExpenseReportSummary } from '@/types/reports';
 
@@ -38,10 +39,11 @@ function MetricCard({ icon: Icon, label, value, testId, highlight }: MetricCardP
  * Pre-export summary: the four figures the client checks before committing to
  * the export — expense count, total amount, attachment count and the count of
  * expenses with no attachment at all. It also raises two text-first advisories:
- * a missing-attachment alert (only when that count is above zero) and a
- * cap-exceeded warning that reports how many expenses were found against the
- * server-provided `exportLimit`. Neither advisory suggests or applies an
- * alternative selection — the screen only informs.
+ * the missing-documents panel, which lists WHICH expenses still need a document
+ * (only when there is at least one), and a cap-exceeded warning that reports
+ * how many expenses were found against the server-provided `exportLimit`.
+ * Neither advisory suggests or applies an alternative selection — the screen
+ * only informs.
  */
 export function ExportSummary({ summary, isLoading }: ExportSummaryProps) {
   if (isLoading || !summary) {
@@ -62,6 +64,7 @@ export function ExportSummary({ summary, isLoading }: ExportSummaryProps) {
     totalAmount,
     attachmentCount,
     expensesWithoutAttachments,
+    expensesWithMissingDocuments,
     exportLimit,
     exceedsLimit,
   } = summary;
@@ -96,27 +99,7 @@ export function ExportSummary({ summary, isLoading }: ExportSummaryProps) {
         />
       </div>
 
-      {expensesWithoutAttachments > 0 && (
-        <div
-          role="alert"
-          data-testid="no-attachments-alert"
-          className="flex items-start gap-3 rounded-lg border border-destructive/50 p-4"
-        >
-          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
-          <div>
-            <p className="font-semibold">
-              {expensesWithoutAttachments}{' '}
-              {expensesWithoutAttachments === 1
-                ? 'despesa sem nenhum comprovante'
-                : 'despesas sem nenhum comprovante'}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Estas despesas entrarão no pacote sem qualquer arquivo anexado.
-              Revise-as antes de enviar o relatório para a contabilidade.
-            </p>
-          </div>
-        </div>
-      )}
+      <MissingDocumentsAlert items={expensesWithMissingDocuments} />
 
       {exceedsLimit && (
         <div

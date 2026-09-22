@@ -1,7 +1,27 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ExportSummary } from '../ExportSummary';
-import type { ExpenseReportSummary } from '@/types/reports';
+import { ExpenseStatus } from '@/constants/expenses';
+import type {
+  ExpenseReportSummary,
+  ExpenseWithMissingDocuments,
+} from '@/types/reports';
+
+function buildMissingItem(
+  overrides: Partial<ExpenseWithMissingDocuments> = {}
+): ExpenseWithMissingDocuments {
+  return {
+    id: 'expense-1',
+    description: 'Aluguel sala',
+    favorecidoName: 'Imobiliária Silva',
+    dueDate: '2026-09-05T00:00:00.000Z',
+    amount: 1200,
+    status: ExpenseStatus.OPEN,
+    missingDocuments: ['serviceInvoice'],
+    hasNoAttachments: false,
+    ...overrides,
+  };
+}
 
 function buildSummary(
   overrides: Partial<ExpenseReportSummary> = {}
@@ -11,6 +31,7 @@ function buildSummary(
     totalAmount: 12480,
     attachmentCount: 97,
     expensesWithoutAttachments: 0,
+    expensesWithMissingDocuments: [],
     exportLimit: 100,
     exceedsLimit: false,
     ...overrides,
@@ -45,44 +66,62 @@ describe('ExportSummary', () => {
     );
   });
 
-  it('mostra o alerta com a quantidade quando há despesas sem comprovante', () => {
+  it('mostra o painel com a quantidade e as despesas quando há documento faltando', () => {
     render(
       <ExportSummary
-        summary={buildSummary({ expensesWithoutAttachments: 3 })}
+        summary={buildSummary({
+          expensesWithoutAttachments: 1,
+          expensesWithMissingDocuments: [
+            buildMissingItem({ id: 'a', description: 'Aluguel sala', hasNoAttachments: true }),
+            buildMissingItem({ id: 'b', description: 'Internet' }),
+            buildMissingItem({ id: 'c', description: 'Consultoria' }),
+          ],
+        })}
         isLoading={false}
       />
     );
 
-    const alert = screen.getByTestId('no-attachments-alert');
-    expect(alert).toBeInTheDocument();
-    expect(alert).toHaveTextContent('3');
-    expect(alert).toHaveTextContent('sem nenhum comprovante');
+    const alert = screen.getByTestId('missing-documents-alert');
+    expect(alert).toHaveTextContent('3 despesas com documento faltando');
+    expect(alert).toHaveTextContent('1 sem nenhum comprovante');
+    expect(screen.getAllByTestId('missing-documents-item')).toHaveLength(3);
+    expect(alert).toHaveTextContent('Aluguel sala');
+    expect(alert).toHaveTextContent('Internet');
+    expect(alert).toHaveTextContent('Consultoria');
   });
 
-  it('não renderiza o alerta quando não há despesas sem comprovante', () => {
+  it('não renderiza o painel quando nenhuma despesa está com documento faltando', () => {
     render(
       <ExportSummary
-        summary={buildSummary({ expensesWithoutAttachments: 0 })}
+        summary={buildSummary({
+          expensesWithoutAttachments: 0,
+          expensesWithMissingDocuments: [],
+        })}
         isLoading={false}
       />
     );
 
     expect(
-      screen.queryByTestId('no-attachments-alert')
+      screen.queryByTestId('missing-documents-alert')
     ).not.toBeInTheDocument();
   });
 
   it('comunica o alerta por texto acessível, sem depender de classe de cor', () => {
     render(
       <ExportSummary
-        summary={buildSummary({ expensesWithoutAttachments: 5 })}
+        summary={buildSummary({
+          expensesWithoutAttachments: 5,
+          expensesWithMissingDocuments: Array.from({ length: 5 }, (_, index) =>
+            buildMissingItem({ id: String(index), hasNoAttachments: true })
+          ),
+        })}
         isLoading={false}
       />
     );
 
     const alert = screen.getByRole('alert');
-    expect(alert).toHaveTextContent('5');
-    expect(alert).toHaveTextContent('despesas sem nenhum comprovante');
+    expect(alert).toHaveTextContent('5 despesas com documento faltando');
+    expect(alert).toHaveTextContent('5 sem nenhum comprovante');
   });
 
   it('informa a quantidade encontrada e o teto quando o limite é excedido', () => {

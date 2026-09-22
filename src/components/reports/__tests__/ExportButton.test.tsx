@@ -11,6 +11,7 @@ function buildSummary(
     totalAmount: 12480,
     attachmentCount: 97,
     expensesWithoutAttachments: 0,
+    expensesWithMissingDocuments: [],
     exportLimit: 100,
     exceedsLimit: false,
     ...overrides,

@@ -53,6 +53,7 @@ describe('ReportsApiService.fetchSummary', () => {
       totalAmount: 12480,
       attachmentCount: 97,
       expensesWithoutAttachments: 3,
+      expensesWithMissingDocuments: [],
       exportLimit: 100,
       exceedsLimit: false,
     };
