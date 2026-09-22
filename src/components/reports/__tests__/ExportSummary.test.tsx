@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { ExportSummary } from '../ExportSummary';
 import { ExpenseStatus } from '@/constants/expenses';
 import type {
@@ -66,7 +67,8 @@ describe('ExportSummary', () => {
     );
   });
 
-  it('mostra o painel com a quantidade e as despesas quando há documento faltando', () => {
+  it('mostra o painel com a quantidade e abre as despesas no modal quando há documento faltando', async () => {
+    const user = userEvent.setup();
     render(
       <ExportSummary
         summary={buildSummary({
@@ -84,10 +86,16 @@ describe('ExportSummary', () => {
     const alert = screen.getByTestId('missing-documents-alert');
     expect(alert).toHaveTextContent('3 despesas com documento faltando');
     expect(alert).toHaveTextContent('1 sem nenhum comprovante');
-    expect(screen.getAllByTestId('missing-documents-item')).toHaveLength(3);
-    expect(alert).toHaveTextContent('Aluguel sala');
-    expect(alert).toHaveTextContent('Internet');
-    expect(alert).toHaveTextContent('Consultoria');
+    // The rows live in the dialog, not on the screen.
+    expect(screen.queryByTestId('missing-documents-item')).not.toBeInTheDocument();
+
+    await user.click(screen.getByTestId('missing-documents-open'));
+
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getAllByTestId('missing-documents-item')).toHaveLength(3);
+    expect(dialog).toHaveTextContent('Aluguel sala');
+    expect(dialog).toHaveTextContent('Internet');
+    expect(dialog).toHaveTextContent('Consultoria');
   });
 
   it('não renderiza o painel quando nenhuma despesa está com documento faltando', () => {

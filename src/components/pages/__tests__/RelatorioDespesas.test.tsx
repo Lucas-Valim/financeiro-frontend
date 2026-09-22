@@ -104,6 +104,17 @@ describe('RelatorioDespesas', () => {
     expect(screen.getByTestId('export-button')).toBeEnabled();
   });
 
+  it('mantém o botão de exportar no cabeçalho, antes do painel de filtros', () => {
+    render(<RelatorioDespesas />, { wrapper });
+
+    const exportButton = screen.getByTestId('export-button');
+    expect(screen.getByTestId('page-card-action').contains(exportButton)).toBe(true);
+    expect(
+      exportButton.compareDocumentPosition(screen.getByTestId('report-filter-panel')) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+  });
+
   it('atualiza os dados do resumo quando um filtro do painel muda', async () => {
     render(<RelatorioDespesas />, { wrapper });
 

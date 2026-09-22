@@ -65,6 +65,39 @@ describe('PageCard', () => {
     });
   });
 
+  describe('Header action', () => {
+    it('renders the action in the header, before the content', () => {
+      render(
+        <PageCard {...defaultProps} action={<button type="button">Exportar</button>} />
+      );
+
+      const action = screen.getByTestId('page-card-action');
+      expect(action).toHaveTextContent('Exportar');
+      expect(action.closest('[data-slot="card-header"]')).not.toBeNull();
+      expect(
+        action.compareDocumentPosition(screen.getByTestId('child-content')) &
+          Node.DOCUMENT_POSITION_FOLLOWING
+      ).toBeTruthy();
+    });
+
+    it('keeps the header when only the action is provided', () => {
+      render(
+        <PageCard title="" description="" action={<button type="button">Exportar</button>}>
+          <div>Content</div>
+        </PageCard>
+      );
+
+      expect(screen.getByTestId('page-card-action')).toHaveTextContent('Exportar');
+      expect(screen.getByTestId('page-card-action').closest('[data-slot="card-header"]')).not.toBeNull();
+    });
+
+    it('renders no action container when the prop is omitted', () => {
+      render(<PageCard {...defaultProps} />);
+
+      expect(screen.queryByTestId('page-card-action')).not.toBeInTheDocument();
+    });
+  });
+
   describe('Accessibility', () => {
     it('title is rendered with appropriate styling', () => {
       render(<PageCard {...defaultProps} />);

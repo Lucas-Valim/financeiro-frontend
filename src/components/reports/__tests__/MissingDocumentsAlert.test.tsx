@@ -32,9 +32,7 @@ describe('MissingDocumentsAlert', () => {
 
   it('anuncia a contagem por texto acessível, no singular e no plural', () => {
     const { rerender } = render(
-      <MissingDocumentsAlert
-        items={[buildItem({ hasNoAttachments: true })]}
-      />
+      <MissingDocumentsAlert items={[buildItem({ hasNoAttachments: true })]} />
     );
 
     expect(screen.getByRole('alert')).toHaveTextContent(
@@ -71,139 +69,48 @@ describe('MissingDocumentsAlert', () => {
     );
   });
 
-  it('omite a parte zerada da sublinha', () => {
-    render(
-      <MissingDocumentsAlert
-        items={[buildItem()]}
-      />
-    );
+  it('não lista as despesas na própria tela — só no modal', () => {
+    render(<MissingDocumentsAlert items={[buildItem(), buildItem({ id: 'b' })]} />);
 
-    const breakdown = screen.getByTestId('missing-documents-breakdown');
-    expect(breakdown).toHaveTextContent('1 com documentação incompleta');
-    expect(breakdown).not.toHaveTextContent('sem nenhum comprovante');
+    expect(screen.queryByTestId('missing-documents-item')).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('lista descrição, favorecido, vencimento, valor e status em português', () => {
-    render(
-      <MissingDocumentsAlert
-        items={[buildItem()]}
-      />
-    );
-
-    const row = screen.getByTestId('missing-documents-item');
-    expect(row).toHaveTextContent('Aluguel sala');
-    expect(row).toHaveTextContent('Imobiliária Silva');
-    expect(row).toHaveTextContent('vence 21/09/2026');
-    expect(row).toHaveTextContent('R$ 1.200,00');
-    expect(row).toHaveTextContent('Atrasada');
-    expect(row).not.toHaveTextContent('OVERDUE');
-  });
-
-  it('mostra um chip por documento faltante, com o rótulo do cliente', () => {
-    render(
-      <MissingDocumentsAlert
-        items={[
-          buildItem({
-            status: ExpenseStatus.PAID,
-            missingDocuments: ['serviceInvoice', 'paymentProof'],
-          }),
-        ]}
-      />
-    );
-
-    const row = screen.getByTestId('missing-documents-item');
-    expect(within(row).getByTestId('missing-document-serviceInvoice')).toHaveTextContent(
-      'Nota fiscal'
-    );
-    expect(within(row).getByTestId('missing-document-paymentProof')).toHaveTextContent(
-      'Comprovante de pagamento'
-    );
-    expect(row).toHaveTextContent('Falta:');
-  });
-
-  it('marca "Sem nenhum anexo" apenas na despesa sem documento algum', () => {
-    render(
-      <MissingDocumentsAlert
-        items={[
-          buildItem({ id: 'none', hasNoAttachments: true }),
-          buildItem({ id: 'partial' }),
-        ]}
-      />
-    );
-
-    const [withoutAny, partial] = screen.getAllByTestId('missing-documents-item');
-    expect(
-      within(withoutAny).getByTestId('missing-documents-none-attached')
-    ).toHaveTextContent('Sem nenhum anexo');
-    expect(
-      within(partial).queryByTestId('missing-documents-none-attached')
-    ).not.toBeInTheDocument();
-  });
-
-  it('preserva a ordem recebida, que é a ordem da planilha', () => {
-    render(
-      <MissingDocumentsAlert
-        items={[
-          buildItem({ id: 'first', description: 'Primeira' }),
-          buildItem({ id: 'second', description: 'Segunda' }),
-        ]}
-      />
-    );
-
-    const rows = screen.getAllByTestId('missing-documents-item');
-    expect(rows[0]).toHaveTextContent('Primeira');
-    expect(rows[1]).toHaveTextContent('Segunda');
-  });
-
-  it('abre expandido e recolhe/expande pelo botão, expondo aria-expanded', async () => {
-    const user = userEvent.setup();
-    render(
-      <MissingDocumentsAlert
-        items={[buildItem()]}
-      />
-    );
-
-    const toggle = screen.getByTestId('missing-documents-toggle');
-    const list = screen.getByTestId('missing-documents-list');
-    expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    expect(toggle).toHaveTextContent('Ocultar');
-    expect(list).toBeVisible();
-
-    await user.click(toggle);
-
-    expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    expect(toggle).toHaveTextContent('Mostrar');
-    expect(list).not.toBeVisible();
-    expect(screen.getByRole('alert')).toHaveTextContent(
-      '1 despesa com documento faltando'
-    );
-
-    await user.click(toggle);
-
-    expect(list).toBeVisible();
-  });
-
-  it('mantém a lista no DOM quando recolhida, para o aria-controls sempre resolver', async () => {
-    const user = userEvent.setup();
-    render(<MissingDocumentsAlert items={[buildItem()]} />);
-
-    const toggle = screen.getByTestId('missing-documents-toggle');
-    await user.click(toggle);
-
-    const controlledId = toggle.getAttribute('aria-controls');
-    expect(controlledId).toBeTruthy();
-    expect(document.getElementById(controlledId!)).toBe(
-      screen.getByTestId('missing-documents-list')
-    );
-  });
-
-  it('deixa o botão de recolher fora da região de alerta', () => {
+  it('deixa o botão "Ver despesas" fora da região de alerta', () => {
     render(<MissingDocumentsAlert items={[buildItem()]} />);
 
     const alert = screen.getByRole('alert');
     expect(
-      within(alert).queryByTestId('missing-documents-toggle')
+      within(alert).queryByTestId('missing-documents-open')
     ).not.toBeInTheDocument();
-    expect(alert).toHaveTextContent('1 despesa com documento faltando');
+    expect(screen.getByTestId('missing-documents-open')).toHaveTextContent(
+      'Ver despesas'
+    );
+  });
+
+  it('abre o modal com a lista ao clicar em "Ver despesas" e fecha pelo botão Fechar', async () => {
+    const user = userEvent.setup();
+    render(
+      <MissingDocumentsAlert
+        items={[
+          buildItem({ id: 'a', description: 'Primeira' }),
+          buildItem({ id: 'b', description: 'Segunda' }),
+        ]}
+      />
+    );
+
+    await user.click(screen.getByTestId('missing-documents-open'));
+
+    const dialog = screen.getByRole('dialog', {
+      name: 'Despesas com documento faltando',
+    });
+    expect(within(dialog).getAllByTestId('missing-documents-item')).toHaveLength(2);
+    expect(dialog).toHaveTextContent('Primeira');
+    expect(dialog).toHaveTextContent('Segunda');
+
+    await user.click(within(dialog).getByRole('button', { name: 'Fechar' }));
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(document.activeElement).toBe(screen.getByTestId('missing-documents-open'));
   });
 });

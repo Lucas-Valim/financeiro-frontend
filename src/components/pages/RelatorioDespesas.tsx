@@ -18,7 +18,7 @@ const PAGE_DESCRIPTION =
 /**
  * Report screen. It owns the filter state — so a failed export never loses it —
  * and wires the grouped filter panel, the live pre-export summary and the
- * single export action to the report hooks. It opens with the current month and
+ * single export action (in the header, always reachable) to the report hooks. It opens with the current month and
  * no status filter, ready to export without any configuration.
  */
 export function RelatorioDespesas() {
@@ -67,8 +67,24 @@ export function RelatorioDespesas() {
     );
   }
 
+  // The export action lives in the page header, outside the scrolling body:
+  // with long filters and a long missing-documents list it used to sit below
+  // the fold, and the client had to scroll to the end to find it.
+  const exportAction = (
+    <ExportButton
+      summary={summary}
+      isExporting={isExporting}
+      receivedBytes={receivedBytes}
+      onExport={handleExport}
+    />
+  );
+
   return (
-    <PageCard title={PAGE_TITLE} description={PAGE_DESCRIPTION}>
+    <PageCard
+      title={PAGE_TITLE}
+      description={PAGE_DESCRIPTION}
+      action={exportAction}
+    >
       <div className="flex flex-1 flex-col gap-6 overflow-y-auto">
         <ReportFilterPanel
           filters={filters}
@@ -77,13 +93,6 @@ export function RelatorioDespesas() {
         />
 
         <ExportSummary summary={summary} isLoading={isLoading} />
-
-        <ExportButton
-          summary={summary}
-          isExporting={isExporting}
-          receivedBytes={receivedBytes}
-          onExport={handleExport}
-        />
       </div>
     </PageCard>
   );
