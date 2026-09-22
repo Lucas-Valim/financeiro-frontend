@@ -93,6 +93,20 @@ export function isExpenseEditable(status: ExpenseStatus): boolean {
 }
 
 /**
+ * Espelha a regra de domínio do backend
+ * (`ExpenseStatus.allowsServiceInvoiceAttachment`): a nota de serviço costuma
+ * chegar DEPOIS de a conta ter sido paga, então anexá-la é a única alteração que
+ * uma despesa `PAID` ainda aceita — só `CANCELLED` recusa.
+ *
+ * Mantida separada de `isExpenseEditable` porque são regras distintas no
+ * backend: a edição (valor, vencimento, favorecido, boleto) continua proibida na
+ * despesa paga, e só esta função governa o anexo da nota.
+ */
+export function isServiceInvoiceAttachable(status: ExpenseStatus): boolean {
+  return status !== ExpenseStatus.CANCELLED;
+}
+
+/**
  * Espelha a regra de domínio do backend (`ExpenseStatus.allowsCancellation`):
  * apenas despesas OPEN e OVERDUE podem ser canceladas. Mantida separada de
  * `isExpenseEditable` porque são regras distintas no backend que hoje apenas
@@ -125,6 +139,37 @@ export function translateCancelExpenseError(message: string): string {
     return CANCEL_EXPENSE_ERROR_MESSAGES.NOT_FOUND;
   }
   return CANCEL_EXPENSE_ERROR_MESSAGES.DEFAULT;
+}
+
+/** Trechos das mensagens (em inglês) devolvidas pelo backend ao anexar a nota. */
+const CANNOT_ATTACH_INVOICE_BACKEND_PREFIX =
+  'Cannot attach service invoice to expense with status';
+const SERVICE_INVOICE_REQUIRED_BACKEND = 'Service invoice file is required';
+
+export const ATTACH_SERVICE_INVOICE_ERROR_MESSAGES = {
+  NOT_ATTACHABLE: 'Não é possível anexar nota em uma despesa cancelada',
+  FILE_REQUIRED: 'Selecione o arquivo da nota de serviço',
+  NOT_FOUND: 'Despesa não encontrada',
+  DEFAULT: 'Ocorreu um erro ao anexar a nota de serviço',
+} as const;
+
+/**
+ * Traduz as mensagens de domínio (em inglês) do anexo da nota para o texto do
+ * toast, no molde de `translateCancelExpenseError`. Qualquer mensagem
+ * desconhecida (inclusive erro de rede) cai no texto genérico, para nunca vazar
+ * inglês nem detalhe técnico para o usuário.
+ */
+export function translateAttachServiceInvoiceError(message: string): string {
+  if (message.startsWith(CANNOT_ATTACH_INVOICE_BACKEND_PREFIX)) {
+    return ATTACH_SERVICE_INVOICE_ERROR_MESSAGES.NOT_ATTACHABLE;
+  }
+  if (message.includes(SERVICE_INVOICE_REQUIRED_BACKEND)) {
+    return ATTACH_SERVICE_INVOICE_ERROR_MESSAGES.FILE_REQUIRED;
+  }
+  if (message.endsWith(NOT_FOUND_BACKEND_SUFFIX)) {
+    return ATTACH_SERVICE_INVOICE_ERROR_MESSAGES.NOT_FOUND;
+  }
+  return ATTACH_SERVICE_INVOICE_ERROR_MESSAGES.DEFAULT;
 }
 
 /**

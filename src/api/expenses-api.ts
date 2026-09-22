@@ -1,5 +1,5 @@
 import { apiClient } from '../lib/api-client';
-import type { ExpenseDTO, ExpenseFilter, ExpenseStatusSummary, ListExpensesOutput, CreateExpenseInput, UpdateExpenseInput, ConfirmExpenseAmountOutput, ResyncCalendarOutput } from '../types/expenses';
+import type { ExpenseDTO, ExpenseFilter, ExpenseStatusSummary, ListExpensesOutput, CreateExpenseInput, UpdateExpenseInput, AttachServiceInvoiceInput, ConfirmExpenseAmountOutput, ResyncCalendarOutput } from '../types/expenses';
 import type { PaymentRequest, PaymentResponse } from '../schemas/payment-schema';
 import { ORGANIZATION_ID } from '../constants/expenses';
 
@@ -183,6 +183,27 @@ export class ExpensesApiService {
         'Content-Type': 'multipart/form-data',
       },
     }) as unknown as Promise<PaymentResponse>;
+  }
+
+  /**
+   * Anexa (ou substitui) a nota de serviço de uma despesa
+   * (backend: `PUT /expenses/:id/service-invoice`), inclusive quando ela já está
+   * paga — é a única alteração que o backend aceita numa despesa `PAID`.
+   *
+   * Rota separada do `update` de propósito: `PUT /expenses/:id` é o fluxo de
+   * edição, que a despesa paga recusa por inteiro com `403`. O `organizationId`
+   * é injetado pelo interceptor do api-client para o namespace `/expenses`, como
+   * em `pay`, por isso a query string não é montada manualmente.
+   */
+  async attachServiceInvoice(data: AttachServiceInvoiceInput): Promise<ExpenseDTO> {
+    const formData = new FormData();
+    formData.append('serviceInvoice', data.serviceInvoice);
+
+    return apiClient.put(`/expenses/${data.id}/service-invoice`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }) as unknown as Promise<ExpenseDTO>;
   }
 
   /**

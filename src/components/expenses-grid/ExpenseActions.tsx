@@ -9,11 +9,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { PaymentModal } from '@/components/payment/PaymentModal';
 import { ExpenseCancelDialog } from '@/components/expenses/ExpenseCancelDialog';
+import { AttachServiceInvoiceModal } from '@/components/expenses/AttachServiceInvoiceModal';
 import {
   ExpenseStatus,
   hasCalendarSyncFailure,
   isExpenseCancellable,
   isExpenseEditable,
+  isServiceInvoiceAttachable,
   requiresAmountConfirmation,
 } from '@/constants/expenses';
 import { useConfirmExpenseAmount } from '@/hooks/useConfirmExpenseAmount';
@@ -29,6 +31,7 @@ interface ExpenseActionsProps {
 export function ExpenseActions({ expense, onEdit }: ExpenseActionsProps) {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+  const [isAttachInvoiceModalOpen, setIsAttachInvoiceModalOpen] = useState(false);
   const confirmAmountMutation = useConfirmExpenseAmount();
   const resyncCalendarMutation = useResyncExpenseCalendar();
 
@@ -61,6 +64,12 @@ export function ExpenseActions({ expense, onEdit }: ExpenseActionsProps) {
   const editMenuLabel = isExpenseEditable(expense.status)
     ? 'Editar'
     : 'Ver Detalhes';
+  // A nota de serviço costuma chegar depois do pagamento, e na despesa paga o
+  // formulário abre somente-leitura — sem este item não haveria por onde enviá-la.
+  // Nas despesas OPEN/OVERDUE o anexo continua sendo pelo "Editar", então a
+  // condição exige as DUAS regras: anexável e não editável.
+  const canAttachServiceInvoice =
+    isServiceInvoiceAttachable(expense.status) && !isExpenseEditable(expense.status);
 
   const handleEdit = () => {
     onEdit?.(expense);
@@ -91,6 +100,14 @@ export function ExpenseActions({ expense, onEdit }: ExpenseActionsProps) {
     window.open(expense.calendarEventUrl!, '_blank', 'noopener,noreferrer');
   };
 
+  const handleAttachServiceInvoice = () => {
+    setIsAttachInvoiceModalOpen(true);
+  };
+
+  const handleCloseAttachInvoiceModal = () => {
+    setIsAttachInvoiceModalOpen(false);
+  };
+
   const handleCancel = () => {
     setIsCancelDialogOpen(true);
   };
@@ -115,6 +132,14 @@ export function ExpenseActions({ expense, onEdit }: ExpenseActionsProps) {
           {isPayable && (
             <DropdownMenuItem className="cursor-pointer" onSelect={handlePay}>
               {payMenuLabel}
+            </DropdownMenuItem>
+          )}
+          {canAttachServiceInvoice && (
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onSelect={handleAttachServiceInvoice}
+            >
+              Anexar nota de serviço
             </DropdownMenuItem>
           )}
           {canConfirmAmount && (
@@ -160,6 +185,11 @@ export function ExpenseActions({ expense, onEdit }: ExpenseActionsProps) {
       <PaymentModal
         isOpen={isPaymentModalOpen}
         onClose={handleClosePaymentModal}
+        expense={expense}
+      />
+      <AttachServiceInvoiceModal
+        isOpen={isAttachInvoiceModalOpen}
+        onClose={handleCloseAttachInvoiceModal}
         expense={expense}
       />
       <ExpenseCancelDialog
