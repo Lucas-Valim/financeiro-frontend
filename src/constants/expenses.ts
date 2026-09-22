@@ -40,6 +40,23 @@ export const EXPENSE_MARKER_COLORS = {
   calendarSyncFailed: 'bg-red-100 text-red-800',
 } as const;
 
+/**
+ * Chips do painel "documento faltando" do relatório (`MissingDocumentsAlert`),
+ * aqui pelo mesmo motivo de `EXPENSE_MARKER_COLORS` (ADR-002): todo o
+ * vocabulário de badge num só arquivo.
+ *
+ * `missingDocument` é âmbar por ser "atenção, ainda falta" — e é uma entrada
+ * PRÓPRIA, não `EXPENSE_MARKER_COLORS.amountPending`, porque aquela significa
+ * "dinheiro a confirmar"; compartilhar o token acoplaria dois significados que
+ * podem precisar divergir. `noAttachments` repete DELIBERADAMENTE o vermelho de
+ * `OVERDUE` e do card "Sem comprovante": é a mesma família "isto precisa de
+ * ação", e chip e card falam da mesma regra.
+ */
+export const REPORT_MISSING_DOCUMENT_COLORS = {
+  missingDocument: 'bg-amber-100 text-amber-800',
+  noAttachments: EXPENSE_STATUS_COLORS.OVERDUE,
+} as const;
+
 export const EXPENSE_PAGE_LIMIT = 10;
 
 export const ORGANIZATION_ID = 'fca3c088-ba34-43a2-9b32-b2b1a1246915';
