@@ -44,7 +44,8 @@ function resolveDisabledReason(
 }
 
 /**
- * The single export action. It is blocked with an explanation on an empty
+ * The single export action, rendered in the page header so it is reachable
+ * without scrolling. It is blocked with an explanation on an empty
  * selection and above the cap, and it is blocked against repeated clicks while
  * an export is in flight. During the export the button carries `aria-busy` and
  * an `aria-live="polite"` region announces the state: a spinner-only "gerando"
@@ -73,7 +74,7 @@ export function ExportButton({
       : 'Gerando o pacote. Isso pode levar alguns instantes...';
 
   return (
-    <div className="space-y-2">
+    <div className="flex flex-col gap-2 sm:items-end">
       <Button
         type="button"
         size="lg"
@@ -101,7 +102,7 @@ export function ExportButton({
           role="status"
           aria-live="polite"
           data-testid="export-status"
-          className="text-sm text-muted-foreground"
+          className="max-w-xs text-sm text-muted-foreground sm:text-right"
         >
           {progressText}
         </p>
@@ -110,7 +111,7 @@ export function ExportButton({
       {!isExporting && disabledReason && (
         <p
           data-testid="export-explanation"
-          className="text-sm text-muted-foreground"
+          className="max-w-xs text-sm text-muted-foreground sm:text-right"
         >
           {disabledReason}
         </p>
