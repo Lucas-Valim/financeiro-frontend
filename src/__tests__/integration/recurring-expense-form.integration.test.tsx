@@ -11,6 +11,8 @@ import type {
 } from '@/types/recurring-expenses';
 
 const FAVORECIDO_ID = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
+// Literal repetido no mock de `useCategories`: a fábrica do `vi.mock` é içada e não enxerga constantes do módulo.
+const CATEGORY_ID = '9b2f1c3e-0d4a-4e5f-8a6b-7c8d9e0f1a2b';
 
 const apiMock = vi.hoisted(() => ({
   checkDuplicates: vi.fn(),
@@ -30,7 +32,11 @@ const toastMock = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));
 vi.mock('sonner', () => ({ toast: { success: toastMock.success, error: toastMock.error } }));
 
 vi.mock('@/hooks/use-categories', () => ({
-  useCategories: vi.fn(() => ({ categories: [], isLoading: false, error: null })),
+  useCategories: vi.fn(() => ({
+    categories: [{ id: '9b2f1c3e-0d4a-4e5f-8a6b-7c8d9e0f1a2b', name: 'Aluguel' }],
+    isLoading: false,
+    error: null,
+  })),
 }));
 
 vi.mock('@/hooks/use-favorecidos', () => ({
@@ -82,6 +88,10 @@ async function fillValidCreateForm(user: ReturnType<typeof userEvent.setup>) {
   // Município (Radix Select)
   await user.click(screen.getByRole('combobox', { name: /município/i }));
   await user.click(await screen.findByRole('option', { name: 'Porto Alegre' }));
+
+  // Categoria (Radix Select, obrigatória)
+  await user.click(screen.getByRole('combobox', { name: /categoria/i }));
+  await user.click(await screen.findByRole('option', { name: 'Aluguel' }));
 
   // Data de início (startDate é o primeiro datepicker)
   const startDate = screen.getAllByTestId('date-picker')[0];
@@ -241,7 +251,7 @@ describe('RecurringExpenseFormModal — integration (create cycle)', () => {
       organizationId: 'org-1',
       description: 'Aluguel',
       favorecidoId: FAVORECIDO_ID,
-      categoryId: null,
+      categoryId: CATEGORY_ID,
       amountType: 'VARIABLE',
       amount: 1500,
       paymentMethod: null,
@@ -284,5 +294,77 @@ describe('RecurringExpenseFormModal — integration (create cycle)', () => {
     expect(updateInput).not.toHaveProperty('startDate');
     expect(updateInput.description).toBe('Aluguel novo');
     expect(updateInput.dueDay).toBe(5);
+    expect(updateInput.categoryId).toBe(CATEGORY_ID);
+  });
+
+  it('blocks a new recurrence without category and skips the API', async () => {
+    const user = userEvent.setup();
+    renderModal();
+
+    await user.type(screen.getByLabelText(/descrição/i), 'Aluguel');
+    await user.type(screen.getByLabelText(/valor da despesa/i), '150000');
+    await user.type(screen.getByLabelText(/dia do vencimento/i), '5');
+    await user.click(screen.getByRole('combobox', { name: /favorecido/i }));
+    await user.click(await screen.findByText('Favorecido Um'));
+    await user.click(screen.getByRole('combobox', { name: /município/i }));
+    await user.click(await screen.findByRole('option', { name: 'Porto Alegre' }));
+    fireEvent.change(screen.getAllByTestId('date-picker')[0], {
+      target: { value: '2026-06-15' },
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Criar Recorrência' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('A categoria é obrigatória')).toBeInTheDocument();
+    });
+    expect(apiMock.checkDuplicates).not.toHaveBeenCalled();
+    expect(apiMock.create).not.toHaveBeenCalled();
+  });
+
+  it('asks for a category when editing an old recurrence saved without one', async () => {
+    const user = userEvent.setup();
+    const legacy: RecurringExpenseDTO = {
+      id: 'rec-legacy',
+      organizationId: 'org-1',
+      description: 'Aluguel',
+      favorecidoId: FAVORECIDO_ID,
+      categoryId: null,
+      amountType: 'FIXED',
+      amount: 1500,
+      paymentMethod: null,
+      municipality: 'Porto Alegre',
+      dueDay: 5,
+      startDate: new Date(2026, 5, 15),
+      endDate: null,
+      status: 'ACTIVE',
+      terminationReason: null,
+      terminatedAt: null,
+      createdAt: new Date(2026, 5, 15),
+      updatedAt: new Date(2026, 5, 15),
+    };
+    apiMock.update.mockResolvedValue({ ...legacy, categoryId: CATEGORY_ID });
+
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <RecurringExpenseFormModal isOpen onClose={vi.fn()} recurringExpense={legacy} />
+      </QueryClientProvider>,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Salvar Alterações' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('A categoria é obrigatória')).toBeInTheDocument();
+    });
+    expect(apiMock.update).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole('combobox', { name: /categoria/i }));
+    await user.click(await screen.findByRole('option', { name: 'Aluguel' }));
+    await user.click(screen.getByRole('button', { name: 'Salvar Alterações' }));
+
+    await waitFor(() => {
+      expect(apiMock.update).toHaveBeenCalledTimes(1);
+    });
+    expect(apiMock.update.mock.calls[0][1].categoryId).toBe(CATEGORY_ID);
   });
 });

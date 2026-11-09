@@ -140,11 +140,11 @@ export function ExpenseFormFields({ disabled = false, organizationId }: ExpenseF
         name="categoryId"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Categoria</FormLabel>
+            <FormLabel required>Categoria</FormLabel>
             <Select
               disabled={disabled || isLoadingCategories}
               onValueChange={field.onChange}
-              value={field.value ?? undefined}
+              value={field.value ?? ''}
             >
               <FormControl>
                 <SelectTrigger aria-describedby="categoryId-error">

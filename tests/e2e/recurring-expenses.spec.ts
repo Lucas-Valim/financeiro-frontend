@@ -34,6 +34,18 @@ function dueDateThisMonth(day: number): string {
 
 /* --------------------------------------------------------------- fixtures */
 
+const CATEGORY_ID = '9b2f1c3e-0d4a-4e5f-8a6b-7c8d9e0f1a2b';
+const CATEGORY_NAME = 'Aluguel';
+
+const CATEGORY = {
+  id: CATEGORY_ID,
+  organizationId: ORGANIZATION_ID,
+  name: CATEGORY_NAME,
+  description: '',
+  createdAt: ISO,
+  updatedAt: ISO,
+};
+
 const FAVORECIDO = {
   id: FAVORECIDO_ID,
   organizationId: ORGANIZATION_ID,
@@ -59,7 +71,7 @@ function buildRecurrence(overrides: Rec = {}): Rec {
     organizationId: ORGANIZATION_ID,
     description: 'Aluguel do escritório',
     favorecidoId: FAVORECIDO_ID,
-    categoryId: null,
+    categoryId: CATEGORY_ID,
     amountType: 'FIXED',
     amount: 1500,
     paymentMethod: null,
@@ -165,12 +177,15 @@ async function installMock(page: Page, seed: SeedOptions = {}): Promise<MockStat
     },
   );
 
-  // Categorias (opcional no formulário — devolvemos vazio).
+  // Categorias (obrigatória no formulário — devolvemos uma).
   await page.route(
     (url) => url.pathname.startsWith('/categories'),
     async (route) => {
       if (route.request().method() !== 'GET') return route.fallback();
-      await json(route, 200, { data: [], pagination: { page: 1, limit: 100, total: 0 } });
+      await json(route, 200, {
+        data: [CATEGORY],
+        pagination: { page: 1, limit: 100, total: 1 },
+      });
     },
   );
 
@@ -427,6 +442,7 @@ async function fillRecurringForm(page: Page, values: FormValues) {
 
   await selectFavorecido(page, dialog);
   await selectDropdown(page, dialog, 'Município', 'Porto Alegre');
+  await selectDropdown(page, dialog, 'Categoria', CATEGORY_NAME);
 
   await dialog.getByRole('button', { name: 'Data de início' }).click();
   await selectDay(page, values.startDay ?? 15);

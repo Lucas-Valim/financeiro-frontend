@@ -110,6 +110,19 @@ describe('RecurringExpenseFormFields', () => {
     });
   });
 
+  describe('Required category', () => {
+    it('marks Categoria as required', () => {
+      render(
+        <FormWrapper>
+          <RecurringExpenseFormFields organizationId={ORG_ID} />
+        </FormWrapper>,
+      );
+
+      const label = screen.getByText('Categoria').closest('label');
+      expect(label).toHaveTextContent('*');
+    });
+  });
+
   describe('Due day note', () => {
     it('renders the fixed note about months without that day', () => {
       render(
