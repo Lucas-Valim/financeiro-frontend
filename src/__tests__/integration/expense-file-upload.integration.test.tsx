@@ -305,9 +305,9 @@ describe('Expense File Upload Integration', () => {
       const existingExpense: ExpenseDTO = {
         id: 'existing-id',
         organizationId: 'org-123',
-        categoryId: null,
-        // favorecidoId is now required to save: a non-legacy expense already has one,
-        // so updating the description alone passes validation and submits successfully.
+        // favorecidoId and categoryId are required to save: a non-legacy expense already
+        // has both, so updating the description alone passes validation and submits.
+        categoryId: 'category-123',
         favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
         description: 'Existing Expense',
         amount: 1000,

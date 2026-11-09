@@ -162,6 +162,17 @@ describe('ExpenseFormFields', () => {
       const requiredLabels = screen.getAllByText('*');
       expect(requiredLabels.length).toBeGreaterThanOrEqual(5);
     });
+
+    it('marks Categoria as required', () => {
+      render(
+        <FormWrapper>
+          <ExpenseFormFields organizationId={DEFAULT_ORGANIZATION_ID} />
+        </FormWrapper>
+      );
+
+      const label = screen.getByText('Categoria').closest('label');
+      expect(label).toHaveTextContent('*');
+    });
   });
 
   describe('Description Field', () => {

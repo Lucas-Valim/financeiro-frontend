@@ -206,6 +206,7 @@ describe('RecurringExpensesApiService', () => {
 
       const result = await service.create({
         favorecidoId: 'fav-1',
+        categoryId: 'category-123',
         description: 'Aluguel',
         amountType: 'VARIABLE',
         amount: 1000,

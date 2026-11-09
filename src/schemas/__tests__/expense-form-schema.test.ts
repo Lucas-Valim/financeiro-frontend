@@ -47,6 +47,7 @@ describe('expenseFormSchema', () => {
         currency: 'BRL',
         dueDate: new Date(),
         status: ExpenseStatus.OPEN,
+        categoryId: 'category-123',
         favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
         municipality: 'City',
       };
@@ -61,7 +62,7 @@ describe('expenseFormSchema', () => {
         currency: 'BRL',
         dueDate: new Date(),
         status: ExpenseStatus.OPEN,
-        categoryId: null,
+        categoryId: 'category-123',
         paymentMethod: null,
         favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
         municipality: 'City',
@@ -171,6 +172,41 @@ describe('expenseFormSchema', () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error.issues[0].message).toBe('O favorecido deve ser um identificador válido');
+      }
+    });
+  });
+
+  describe('categoryId validation', () => {
+    it('should fail when categoryId is missing', () => {
+      const { categoryId: _removed, ...dataWithoutCategory } = createValidExpenseData();
+      const result = expenseFormSchema.safeParse(dataWithoutCategory);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(
+          result.error.issues.some((issue) => issue.message === 'A categoria é obrigatória')
+        ).toBe(true);
+      }
+    });
+
+    it('should fail when categoryId is empty (select untouched)', () => {
+      const result = expenseFormSchema.safeParse({
+        ...createValidExpenseData(),
+        categoryId: '',
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0].message).toBe('A categoria é obrigatória');
+      }
+    });
+
+    it('should fail when categoryId is null (old expense saved without category)', () => {
+      const result = expenseFormSchema.safeParse({
+        ...createValidExpenseData(),
+        categoryId: null,
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0].message).toBe('A categoria é obrigatória');
       }
     });
   });
@@ -452,7 +488,7 @@ describe('defaultExpenseFormValues', () => {
     expect(defaultExpenseFormValues.amount).toBeUndefined();
     expect(defaultExpenseFormValues.currency).toBe('BRL');
     expect(defaultExpenseFormValues.status).toBe(ExpenseStatus.OPEN);
-    expect(defaultExpenseFormValues.categoryId).toBeNull();
+    expect(defaultExpenseFormValues.categoryId).toBe('');
     expect(defaultExpenseFormValues.paymentMethod).toBeNull();
     expect(defaultExpenseFormValues.favorecidoId).toBe('');
     expect(defaultExpenseFormValues.municipality).toBe('');
@@ -479,7 +515,6 @@ describe('transformExpenseFormData', () => {
 
   it('should handle null optional fields', () => {
     const formData = createValidExpenseData({
-      categoryId: null,
       paymentMethod: null,
       serviceInvoice: null,
       bankBill: null,
@@ -487,7 +522,7 @@ describe('transformExpenseFormData', () => {
 
     const result = transformExpenseFormData(formData);
 
-    expect(result.categoryId).toBeNull();
+    expect(result.categoryId).toBe('category-123');
     expect(result.paymentMethod).toBeNull();
     expect(result.serviceInvoice).toBeNull();
     expect(result.bankBill).toBeNull();
@@ -500,7 +535,7 @@ describe('transformExpenseFormData', () => {
       currency: 'BRL',
       dueDate: new Date(),
       status: ExpenseStatus.OPEN,
-      categoryId: '',
+      categoryId: 'category-123',
       paymentMethod: '',
       favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
       municipality: 'City',
@@ -510,7 +545,7 @@ describe('transformExpenseFormData', () => {
 
     const result = transformExpenseFormData(formData);
 
-    expect(result.categoryId).toBeNull();
+    expect(result.categoryId).toBe('category-123');
     expect(result.paymentMethod).toBeNull();
   });
 
@@ -566,6 +601,7 @@ describe('type exports', () => {
       currency: 'BRL',
       dueDate: new Date(),
       status: ExpenseStatus.OPEN,
+      categoryId: 'category-123',
       favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
       municipality: 'City',
     };

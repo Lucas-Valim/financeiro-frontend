@@ -58,7 +58,7 @@ export function useExpenseForm({
           ? initialExpense.dueDate
           : new Date(initialExpense.dueDate),
         status: initialExpense.status,
-        categoryId: initialExpense.categoryId,
+        categoryId: initialExpense.categoryId ?? '',
         paymentMethod: initialExpense.paymentMethod,
         favorecidoId: initialExpense.favorecidoId ?? '',
         municipality: initialExpense.municipality,
@@ -102,7 +102,7 @@ export function useExpenseForm({
         favorecidoId: formData.favorecidoId,
         municipality: formData.municipality,
         paymentMethod: formData.paymentMethod ?? undefined,
-        categoryId: formData.categoryId ?? null,
+        categoryId: formData.categoryId,
         serviceInvoice: formData.serviceInvoice ?? null,
         bankBill: formData.bankBill ?? null,
       };

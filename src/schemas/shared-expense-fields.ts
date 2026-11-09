@@ -38,7 +38,14 @@ export const amountSchema = z
   .positive({ error: 'O valor deve ser maior que zero' })
   .max(99999999.99, { error: 'O valor excede o limite máximo' });
 
-export const categoryIdSchema = z.string().nullable().optional();
+/**
+ * Obrigatória nos dois formulários: o backend recusa despesa e recorrência sem
+ * categoria. O select começa vazio (`''`), e uma despesa antiga pode chegar com
+ * `null` — os dois caem na mesma mensagem.
+ */
+export const categoryIdSchema = z
+  .string({ error: 'A categoria é obrigatória' })
+  .min(1, { error: 'A categoria é obrigatória' });
 
 export const favorecidoIdSchema = z
   .string({ error: 'O favorecido é obrigatório' })

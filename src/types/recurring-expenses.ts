@@ -81,7 +81,7 @@ export interface TerminationPreview {
  */
 export interface CreateRecurringExpenseInput {
   favorecidoId: string;
-  categoryId?: string | null;
+  categoryId: string;
   description: string;
   amountType: RecurrenceAmountType;
   amount: number;
@@ -95,10 +95,12 @@ export interface CreateRecurringExpenseInput {
 /**
  * Update body. `amountType` and `startDate` are intentionally absent: they are
  * immutable after creation and the backend Zod discards them silently.
+ * `categoryId` is optional here but required by the backend on every edit (the
+ * PUT is the full-form flow; the form always sends it).
  */
 export interface UpdateRecurringExpenseInput {
   favorecidoId?: string;
-  categoryId?: string | null;
+  categoryId?: string;
   description?: string;
   amount?: number;
   paymentMethod?: string | null;

@@ -60,7 +60,7 @@ export type RecurringExpenseFormData = z.infer<typeof recurringExpenseFormSchema
 export const defaultRecurringExpenseFormValues: Partial<RecurringExpenseFormData> = {
   description: '',
   favorecidoId: '',
-  categoryId: null,
+  categoryId: '',
   amountType: 'FIXED',
   amount: undefined,
   paymentMethod: null,
@@ -80,7 +80,7 @@ export function toCreateInput(
 ): CreateRecurringExpenseInput {
   return {
     favorecidoId: data.favorecidoId,
-    categoryId: data.categoryId ?? null,
+    categoryId: data.categoryId,
     description: data.description,
     amountType: data.amountType,
     amount: data.amount,
@@ -104,7 +104,7 @@ export function toUpdateInput(
 ): UpdateRecurringExpenseInput {
   return {
     favorecidoId: data.favorecidoId,
-    categoryId: data.categoryId ?? null,
+    categoryId: data.categoryId,
     description: data.description,
     amount: data.amount,
     paymentMethod: data.paymentMethod ?? null,

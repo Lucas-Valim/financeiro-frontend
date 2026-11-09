@@ -45,6 +45,7 @@ export class ExpensesApiService {
     formData.append('currency', data.currency);
     formData.append('dueDate', data.dueDate.toISOString());
     formData.append('favorecidoId', data.favorecidoId);
+    formData.append('categoryId', data.categoryId);
     formData.append('municipality', data.municipality);
 
     if (data.paymentMethod) {
@@ -73,6 +74,7 @@ export class ExpensesApiService {
     if (data.amount !== undefined) formData.append('amount', String(data.amount));
     if (data.dueDate) formData.append('dueDate', data.dueDate.toISOString());
     if (data.favorecidoId) formData.append('favorecidoId', data.favorecidoId);
+    if (data.categoryId) formData.append('categoryId', data.categoryId);
     if (data.municipality) formData.append('municipality', data.municipality);
     if (data.paymentMethod) formData.append('paymentMethod', data.paymentMethod);
     if (data.serviceInvoice instanceof File) {

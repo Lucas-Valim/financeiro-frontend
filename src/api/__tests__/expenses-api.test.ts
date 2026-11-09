@@ -360,6 +360,7 @@ describe('ExpensesApiService', () => {
         currency: 'BRL',
         dueDate: new Date('2024-06-15'),
         favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
+        categoryId: 'category-123',
         municipality: 'New City',
         paymentMethod: 'PIX',
       };
@@ -382,6 +383,7 @@ describe('ExpensesApiService', () => {
         currency: 'BRL',
         dueDate: new Date('2024-06-15'),
         favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
+        categoryId: 'category-123',
         municipality: 'City',
       };
 
@@ -398,6 +400,7 @@ describe('ExpensesApiService', () => {
         currency: 'BRL',
         dueDate: new Date('2024-06-15'),
         favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
+        categoryId: 'category-123',
         municipality: 'New City',
       };
 
@@ -416,6 +419,7 @@ describe('ExpensesApiService', () => {
         currency: 'BRL',
         dueDate: new Date('2024-06-15'),
         favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
+        categoryId: 'category-123',
         municipality: 'New City',
       };
 
@@ -437,6 +441,7 @@ describe('ExpensesApiService', () => {
         currency: 'BRL',
         dueDate: new Date('2024-06-15'),
         favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
+        categoryId: 'category-123',
         municipality: 'City',
       };
 
@@ -602,6 +607,7 @@ describe('ExpensesApiService', () => {
         currency: 'BRL',
         dueDate: new Date('2024-12-31'),
         favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
+        categoryId: 'category-123',
         municipality: 'City',
         serviceInvoice: file,
       };
@@ -625,6 +631,7 @@ describe('ExpensesApiService', () => {
         currency: 'BRL',
         dueDate: new Date('2024-12-31'),
         favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
+        categoryId: 'category-123',
         municipality: 'City',
         bankBill: file,
       };
@@ -649,6 +656,7 @@ describe('ExpensesApiService', () => {
         currency: 'BRL',
         dueDate: new Date('2024-12-31'),
         favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
+        categoryId: 'category-123',
         municipality: 'City',
         serviceInvoice: invoiceFile,
         bankBill: boletoFile,
@@ -672,6 +680,7 @@ describe('ExpensesApiService', () => {
         currency: 'BRL',
         dueDate: new Date('2024-12-31'),
         favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
+        categoryId: 'category-123',
         municipality: 'City',
       };
 
@@ -690,6 +699,7 @@ describe('ExpensesApiService', () => {
         currency: 'BRL',
         dueDate: new Date('2024-12-31'),
         favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
+        categoryId: 'category-123',
         municipality: 'City',
         serviceInvoice: file,
       };
@@ -710,6 +720,7 @@ describe('ExpensesApiService', () => {
         currency: 'BRL',
         dueDate: new Date('2024-12-31'),
         favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
+        categoryId: 'category-123',
         municipality: 'City',
         bankBill: file,
       };
@@ -730,6 +741,7 @@ describe('ExpensesApiService', () => {
         currency: 'BRL',
         dueDate: new Date('2024-12-31T00:00:00.000Z'),
         favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
+        categoryId: 'category-123',
         municipality: 'Test City',
         paymentMethod: 'PIX',
         serviceInvoice: file,
@@ -746,6 +758,7 @@ describe('ExpensesApiService', () => {
       expect(formData.get('municipality')).toBe('Test City');
       expect(formData.get('paymentMethod')).toBe('PIX');
       expect(formData.get('organizationId')).toBe('org-123');
+      expect(formData.get('categoryId')).toBe('category-123');
     });
   });
 
@@ -796,6 +809,23 @@ describe('ExpensesApiService', () => {
       );
     });
 
+    // Regressão: o multipart da edição não levava a categoria, então salvar com
+    // anexo descartava a categoria escolhida.
+    it('should append the categoryId to FormData', async () => {
+      const file = new File(['content'], 'invoice.pdf', { type: 'application/pdf' });
+      const input: UpdateExpenseInput = {
+        description: 'Updated',
+        categoryId: 'category-123',
+        serviceInvoice: file,
+      };
+      mockedApiClient.put.mockResolvedValue(mockUpdatedExpense);
+
+      await service.update('123', input);
+
+      const formData = mockedApiClient.put.mock.calls[0][1] as FormData;
+      expect(formData.get('categoryId')).toBe('category-123');
+    });
+
     it('should send FormData when bankBill is a File', async () => {
       const file = new File(['content'], 'boleto.png', { type: 'image/png' });
       const input: UpdateExpenseInput = {
@@ -823,6 +853,7 @@ describe('ExpensesApiService', () => {
         currency: 'BRL',
         dueDate: new Date('2024-12-31'),
         favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
+        categoryId: 'category-123',
         municipality: 'City',
       };
 
@@ -837,6 +868,7 @@ describe('ExpensesApiService', () => {
         currency: 'BRL',
         dueDate: new Date('2024-12-31'),
         favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
+        categoryId: 'category-123',
         municipality: 'City',
       };
 
@@ -851,6 +883,7 @@ describe('ExpensesApiService', () => {
         currency: 'BRL',
         dueDate: new Date('2024-12-31'),
         favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
+        categoryId: 'category-123',
         municipality: 'City',
       };
 
@@ -865,6 +898,7 @@ describe('ExpensesApiService', () => {
         currency: 'BRL',
         dueDate: '2024-12-31' as unknown as Date,
         favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
+        categoryId: 'category-123',
         municipality: 'City',
       };
 
@@ -888,6 +922,7 @@ describe('ExpensesApiService', () => {
         currency: 'BRL',
         dueDate: new Date('2024-12-31'),
         favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
+        categoryId: 'category-123',
         municipality: 'City',
         serviceInvoice: file,
       };
@@ -906,6 +941,7 @@ describe('ExpensesApiService', () => {
         currency: 'BRL',
         dueDate: new Date('2024-12-31'),
         favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
+        categoryId: 'category-123',
         municipality: 'City',
         serviceInvoice: file,
       };

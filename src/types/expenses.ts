@@ -61,14 +61,16 @@ export interface CreateExpenseInput {
   dueDate: Date;
   municipality: string;
   paymentMethod?: string;
-  categoryId?: string | null;
+  categoryId: string;
   serviceInvoice?: File | null;
   bankBill?: File | null;
 }
 
 /**
- * Input type for updating an existing expense
- * All fields are optional for partial updates
+ * Corpo da edição de uma despesa (`PUT /expenses/:id`).
+ * Os campos são opcionais no tipo, mas o backend exige `favorecidoId` e
+ * `categoryId` em toda edição: o PUT é o fluxo do formulário completo, e o
+ * formulário sempre envia os dois.
  */
 export interface UpdateExpenseInput {
   favorecidoId?: string;
@@ -77,7 +79,7 @@ export interface UpdateExpenseInput {
   dueDate?: Date;
   municipality?: string;
   paymentMethod?: string;
-  categoryId?: string | null;
+  categoryId?: string;
   serviceInvoice?: File | null;
   bankBill?: File | null;
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { useExpenseForm } from '../useExpenseForm';
 import { ExpenseStatus } from '../../constants/expenses';
 import type { ExpenseDTO } from '../../types/expenses';
@@ -42,7 +42,7 @@ describe('useExpenseForm', () => {
   const mockExpense: ExpenseDTO = {
     id: 'expense-1',
     organizationId: 'org-1',
-    categoryId: null,
+    categoryId: 'category-123',
     favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
     description: 'Test expense',
     amount: 100.50,
@@ -74,7 +74,7 @@ describe('useExpenseForm', () => {
     currency: 'BRL',
     dueDate: new Date('2024-12-31'),
     status: ExpenseStatus.OPEN,
-    categoryId: null,
+    categoryId: 'category-123',
     paymentMethod: null,
     favorecidoId: '550e8400-e29b-41d4-a716-446655440000',
     municipality: 'Valid City',
@@ -95,7 +95,7 @@ describe('useExpenseForm', () => {
       expect(result.current.form.getValues('amount')).toBeUndefined();
       expect(result.current.form.getValues('currency')).toBe('BRL');
       expect(result.current.form.getValues('status')).toBe(ExpenseStatus.OPEN);
-      expect(result.current.form.getValues('categoryId')).toBeNull();
+      expect(result.current.form.getValues('categoryId')).toBe('');
       expect(result.current.form.getValues('paymentMethod')).toBeNull();
       expect(result.current.form.getValues('favorecidoId')).toBe('');
       expect(result.current.form.getValues('municipality')).toBe('');
@@ -304,6 +304,59 @@ describe('useExpenseForm', () => {
 
       expect(mockCreate).not.toHaveBeenCalled();
       expect(mockUpdate).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('mandatory category', () => {
+    it('should block creating an expense without category and show the message', async () => {
+      const { result } = renderHook(() => useExpenseForm());
+
+      act(() => {
+        result.current.form.reset({ ...validFormData, categoryId: '' });
+      });
+
+      await act(async () => {
+        await result.current.onSubmit();
+      });
+
+      expect(mockCreate).not.toHaveBeenCalled();
+      expect(result.current.form.getFieldState('categoryId').error?.message).toBe(
+        'A categoria é obrigatória'
+      );
+    });
+
+    it('should send the chosen category in the create payload', async () => {
+      const { result } = renderHook(() => useExpenseForm());
+
+      act(() => {
+        result.current.form.reset(validFormData);
+      });
+
+      await act(async () => {
+        await result.current.onSubmit();
+      });
+
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ categoryId: 'category-123' })
+      );
+    });
+
+    it('should ask for a category before updating an old expense saved without one', async () => {
+      const legacyExpense: ExpenseDTO = { ...mockExpense, categoryId: null };
+      const { result } = renderHook(() =>
+        useExpenseForm({ initialExpense: legacyExpense })
+      );
+
+      expect(result.current.form.getValues('categoryId')).toBe('');
+
+      await act(async () => {
+        await result.current.onSubmit();
+      });
+
+      expect(mockUpdate).not.toHaveBeenCalled();
+      expect(result.current.form.getFieldState('categoryId').error?.message).toBe(
+        'A categoria é obrigatória'
+      );
     });
   });
 

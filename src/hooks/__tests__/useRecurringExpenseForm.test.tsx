@@ -31,7 +31,7 @@ const VALID_UUID = '550e8400-e29b-41d4-a716-446655440000';
 const validFormData: RecurringExpenseFormData = {
   description: 'Aluguel do escritório',
   favorecidoId: VALID_UUID,
-  categoryId: null,
+  categoryId: 'category-123',
   amountType: 'VARIABLE',
   amount: 1500,
   paymentMethod: null,

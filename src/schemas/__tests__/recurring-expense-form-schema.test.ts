@@ -15,7 +15,7 @@ function buildValidFormData(
   return {
     description: 'Aluguel do escritório',
     favorecidoId: VALID_UUID,
-    categoryId: null,
+    categoryId: 'category-123',
     amountType: 'FIXED',
     amount: 1500,
     paymentMethod: null,
@@ -28,6 +28,27 @@ function buildValidFormData(
 }
 
 describe('recurringExpenseFormSchema', () => {
+  describe('categoryId', () => {
+    it('rejects an empty category with a Portuguese message', () => {
+      const result = recurringExpenseFormSchema.safeParse(buildValidFormData({ categoryId: '' }));
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0].path).toEqual(['categoryId']);
+        expect(result.error.issues[0].message).toBe('A categoria é obrigatória');
+      }
+    });
+
+    it('rejects a null category (old recurrence saved without one)', () => {
+      const result = recurringExpenseFormSchema.safeParse({
+        ...buildValidFormData(),
+        categoryId: null,
+      });
+
+      expect(result.success).toBe(false);
+    });
+  });
+
   describe('dueDay', () => {
     it('rejects dueDay of 0', () => {
       const result = recurringExpenseFormSchema.safeParse(
@@ -199,12 +220,12 @@ describe('toCreateInput', () => {
     expect(input.startDate).toBe(startDate);
   });
 
-  it('normalizes optional fields to null', () => {
+  it('normalizes optional fields to null and keeps the category', () => {
     const input = toCreateInput(
-      buildValidFormData({ categoryId: undefined, paymentMethod: undefined, endDate: undefined })
+      buildValidFormData({ paymentMethod: undefined, endDate: undefined })
     );
 
-    expect(input.categoryId).toBeNull();
+    expect(input.categoryId).toBe('category-123');
     expect(input.paymentMethod).toBeNull();
     expect(input.endDate).toBeNull();
   });

@@ -77,7 +77,7 @@ export function useRecurringExpenseForm({
       return {
         description: initialRecurringExpense.description,
         favorecidoId: initialRecurringExpense.favorecidoId,
-        categoryId: initialRecurringExpense.categoryId,
+        categoryId: initialRecurringExpense.categoryId ?? '',
         amountType: initialRecurringExpense.amountType,
         amount: initialRecurringExpense.amount,
         paymentMethod: initialRecurringExpense.paymentMethod,

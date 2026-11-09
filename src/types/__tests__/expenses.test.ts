@@ -260,6 +260,7 @@ describe('Type Definitions', () => {
       const input: CreateExpenseInput = {
         organizationId: 'org-123',
         favorecidoId: FAVORECIDO_ID,
+        categoryId: 'category-123',
         description: 'Test expense',
         amount: 100.50,
         currency: 'BRL',
@@ -295,6 +296,7 @@ describe('Type Definitions', () => {
       const inputWithPaymentMethod: CreateExpenseInput = {
         organizationId: 'org-123',
         favorecidoId: FAVORECIDO_ID,
+        categoryId: 'category-123',
         description: 'Test expense',
         amount: 100,
         currency: 'BRL',
@@ -310,6 +312,7 @@ describe('Type Definitions', () => {
       const input: CreateExpenseInput = {
         organizationId: 'org-123',
         favorecidoId: FAVORECIDO_ID,
+        categoryId: 'category-123',
         description: 'Test expense',
         amount: 100,
         currency: 'BRL',
@@ -324,6 +327,7 @@ describe('Type Definitions', () => {
       const input: CreateExpenseInput = {
         organizationId: 'org-123',
         favorecidoId: FAVORECIDO_ID,
+        categoryId: 'category-123',
         description: 'A valid description',
         amount: 100,
         currency: 'BRL',
@@ -340,6 +344,7 @@ describe('Type Definitions', () => {
       const input: CreateExpenseInput = {
         organizationId: 'org-123',
         favorecidoId: FAVORECIDO_ID,
+        categoryId: 'category-123',
         description: 'Test',
         amount: 99999999.99,
         currency: 'BRL',
