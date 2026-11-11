@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { UseFormReturn } from 'react-hook-form';
@@ -255,6 +256,52 @@ describe('FavorecidoFormModal', () => {
       await waitFor(() => {
         expect(onClose).toHaveBeenCalledTimes(1);
       });
+    });
+  });
+
+  // The modal is also the quick-create inside the expense and recurrence
+  // forms. Radix portals it out of their DOM, but React still bubbles the
+  // submit through the component tree: saving the favorecido used to submit
+  // the host form too and create the expense with the previously selected
+  // favorecido.
+  describe('opened from inside another form', () => {
+    function renderInsideHostForm(onHostSubmit: () => void, onClose: () => void) {
+      return render(
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            onHostSubmit();
+          }}
+        >
+          {createPortal(<FavorecidoFormModal isOpen={true} onClose={onClose} />, document.body)}
+        </form>
+      );
+    }
+
+    it('saves the favorecido without submitting the host form', async () => {
+      const onHostSubmit = vi.fn();
+      const onClose = vi.fn();
+      renderInsideHostForm(onHostSubmit, onClose);
+
+      await user.type(screen.getByPlaceholderText('Nome do favorecido'), 'Maria Santos');
+      await user.click(screen.getByRole('button', { name: /^salvar$/i }));
+
+      await waitFor(() => {
+        expect(onClose).toHaveBeenCalledTimes(1);
+      });
+      expect(onHostSubmit).not.toHaveBeenCalled();
+    });
+
+    it('does not submit the host form when the favorecido is invalid', async () => {
+      const onHostSubmit = vi.fn();
+      renderInsideHostForm(onHostSubmit, vi.fn());
+
+      await user.click(screen.getByRole('button', { name: /^salvar$/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText(/o nome é obrigatório/i)).toBeInTheDocument();
+      });
+      expect(onHostSubmit).not.toHaveBeenCalled();
     });
   });
 
