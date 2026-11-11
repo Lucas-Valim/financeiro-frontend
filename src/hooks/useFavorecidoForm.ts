@@ -12,6 +12,28 @@ import { favorecidosApiService } from '../api/favorecidos-api';
 import type { FavorecidoDTO } from '../types/favorecidos';
 import { ORGANIZATION_ID } from '../constants/expenses';
 
+// The API answers errors with a message only, so its text decides which field
+// shows it. The namesake 409 ("Já existe um favorecido com o nome …") is checked
+// first: it would otherwise match the generic "já existe" of the document rule.
+const NAMESAKE_CONFLICT_FRAGMENT = 'já existe um favorecido com o nome';
+const DOCUMENT_ERROR_FRAGMENTS = ['já cadastrado', 'já existe', 'documento inválido', 'documento'];
+
+type FieldWithServerError = 'name' | 'document';
+
+function resolveServerErrorField(errorMessage: string): FieldWithServerError | null {
+  const normalizedMessage = errorMessage.toLowerCase();
+
+  if (normalizedMessage.includes(NAMESAKE_CONFLICT_FRAGMENT)) {
+    return 'name';
+  }
+
+  if (DOCUMENT_ERROR_FRAGMENTS.some((fragment) => normalizedMessage.includes(fragment))) {
+    return 'document';
+  }
+
+  return null;
+}
+
 interface UseFavorecidoFormParams {
   favorecido?: FavorecidoDTO | null;
   organizationId?: string;
@@ -109,14 +131,10 @@ export function useFavorecidoForm({
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '';
-      const normalizedMessage = errorMessage.toLowerCase();
-      const isDuplicateOrInvalid = normalizedMessage.includes('já cadastrado') ||
-        normalizedMessage.includes('já existe') ||
-        normalizedMessage.includes('documento inválido') ||
-        normalizedMessage.includes('documento');
+      const errorField = resolveServerErrorField(errorMessage);
 
-      if (isDuplicateOrInvalid) {
-        form.setError('document', { message: errorMessage });
+      if (errorField) {
+        form.setError(errorField, { message: errorMessage });
       } else {
         toast.error(errorMessage || 'Ocorreu um erro ao salvar o favorecido');
       }

@@ -270,6 +270,114 @@ describe('useFavorecidoForm', () => {
       });
       expect(toast.error).not.toHaveBeenCalled();
     });
+
+    // The backend's own wording also starts with "Já existe um favorecido com…";
+    // it must keep landing on the document field, not on the name field.
+    it('should keep the backend duplicate-document message on the document field', async () => {
+      const documentMessage = 'Já existe um favorecido com este documento nesta organização';
+      mockCreate.mockRejectedValue(new Error(documentMessage));
+
+      const { Wrapper } = createWrapper();
+      const { result } = renderHook(
+        () => useFavorecidoForm({ organizationId: ORGANIZATION_ID }),
+        { wrapper: Wrapper }
+      );
+
+      await act(async () => {
+        result.current.form.setValue('name', 'Test', { shouldDirty: true });
+        result.current.form.setValue('document', '12345678901', { shouldDirty: true });
+      });
+
+      await act(async () => {
+        await result.current.onSubmit();
+      });
+
+      await waitFor(() => {
+        expect(result.current.form.getFieldState('document').error?.message).toBe(documentMessage);
+      });
+      expect(result.current.form.getFieldState('name').error).toBeUndefined();
+    });
+  });
+
+  describe('error handling - same name already registered (409)', () => {
+    const namesakeMessage =
+      'Já existe um favorecido com o nome "Carlo Fernando Valim Borges". Use o cadastro existente ou, ' +
+      'se forem pessoas ou empresas diferentes, informe o CPF/CNPJ dos dois.';
+
+    it('should surface the namesake error on the name field, not on the document field', async () => {
+      mockCreate.mockRejectedValue(new Error(namesakeMessage));
+
+      const { Wrapper } = createWrapper();
+      const { result } = renderHook(
+        () => useFavorecidoForm({ organizationId: ORGANIZATION_ID }),
+        { wrapper: Wrapper }
+      );
+
+      await act(async () => {
+        result.current.form.setValue('name', 'Carlo Fernando Valim Borges', { shouldDirty: true });
+      });
+
+      await act(async () => {
+        await result.current.onSubmit();
+      });
+
+      await waitFor(() => {
+        expect(result.current.form.getFieldState('name').error?.message).toBe(namesakeMessage);
+      });
+      expect(result.current.form.getFieldState('document').error).toBeUndefined();
+      expect(toast.error).not.toHaveBeenCalled();
+    });
+
+    // The existing cadastro's name is echoed in the message; a name containing
+    // "documento" must not pull the error over to the document field.
+    it('should keep the namesake error on the name field when the existing name contains "documento"', async () => {
+      const messageWithDocumentWord =
+        'Já existe um favorecido com o nome "Documento Fiscal Ltda". Use o cadastro existente ou, ' +
+        'se forem pessoas ou empresas diferentes, informe o CPF/CNPJ dos dois.';
+      mockCreate.mockRejectedValue(new Error(messageWithDocumentWord));
+
+      const { Wrapper } = createWrapper();
+      const { result } = renderHook(
+        () => useFavorecidoForm({ organizationId: ORGANIZATION_ID }),
+        { wrapper: Wrapper }
+      );
+
+      await act(async () => {
+        result.current.form.setValue('name', 'Documento Fiscal Ltda', { shouldDirty: true });
+      });
+
+      await act(async () => {
+        await result.current.onSubmit();
+      });
+
+      await waitFor(() => {
+        expect(result.current.form.getFieldState('name').error?.message).toBe(messageWithDocumentWord);
+      });
+      expect(result.current.form.getFieldState('document').error).toBeUndefined();
+    });
+
+    it('should surface the namesake error on the name field when editing', async () => {
+      mockUpdate.mockRejectedValue(new Error(namesakeMessage));
+
+      const { Wrapper } = createWrapper();
+      const { result } = renderHook(
+        () => useFavorecidoForm({ favorecido: mockFavorecido, organizationId: ORGANIZATION_ID }),
+        { wrapper: Wrapper }
+      );
+
+      await act(async () => {
+        result.current.form.setValue('name', 'Carlo Fernando Valim Borges', { shouldDirty: true });
+      });
+
+      await act(async () => {
+        await result.current.onSubmit();
+      });
+
+      await waitFor(() => {
+        expect(result.current.form.getFieldState('name').error?.message).toBe(namesakeMessage);
+      });
+      expect(result.current.form.getFieldState('document').error).toBeUndefined();
+    });
   });
 
   describe('error handling - invalid document (400)', () => {
