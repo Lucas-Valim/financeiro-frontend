@@ -56,6 +56,11 @@ export function FavorecidoFormModal({ isOpen, onClose, favorecido = null, onSucc
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
+      // Radix portals the Dialog out of the DOM, but React still bubbles
+      // `submit` through the component tree. When this modal is nested in
+      // another form (quick-create via FavorecidoField), letting it bubble
+      // would also submit the host form.
+      e.stopPropagation();
       await onSubmit();
     },
     [onSubmit]
